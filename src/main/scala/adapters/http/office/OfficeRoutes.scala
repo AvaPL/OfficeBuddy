@@ -8,6 +8,7 @@ import domain.service.office.OfficeService
 import io.circe.generic.auto._
 import java.util.UUID
 import org.http4s.HttpRoutes
+import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s._
@@ -19,26 +20,27 @@ class OfficeRoutes[F[_]: Async](
   // TODO: Probably the base endpoint should be defined in some central part
   private val baseEndpoint =
     endpoint
-      .in("api" / "v1")
-      .errorOut(jsonBody[OfficeApiError])
+      .in("api" / "v1" / "office")
+      .errorOut(statusCode and jsonBody[OfficeApiError])
 
   private val readOfficeEndpoint =
     baseEndpoint.get
       .in(path[UUID]("id"))
       .out(jsonBody[JsonOffice])
+      .serverLogic(readOffice)
 
-  private val readOfficeRoute =
-    readOfficeEndpoint
-      .serverLogic { id =>
-        officeService
-          .readOffice(id)
-          .map(JsonOffice.fromDomain(_).asRight[OfficeApiError])
-          .recover {
-            case OfficeNotFound(id: UUID) => OfficeApiError(s"Office [id: $id] was not found").asLeft
-          }
+  private def readOffice(id: UUID) =
+    officeService
+      .readOffice(id)
+      .map(JsonOffice.fromDomain)
+      .map(_.asRight[(StatusCode, OfficeApiError)])
+      .recover {
+        case OfficeNotFound(id: UUID) =>
+          val officeApiError = OfficeApiError(s"Office [id: $id] was not found")
+          (StatusCode.NotFound -> officeApiError).asLeft
       }
 
-  // TODO: Probably routes should be defined in some central part
+  // TODO: Add OpenAPI docs endpoint
   val routes: HttpRoutes[F] =
-    Http4sServerInterpreter().toRoutes(readOfficeRoute)
+    Http4sServerInterpreter().toRoutes(readOfficeEndpoint)
 }
