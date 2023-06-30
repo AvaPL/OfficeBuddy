@@ -13,6 +13,7 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.http4s._
 
+// TODO: Add unit tests
 class OfficeRoutes[F[_]: Async](
   officeService: OfficeService[F]
 ) {
