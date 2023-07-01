@@ -7,6 +7,7 @@ val circeVersion = "3.8.15"
 val enumeratumVersion = "1.7.2"
 val http4sVersion = "0.23.21"
 val mockitoScalaVersion = "1.17.14"
+val quicklensVersion = "1.9.4"
 val skunkVersion = "0.6.0"
 val tapirVersion = "1.5.5"
 val weaverCatsVersion = "0.8.3"
@@ -41,6 +42,7 @@ lazy val integrationTests = (project in file("it"))
     publish / skip := true,
     Test / parallelExecution := false,
     libraryDependencies ++= Seq(
+      "com.softwaremill.quicklens" %% "quicklens" % quicklensVersion % Test,
       "com.disneystreaming" %% "weaver-cats" % weaverCatsVersion % Test
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect")
