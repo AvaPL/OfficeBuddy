@@ -7,7 +7,7 @@ import scala.util.control.NoStackTrace
 
 trait OfficeRepository[F[_]] {
 
-  def create(office: Office): F[UUID]
+  def create(office: Office): F[Unit]
   def read(officeId: UUID): F[Office]
   def update(office: Office): F[Unit]
   def delete(officeId: UUID): F[Unit]

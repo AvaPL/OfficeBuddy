@@ -29,7 +29,7 @@ object Main extends IOApp.Simple {
 
   private def runHttpServer[F[_]: Async](host: Host, port: Port) = {
     val officeRepository = new OfficeRepository[F] { // TODO: Add proper adapter
-      override def create(office: Office): F[UUID] = anyOfficeId.pure
+      override def create(office: Office): F[Unit] = ().pure
       override def read(officeId: UUID): F[Office] = anyOffice.pure
       override def update(office: Office): F[Unit] = ().pure
       override def delete(officeId: UUID): F[Unit] = ().pure

@@ -33,3 +33,15 @@ lazy val root = (project in file("."))
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
+
+lazy val integrationTests = (project in file("it"))
+  .dependsOn(root) // your current subproject
+  .settings(
+    idePackagePrefix := Some("io.github.avapl"),
+    publish / skip := true,
+    Test / parallelExecution := false,
+    libraryDependencies ++= Seq(
+      "com.disneystreaming" %% "weaver-cats" % weaverCatsVersion % Test
+    ),
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
+  )
