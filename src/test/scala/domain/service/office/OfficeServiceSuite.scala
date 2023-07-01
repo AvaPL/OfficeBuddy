@@ -29,7 +29,7 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
     val officeId = anyOfficeId
     implicit val fuuid: FUUID[IO] = whenF(mock[FUUID[IO]].randomUUID()) thenReturn officeId
     val officeRepository = mock[OfficeRepository[IO]]
-    whenF(officeRepository.create(any)) thenReturn officeId
+    whenF(officeRepository.create(any)) thenReturn ()
     val officeService = new OfficeService[IO](officeRepository)
 
     for {

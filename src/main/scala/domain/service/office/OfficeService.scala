@@ -17,8 +17,8 @@ class OfficeService[F[_]: FlatMap](
     for {
       id <- fuuid.randomUUID()
       office = Office(id, name, notes, address)
-      createdOfficeId <- officeRepository.create(office)
-    } yield createdOfficeId
+      _ <- officeRepository.create(office)
+    } yield id
 
   def readOffice(officeId: UUID): F[Office] =
     officeRepository.read(officeId)

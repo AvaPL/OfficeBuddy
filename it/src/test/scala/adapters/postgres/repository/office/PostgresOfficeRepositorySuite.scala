@@ -1,6 +1,7 @@
 package io.github.avapl
 package adapters.postgres.repository.office
 
+import adapters.postgres.migration.FlywayMigration
 import cats.effect.IO
 import cats.effect.Resource
 import com.softwaremill.quicklens._
@@ -16,16 +17,30 @@ import weaver.IOSuite
 object PostgresOfficeRepositorySuite extends IOSuite {
 
   override type Res = PostgresOfficeRepository[IO]
-  override def sharedResource: Resource[IO, Res] = {
+  override def sharedResource: Resource[IO, Res] = { // TODO: Extract to a common place and simplify
+    val host = "localhost"
+    val port = 2345
+    val user = "postgres"
+    val password = "postgres"
+    val database = "office_buddy"
     val session = Session.pooled(
-      host = "localhost",
-      port = 2345,
-      user = "postgres",
-      password = Some("postgres"),
-      database = "office_buddy",
+      host = host,
+      port = port,
+      user = user,
+      password = Some(password),
+      database = database,
       max = 10
     )
-    session.map(new PostgresOfficeRepository[IO](_))
+    val migration = new FlywayMigration[IO](
+      host = host,
+      port = port,
+      user = user,
+      password = password,
+      database = database
+    )
+    session
+      .evalTap(_ => migration.run())
+      .map(new PostgresOfficeRepository[IO](_))
   }
 
   test(
