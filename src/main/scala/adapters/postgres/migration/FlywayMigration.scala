@@ -4,7 +4,6 @@ package adapters.postgres.migration
 import cats.effect.kernel.Async
 import fly4s.core.Fly4s
 import fly4s.core.data.MigrateResult
-import fly4s.implicits._
 
 class FlywayMigration[F[_]: Async](
   host: String,
@@ -21,5 +20,5 @@ class FlywayMigration[F[_]: Async](
   )
 
   def run(): F[MigrateResult] =
-    fly4s.use(_.validateAndMigrate.result)
+    fly4s.use(_.migrate)
 }

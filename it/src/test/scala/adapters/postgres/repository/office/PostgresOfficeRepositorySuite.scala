@@ -11,12 +11,18 @@ import domain.repository.office.OfficeRepository.DuplicateOfficeName
 import domain.repository.office.OfficeRepository.OfficeNotFound
 import java.util.UUID
 import natchez.Trace.Implicits.noop
+import skunk.Command
 import skunk.Session
+import skunk.Void
+import skunk.implicits._
+import weaver.Expectations
 import weaver.IOSuite
+import weaver.TestName
 
 object PostgresOfficeRepositorySuite extends IOSuite {
 
-  override type Res = PostgresOfficeRepository[IO]
+  override val maxParallelism: Int = 1
+  override type Res = Resource[IO, Session[IO]]
   override def sharedResource: Resource[IO, Res] = { // TODO: Extract to a common place and simplify
     val host = "localhost"
     val port = 2345
@@ -40,11 +46,26 @@ object PostgresOfficeRepositorySuite extends IOSuite {
     )
     session
       .evalTap(_ => migration.run())
-      .map(new PostgresOfficeRepository[IO](_))
   }
 
-  test(
-    """GIVEN an office to create
+  // TODO: Extract to a common place and simplify
+  private def beforeTest(name: TestName)(run: PostgresOfficeRepository[IO] => IO[Expectations]): Unit =
+    test(name) { session =>
+      lazy val postgresOfficeRepository = new PostgresOfficeRepository[IO](session)
+      truncateOfficeTable(session) >> run(postgresOfficeRepository)
+    }
+
+  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE office
+      """.command
+    session.use(_.execute(sql))
+  }
+
+  beforeTest(
+    """
+      |GIVEN an office to create
       | WHEN create is called
       | THEN the office should be inserted into Postgres
       |""".stripMargin
@@ -57,8 +78,9 @@ object PostgresOfficeRepositorySuite extends IOSuite {
     } yield expect(readOffice == office)
   }
 
-  test(
-    """GIVEN an existing office and a new office with the same name
+  beforeTest(
+    """
+      |GIVEN an existing office and a new office with the same name
       | WHEN create is called
       | THEN the call should fail with DuplicateOfficeName
       |""".stripMargin
@@ -78,8 +100,9 @@ object PostgresOfficeRepositorySuite extends IOSuite {
     }
   }
 
-  test(
-    """GIVEN an existing office and an update
+  beforeTest(
+    """
+      |GIVEN an existing office and an update
       | WHEN update is called
       | THEN the office should be updated
       |""".stripMargin
@@ -105,8 +128,24 @@ object PostgresOfficeRepositorySuite extends IOSuite {
     } yield expect(readOffice == updatedOffice)
   }
 
-  test(
-    """GIVEN an update for nonexistent office
+  beforeTest(
+    """
+      |GIVEN an existing office
+      | WHEN update is called without any changes
+      | THEN the call should not fail (no-op)
+      |""".stripMargin
+  ) { officeRepository =>
+    val office = anyOffice
+
+    for {
+      _ <- officeRepository.create(office)
+      _ <- officeRepository.update(office)
+    } yield success
+  }
+
+  beforeTest(
+    """
+      |GIVEN an update for nonexistent office
       | WHEN update is called
       | THEN the call should fail with OfficeNotFound
       |""".stripMargin
@@ -122,8 +161,9 @@ object PostgresOfficeRepositorySuite extends IOSuite {
     }
   }
 
-  test(
-    """GIVEN an existing office
+  beforeTest(
+    """
+      |GIVEN an existing office
       | WHEN delete is called on its ID
       | THEN the office should be deleted
       |""".stripMargin
@@ -137,12 +177,14 @@ object PostgresOfficeRepositorySuite extends IOSuite {
     } yield matches(result) {
       case Left(throwable) =>
         val officeNotFound = OfficeNotFound(office.id)
+        println(throwable)
         expect(throwable == officeNotFound)
     }
   }
 
-  test(
-    """WHEN delete is called on nonexistent office ID
+  beforeTest(
+    """
+      |WHEN delete is called on nonexistent office ID
       |THEN the call should not fail (no-op)
       |""".stripMargin
   ) { officeRepository =>

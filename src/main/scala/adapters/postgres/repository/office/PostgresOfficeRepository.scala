@@ -1,16 +1,20 @@
 package io.github.avapl
 package adapters.postgres.repository.office
 
+import cats.data.OptionT
 import cats.effect.Resource
 import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.repository.office.OfficeRepository
+import domain.repository.office.OfficeRepository.DuplicateOfficeName
+import domain.repository.office.OfficeRepository.OfficeNotFound
 import java.util.UUID
 import skunk._
 import skunk.codec.all._
 import skunk.data.Arr
+import skunk.data.Completion
 import skunk.implicits._
 
 // TODO: Add integration tests
@@ -25,7 +29,12 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
       session
         .prepare(createSql)
         .flatMap { sql =>
-          sql.execute(office)
+          sql
+            .execute(office)
+            .recoverWith {
+              case SqlState.UniqueViolation(e) if e.constraintName.contains("office_name_key") =>
+                DuplicateOfficeName(office.name).raiseError
+            }
         }
         .void
     }
@@ -38,11 +47,10 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
 
   override def read(officeId: UUID): F[Office] =
     session.use { session =>
-      session
-        .prepare(readSql)
-        .flatMap { sql =>
-          sql.unique(officeId)
-        }
+      for {
+        sql <- session.prepare(readSql)
+        office <- OptionT(sql.option(officeId)).getOrRaise(OfficeNotFound(officeId))
+      } yield office
     }
 
   private lazy val readSql: Query[UUID, Office] =
@@ -54,12 +62,15 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
 
   override def update(office: Office): F[Unit] =
     session.use { session =>
-      session
-        .prepare(updateSql)
-        .flatMap { sql =>
-          sql.execute(office)
-        }
-        .void
+      for {
+        sql <- session.prepare(updateSql)
+        _ <- sql
+          .execute(office)
+          .ensureOr {
+            case Completion.Update(0) => OfficeNotFound(office.id)
+            case completion           => new RuntimeException(s"Expected 1 updated office, but got: $completion")
+          }(_ == Completion.Update(1))
+      } yield ()
     }
 
   private lazy val updateSql: Command[Office] =
