@@ -7,7 +7,7 @@ import domain.repository.office.OfficeRepository._
 import domain.service.office.OfficeService
 import io.circe.generic.auto._
 import java.util.UUID
-import org.http4s.HttpRoutes
+import org.http4s._
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -23,6 +23,10 @@ class OfficeRoutes[F[_]: Async](
     endpoint
       .in("api" / "v1" / "office")
       .errorOut(statusCode and jsonBody[OfficeApiError])
+
+  // TODO: Implement
+//  private val createOfficeEndpoint =
+//    baseEndpoint.post
 
   private val readOfficeEndpoint =
     baseEndpoint.get
@@ -41,7 +45,26 @@ class OfficeRoutes[F[_]: Async](
           (StatusCode.NotFound -> officeApiError).asLeft
       }
 
+  // TODO: Implement
+//  private val updateOfficeEndpoint =
+//    baseEndpoint.patch
+
+  private val deleteOfficeEndpoint =
+    baseEndpoint.delete
+      .in(path[UUID]("id"))
+      .out(statusCode(StatusCode.NoContent))
+      .serverLogic(deleteOffice)
+
+  private def deleteOffice(id: UUID) =
+    officeService
+      .deleteOffice(id)
+      .as(().asRight[(StatusCode, OfficeApiError)])
+
   // TODO: Add OpenAPI docs endpoint
   val routes: HttpRoutes[F] =
-    Http4sServerInterpreter().toRoutes(readOfficeEndpoint)
+    Http4sServerInterpreter().toRoutes(
+      readOfficeEndpoint ::
+        deleteOfficeEndpoint ::
+        Nil
+    )
 }
