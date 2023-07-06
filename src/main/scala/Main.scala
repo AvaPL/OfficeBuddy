@@ -1,70 +1,67 @@
 package io.github.avapl
 
 import adapters.http.office.OfficeRoutes
+import adapters.postgres.migration.FlywayMigration
+import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.IOApp
-import cats.syntax.all._
+import cats.effect.std.Console
+import cats.implicits._
 import com.comcast.ip4s.Host
 import com.comcast.ip4s.IpLiteralSyntax
 import com.comcast.ip4s.Port
-import domain.model.office.Address
-import domain.model.office.Office
-import domain.repository.office.OfficeRepository
 import domain.service.office.OfficeService
-import java.util.UUID
+import natchez.Trace.Implicits.noop
+import org.http4s.HttpRoutes
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import skunk.Session
 
 object Main extends IOApp.Simple {
 
   // TODO: Add logging
+  // TODO: Replace noop Skunk tracing with logs
   override def run: IO[Unit] = runF[IO]
 
-  private def runF[F[_]: Async] =
-    runHttpServer[F](
-      host = ipv4"0.0.0.0", // TODO: Introduce config
-      port = port"8080"
-    ).useForever
-
-  private def runHttpServer[F[_]: Async](host: Host, port: Port) = {
-    val officeRepository = new OfficeRepository[F] { // TODO: Add proper adapter
-      override def create(office: Office): F[Unit] = ().pure
-      override def read(officeId: UUID): F[Office] = anyOffice.pure
-      override def update(office: Office): F[Unit] = ().pure
-      override def delete(officeId: UUID): F[Unit] = ().pure
-
-      private lazy val anyOffice = Office(
-        id = anyOfficeId,
-        name = anyOfficeName,
-        notes = anyOfficeNotes,
-        address = anyOfficeAddress
+  private def runF[F[_]: Async: Console] = {
+    val host = "localhost" // TODO: Introduce config
+    val port = 2345
+    val user = "postgres"
+    val password = "postgres"
+    val database = "office_buddy"
+    val session = Session.pooled(
+      host = host,
+      port = port,
+      user = user,
+      password = Some(password),
+      database = database,
+      max = 10
+    )
+    val migration = new FlywayMigration[F](
+      host = host,
+      port = port,
+      user = user,
+      password = password,
+      database = database
+    )
+    migration.run() *> [Nothing] session.flatMap { session =>
+      val officeRepository = new PostgresOfficeRepository[F](session)
+      val officeService = new OfficeService[F](officeRepository)
+      val officeRoutes = new OfficeRoutes[F](officeService)
+      runHttpServer[F](
+        host = ipv4"0.0.0.0", // TODO: Introduce config
+        port = port"8080",
+        routes = officeRoutes.routes
       )
+    }.useForever
+  }
 
-      private lazy val anyOfficeId =
-        UUID.fromString("4f99984c-e371-4b77-a184-7003f6281b8d")
-
-      private lazy val anyOfficeName =
-        "Test Office"
-
-      private lazy val anyOfficeNotes =
-        List("Test", "Notes")
-
-      private lazy val anyOfficeAddress = Address(
-        addressLine1 = "Test Street",
-        addressLine2 = "Building 42",
-        postalCode = "12-345",
-        city = "Wroclaw",
-        country = "Poland"
-      )
-    }
-    val officeService = new OfficeService[F](officeRepository)
-    val officeRoutes = new OfficeRoutes[F](officeService)
+  private def runHttpServer[F[_]: Async](host: Host, port: Port, routes: HttpRoutes[F]) =
     EmberServerBuilder
       .default[F]
       .withHost(host)
       .withPort(port)
-      .withHttpApp(Router("/" -> officeRoutes.routes).orNotFound)
+      .withHttpApp(Router("/" -> routes).orNotFound)
       .build
-  }
 }

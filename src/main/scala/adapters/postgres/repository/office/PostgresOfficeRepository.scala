@@ -17,7 +17,6 @@ import skunk.data.Arr
 import skunk.data.Completion
 import skunk.implicits._
 
-// TODO: Add integration tests
 class PostgresOfficeRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
 ) extends OfficeRepository[F] {
