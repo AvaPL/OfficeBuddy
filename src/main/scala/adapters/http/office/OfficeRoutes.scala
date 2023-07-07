@@ -24,9 +24,22 @@ class OfficeRoutes[F[_]: Async](
       .in("api" / "v1" / "office")
       .errorOut(statusCode and jsonBody[OfficeApiError])
 
-  // TODO: Implement
-//  private val createOfficeEndpoint =
-//    baseEndpoint.post
+  private val createOfficeEndpoint =
+    baseEndpoint.post
+      .in(jsonBody[JsonCreateOffice])
+      .out(statusCode(StatusCode.Created) and jsonBody[JsonOffice])
+      .serverLogic(createOffice)
+
+  private def createOffice(jsonCreateOffice: JsonCreateOffice) =
+    officeService
+      .createOffice(jsonCreateOffice.name, jsonCreateOffice.notes, jsonCreateOffice.address.toDomain)
+      .map(officeId => JsonOffice.fromJsonCreateOffice(officeId, jsonCreateOffice))
+      .map(_.asRight[(StatusCode, OfficeApiError)])
+      .recover {
+        case DuplicateOfficeName(name) =>
+          val officeApiError = OfficeApiError(s"Office '$name' is already defined")
+          (StatusCode.Conflict -> officeApiError).asLeft
+      }
 
   private val readOfficeEndpoint =
     baseEndpoint.get
@@ -40,14 +53,29 @@ class OfficeRoutes[F[_]: Async](
       .map(JsonOffice.fromDomain)
       .map(_.asRight[(StatusCode, OfficeApiError)])
       .recover {
+        case OfficeNotFound(officeId) =>
+          val officeApiError = OfficeApiError(s"Office [id: $officeId] was not found")
+          (StatusCode.NotFound -> officeApiError).asLeft
+      }
+
+  private val updateOfficeEndpoint =
+    baseEndpoint.patch
+      .in(path[UUID]("id") and jsonBody[JsonUpdateOffice])
+      .out(jsonBody[JsonOffice])
+      .serverLogic((updateOffice _).tupled)
+
+  private def updateOffice(officeId: UUID, jsonUpdateOffice: JsonUpdateOffice) = {
+    val domainOffice = jsonUpdateOffice.toDomain(officeId)
+    officeService
+      .updateOffice(domainOffice)
+      .as(JsonOffice.fromDomain(domainOffice))
+      .map(_.asRight[(StatusCode, OfficeApiError)])
+      .recover {
         case OfficeNotFound(id: UUID) =>
           val officeApiError = OfficeApiError(s"Office [id: $id] was not found")
           (StatusCode.NotFound -> officeApiError).asLeft
       }
-
-  // TODO: Implement
-//  private val updateOfficeEndpoint =
-//    baseEndpoint.patch
+  }
 
   private val deleteOfficeEndpoint =
     baseEndpoint.delete
@@ -63,7 +91,9 @@ class OfficeRoutes[F[_]: Async](
   // TODO: Add OpenAPI docs endpoint
   val routes: HttpRoutes[F] =
     Http4sServerInterpreter().toRoutes(
-      readOfficeEndpoint ::
+      createOfficeEndpoint ::
+        readOfficeEndpoint ::
+        updateOfficeEndpoint ::
         deleteOfficeEndpoint ::
         Nil
     )

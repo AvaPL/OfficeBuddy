@@ -13,6 +13,8 @@ class OfficeService[F[_]: FlatMap](
   officeRepository: OfficeRepository[F]
 )(implicit fuuid: FUUID[F]) {
 
+  // TODO: Should have a separate CreateOffice model
+  // TODO: Should return an office
   def createOffice(name: String, notes: List[String], address: Address): F[UUID] =
     for {
       id <- fuuid.randomUUID()
@@ -23,6 +25,8 @@ class OfficeService[F[_]: FlatMap](
   def readOffice(officeId: UUID): F[Office] =
     officeRepository.read(officeId)
 
+  // TODO: Should have a separate UpdateOffice model
+  // TODO: Should return an office
   def updateOffice(office: Office): F[Unit] =
     officeRepository.update(office)
 
