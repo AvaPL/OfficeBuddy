@@ -99,7 +99,7 @@ class OfficeEndpoints[F[_]: Async](
       }
 
   private lazy val updateOfficeEndpoint =
-    baseEndpoint.patch
+    baseEndpoint.put
       .summary("Update an office")
       .in(
         path[UUID]("officeId") and jsonBody[ApiUpdateOffice]
