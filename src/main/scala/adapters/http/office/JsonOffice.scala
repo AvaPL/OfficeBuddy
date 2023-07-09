@@ -3,10 +3,14 @@ package adapters.http.office
 
 import domain.model.office.Address
 import domain.model.office.Office
+
 import io.scalaland.chimney.dsl._
+
 import java.util.UUID
 import sttp.tapir.Schema
+import sttp.tapir.Schema.annotations.encodedName
 
+@encodedName("Office")
 case class JsonOffice(
   id: UUID,
   name: String,
@@ -31,6 +35,7 @@ object JsonOffice {
   implicit val tapirSchema: Schema[JsonOffice] = Schema.derived
 }
 
+@encodedName("Address")
 case class JsonAddress(
   addressLine1: String,
   addressLine2: String,
@@ -47,6 +52,7 @@ object JsonAddress {
   implicit val tapirSchema: Schema[JsonAddress] = Schema.derived
 }
 
+@encodedName("Office (create)")
 case class JsonCreateOffice(
   name: String,
   notes: List[String],
@@ -65,6 +71,7 @@ object JsonCreateOffice {
   implicit val tapirSchema: Schema[JsonCreateOffice] = Schema.derived
 }
 
+@encodedName("Office (update)")
 case class JsonUpdateOffice(
   name: String,
   notes: List[String],
