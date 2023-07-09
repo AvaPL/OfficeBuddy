@@ -15,9 +15,10 @@ val tapirVersion = "1.5.5"
 val weaverCatsVersion = "0.8.3"
 
 lazy val root = (project in file("."))
+  .enablePlugins(BuildInfoPlugin)
   .settings(
-    name := "OfficeBuddy",
     idePackagePrefix := Some("io.github.avapl"),
+    name := "OfficeBuddy",
     scalacOptions ++= Seq("-deprecation"),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
@@ -36,7 +37,9 @@ lazy val root = (project in file("."))
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub-server" % tapirVersion % Test,
       "com.softwaremill.sttp.client3" %% "circe" % circeVersion % Test
     ),
-    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
+    buildInfoKeys := Seq[BuildInfoKey](name, version),
+    buildInfoPackage := "io.github.avapl.util"
   )
 
 lazy val integrationTests = (project in file("it"))

@@ -29,7 +29,7 @@ class OfficeEndpoints[F[_]: Async](
   private lazy val baseEndpoint =
     endpoint
       .withTag("office")
-      .in("api" / "internal" / "office")
+      .in("office")
       .errorOut(
         oneOf[ApiError](
           oneOfVariant(
@@ -46,12 +46,16 @@ class OfficeEndpoints[F[_]: Async](
   private lazy val createOfficeEndpoint =
     baseEndpoint.post
       .summary("Create an office")
-      .in(jsonBody[JsonCreateOffice])
-      .out(
-        statusCode(StatusCode.Created) and jsonBody[JsonOffice]
-          .description("Office created")
+      .in(
+        jsonBody[ApiCreateOffice]
+          .example(apiCreateOfficeExample)
       )
-      .errorOutVariant(
+      .out(
+        statusCode(StatusCode.Created) and jsonBody[ApiOffice]
+          .description("Office created")
+          .example(apiOfficeExample)
+      )
+      .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.Conflict) and jsonBody[ApiError.Conflict]
             .description("Office with the given name already exists")
@@ -59,10 +63,10 @@ class OfficeEndpoints[F[_]: Async](
       )
       .serverLogic(createOffice)
 
-  private def createOffice(jsonCreateOffice: JsonCreateOffice) =
+  private def createOffice(apiCreateOffice: ApiCreateOffice) =
     officeService
-      .createOffice(jsonCreateOffice.name, jsonCreateOffice.notes, jsonCreateOffice.address.toDomain)
-      .map(officeId => JsonOffice.fromJsonCreateOffice(officeId, jsonCreateOffice))
+      .createOffice(apiCreateOffice.name, apiCreateOffice.notes, apiCreateOffice.address.toDomain)
+      .map(officeId => ApiOffice.fromApiCreateOffice(officeId, apiCreateOffice))
       .map(_.asRight[ApiError])
       .recover {
         case DuplicateOfficeName(name) => ApiError.Conflict(s"Office '$name' is already defined").asLeft
@@ -71,12 +75,13 @@ class OfficeEndpoints[F[_]: Async](
   private lazy val readOfficeEndpoint =
     baseEndpoint.get
       .summary("Find an office by ID")
-      .in(path[UUID]("officeId")) // TODO: Add examples
+      .in(path[UUID]("officeId"))
       .out(
-        jsonBody[JsonOffice] // TODO: Add examples
+        jsonBody[ApiOffice]
           .description("Found office")
+          .example(apiOfficeExample)
       )
-      .errorOutVariant(
+      .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
             .description("Office with the given ID was not found")
@@ -87,7 +92,7 @@ class OfficeEndpoints[F[_]: Async](
   private def readOffice(id: UUID) =
     officeService
       .readOffice(id)
-      .map(JsonOffice.fromDomain)
+      .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
@@ -96,12 +101,16 @@ class OfficeEndpoints[F[_]: Async](
   private lazy val updateOfficeEndpoint =
     baseEndpoint.patch
       .summary("Update an office")
-      .in(path[UUID]("officeId") and jsonBody[JsonUpdateOffice])
-      .out(
-        jsonBody[JsonOffice]
-          .description("Updated office")
+      .in(
+        path[UUID]("officeId") and jsonBody[ApiUpdateOffice]
+          .example(apiUpdateOfficeExample)
       )
-      .errorOutVariant(
+      .out(
+        jsonBody[ApiOffice]
+          .description("Updated office")
+          .example(apiOfficeExample)
+      )
+      .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
             .description("Office with the given ID was not found")
@@ -109,11 +118,11 @@ class OfficeEndpoints[F[_]: Async](
       )
       .serverLogic((updateOffice _).tupled)
 
-  private def updateOffice(officeId: UUID, jsonUpdateOffice: JsonUpdateOffice) = {
-    val domainOffice = jsonUpdateOffice.toDomain(officeId)
+  private def updateOffice(officeId: UUID, apiUpdateOffice: ApiUpdateOffice) = {
+    val domainOffice = apiUpdateOffice.toDomain(officeId)
     officeService
       .updateOffice(domainOffice)
-      .as(JsonOffice.fromDomain(domainOffice))
+      .as(ApiOffice.fromDomain(domainOffice))
       .map(_.asRight[ApiError])
       .recover {
         case OfficeNotFound(id: UUID) => ApiError.NotFound(s"Office [id: $id] was not found").asLeft
@@ -135,4 +144,31 @@ class OfficeEndpoints[F[_]: Async](
     officeService
       .deleteOffice(id)
       .as(().asRight[ApiError])
+
+  private lazy val apiOfficeExample = ApiOffice(
+    id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
+    name = "Wroclaw",
+    notes = List("Everyone's favorite", "The funniest one"),
+    address = apiAddressExample
+  )
+
+  private lazy val apiAddressExample = ApiAddress(
+    addressLine1 = "Powstancow Slaskich 9",
+    addressLine2 = "1st floor",
+    postalCode = "53-332",
+    city = "Wroclaw",
+    country = "Poland"
+  )
+
+  private lazy val apiCreateOfficeExample = ApiCreateOffice(
+    name = "Wroclaw",
+    notes = List("Everyone's favorite", "The funniest one"),
+    address = apiAddressExample
+  )
+
+  private lazy val apiUpdateOfficeExample = ApiUpdateOffice(
+    name = "Wroclaw",
+    notes = List("Everyone's favorite", "The funniest one"),
+    address = apiAddressExample
+  )
 }

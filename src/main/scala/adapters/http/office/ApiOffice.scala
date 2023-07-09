@@ -3,40 +3,38 @@ package adapters.http.office
 
 import domain.model.office.Address
 import domain.model.office.Office
-
 import io.scalaland.chimney.dsl._
-
 import java.util.UUID
 import sttp.tapir.Schema
 import sttp.tapir.Schema.annotations.encodedName
 
 @encodedName("Office")
-case class JsonOffice(
+case class ApiOffice(
   id: UUID,
   name: String,
   notes: List[String],
   //
-  address: JsonAddress
+  address: ApiAddress
 ) {
 
   lazy val toDomain: Office =
     this.transformInto[Office]
 }
 
-object JsonOffice {
+object ApiOffice {
 
-  def fromDomain(office: Office): JsonOffice =
-    office.transformInto[JsonOffice]
+  def fromDomain(office: Office): ApiOffice =
+    office.transformInto[ApiOffice]
 
-  def fromJsonCreateOffice(officeId: UUID, jsonCreateOffice: JsonCreateOffice): JsonOffice =
-    jsonCreateOffice.toJsonOffice(officeId)
+  def fromApiCreateOffice(officeId: UUID, apiCreateOffice: ApiCreateOffice): ApiOffice =
+    apiCreateOffice.toApiOffice(officeId)
 
   // TODO: Use derevo for schema
-  implicit val tapirSchema: Schema[JsonOffice] = Schema.derived
+  implicit val tapirSchema: Schema[ApiOffice] = Schema.derived
 }
 
 @encodedName("Address")
-case class JsonAddress(
+case class ApiAddress(
   addressLine1: String,
   addressLine2: String,
   postalCode: String,
@@ -48,43 +46,44 @@ case class JsonAddress(
     this.transformInto[Address]
 }
 
-object JsonAddress {
-  implicit val tapirSchema: Schema[JsonAddress] = Schema.derived
+object ApiAddress {
+  implicit val tapirSchema: Schema[ApiAddress] = Schema.derived
 }
 
 @encodedName("Office (create)")
-case class JsonCreateOffice(
+case class ApiCreateOffice(
   name: String,
   notes: List[String],
   //
-  address: JsonAddress
+  address: ApiAddress
 ) {
 
-  def toJsonOffice(officeId: UUID): JsonOffice =
+  def toApiOffice(officeId: UUID): ApiOffice =
     this
-      .into[JsonOffice]
+      .into[ApiOffice]
       .withFieldConst(_.id, officeId)
       .transform
 }
 
-object JsonCreateOffice {
-  implicit val tapirSchema: Schema[JsonCreateOffice] = Schema.derived
+object ApiCreateOffice {
+  implicit val tapirSchema: Schema[ApiCreateOffice] = Schema.derived
 }
 
 @encodedName("Office (update)")
-case class JsonUpdateOffice(
+case class ApiUpdateOffice(
   name: String,
   notes: List[String],
   //
-  address: JsonAddress
+  address: ApiAddress
 ) {
 
   def toDomain(officeId: UUID): Office =
-    this.into[Office]
+    this
+      .into[Office]
       .withFieldConst(_.id, officeId)
       .transform
 }
 
-object JsonUpdateOffice {
-  implicit val tapirSchema: Schema[JsonUpdateOffice] = Schema.derived
+object ApiUpdateOffice {
+  implicit val tapirSchema: Schema[ApiUpdateOffice] = Schema.derived
 }

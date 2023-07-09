@@ -1,7 +1,6 @@
 package io.github.avapl
 
 import adapters.http.ApiError
-import adapters.http.ApiError.BadRequest
 import adapters.http.office.OfficeEndpoints
 import adapters.postgres.migration.FlywayMigration
 import adapters.postgres.repository.office.PostgresOfficeRepository
@@ -21,7 +20,9 @@ import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.server.http4s.Http4sServerOptions
 import sttp.tapir.server.model.ValuedEndpointOutput
+import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import util.BuildInfo
 
 object Main extends IOApp.Simple {
 
@@ -54,23 +55,29 @@ object Main extends IOApp.Simple {
       val officeRepository = new PostgresOfficeRepository[F](session)
       val officeService = new OfficeService[F](officeRepository)
       val officeEndpoints = new OfficeEndpoints[F](officeService)
-      // TODO: How to specify the app version?
-      // TODO: Add relative paths to v1/v2 APIs
-      // TODO: Remove "Links" column
-      // TODO: Add a better description
-      val docsEndpoints =
-        SwaggerInterpreter().fromServerEndpoints(officeEndpoints.endpoints, "Office Buddy", "0.1.0-SNAPSHOT")
-      val routes = Http4sServerInterpreter(
+      // TODO: Add a better API description
+      val docsEndpoints = SwaggerInterpreter(
+        // TODO: /api/internal/ is duplicated here and in the router, extract to config?
+        swaggerUIOptions = SwaggerUIOptions.default.contextPath(List("api", "internal"))
+      )
+        .fromServerEndpoints(officeEndpoints.endpoints, BuildInfo.name, BuildInfo.version)
+      val apiInternalRoutes = Http4sServerInterpreter(
         Http4sServerOptions.customiseInterceptors.defaultHandlers { errorMessage =>
-          ValuedEndpointOutput(jsonBody[ApiError.BadRequest], BadRequest(errorMessage))
+          ValuedEndpointOutput(jsonBody[ApiError.BadRequest], ApiError.BadRequest(errorMessage))
         }.options
-      ).toRoutes(officeEndpoints.endpoints ++ docsEndpoints)
+      ).toRoutes(officeEndpoints.endpoints)
+      val docsRoutes = Http4sServerInterpreter().toRoutes(docsEndpoints)
 
       EmberServerBuilder
         .default[F]
         .withHost(ipv4"0.0.0.0") // TODO: Introduce config
         .withPort(port"8080")
-        .withHttpApp(Router("/" -> routes).orNotFound)
+        .withHttpApp(
+          Router(
+            "/" -> docsRoutes,
+            "/api/internal/" -> apiInternalRoutes
+          ).orNotFound
+        )
         .build
     }.useForever
   }
