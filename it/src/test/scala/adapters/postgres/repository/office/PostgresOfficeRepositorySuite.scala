@@ -7,6 +7,7 @@ import cats.effect.Resource
 import com.softwaremill.quicklens._
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository.DuplicateOfficeName
 import domain.repository.office.OfficeRepository.OfficeNotFound
 import java.util.UUID
@@ -108,7 +109,7 @@ object PostgresOfficeRepositorySuite extends IOSuite {
       |""".stripMargin
   ) { officeRepository =>
     val office = anyOffice
-    val updatedOffice = office
+    val officeUpdate = anyUpdateOffice
       .modifyAll(
         _.name,
         _.address.addressLine1,
@@ -123,9 +124,12 @@ object PostgresOfficeRepositorySuite extends IOSuite {
 
     for {
       _ <- officeRepository.create(office)
-      _ <- officeRepository.update(updatedOffice)
+      _ <- officeRepository.update(office.id, officeUpdate)
       readOffice <- officeRepository.read(office.id)
-    } yield expect(readOffice == updatedOffice)
+    } yield {
+      val expectedOffice = Office(office.id, officeUpdate.name, officeUpdate.notes, officeUpdate.address)
+      expect(readOffice == expectedOffice)
+    }
   }
 
   beforeTest(
@@ -136,10 +140,11 @@ object PostgresOfficeRepositorySuite extends IOSuite {
       |""".stripMargin
   ) { officeRepository =>
     val office = anyOffice
+    val officeUpdate = UpdateOffice(office.name, office.notes, office.address)
 
     for {
       _ <- officeRepository.create(office)
-      _ <- officeRepository.update(office)
+      _ <- officeRepository.update(office.id, officeUpdate)
     } yield success
   }
 
@@ -150,13 +155,14 @@ object PostgresOfficeRepositorySuite extends IOSuite {
       | THEN the call should fail with OfficeNotFound
       |""".stripMargin
   ) { officeRepository =>
-    val updatedOffice = anyOffice
+    val officeId = anyOfficeId
+    val officeUpdate = anyUpdateOffice
 
     for {
-      result <- officeRepository.update(updatedOffice).attempt
+      result <- officeRepository.update(officeId, officeUpdate).attempt
     } yield matches(result) {
       case Left(throwable) =>
-        val officeNotFound = OfficeNotFound(updatedOffice.id)
+        val officeNotFound = OfficeNotFound(officeId)
         expect(throwable == officeNotFound)
     }
   }
@@ -197,6 +203,12 @@ object PostgresOfficeRepositorySuite extends IOSuite {
 
   private lazy val anyOffice = Office(
     id = anyOfficeId,
+    name = anyOfficeName,
+    notes = anyOfficeNotes,
+    address = anyOfficeAddress
+  )
+
+  private lazy val anyUpdateOffice = UpdateOffice(
     name = anyOfficeName,
     notes = anyOfficeNotes,
     address = anyOfficeAddress

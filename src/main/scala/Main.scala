@@ -55,7 +55,6 @@ object Main extends IOApp.Simple {
       val officeRepository = new PostgresOfficeRepository[F](session)
       val officeService = new OfficeService[F](officeRepository)
       val officeEndpoints = new OfficeEndpoints[F](officeService)
-      // TODO: Add a better API description
       val docsEndpoints = SwaggerInterpreter(
         // TODO: /api/internal/ is duplicated here and in the router, extract to config?
         swaggerUIOptions = SwaggerUIOptions.default.contextPath(List("api", "internal"))

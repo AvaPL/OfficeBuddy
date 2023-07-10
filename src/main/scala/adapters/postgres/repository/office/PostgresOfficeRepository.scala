@@ -7,6 +7,7 @@ import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
 import domain.repository.office.OfficeRepository.DuplicateOfficeName
 import domain.repository.office.OfficeRepository.OfficeNotFound
@@ -23,19 +24,17 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
 
   import PostgresOfficeRepository._
 
-  override def create(office: Office): F[Unit] =
+  override def create(office: Office): F[Office] =
     session.use { session =>
-      session
-        .prepare(createSql)
-        .flatMap { sql =>
-          sql
-            .execute(office)
-            .recoverWith {
-              case SqlState.UniqueViolation(e) if e.constraintName.contains("office_name_key") =>
-                DuplicateOfficeName(office.name).raiseError
-            }
-        }
-        .void
+      for {
+        sql <- session.prepare(createSql)
+        _ <- sql
+          .execute(office)
+          .recoverWith {
+            case SqlState.UniqueViolation(e) if e.constraintName.contains("office_name_key") =>
+              DuplicateOfficeName(office.name).raiseError
+          }
+      } yield office
     }
 
   private lazy val createSql: Command[Office] =
@@ -59,20 +58,21 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
       WHERE  id = $uuid
     """.query(officeDecoder)
 
-  override def update(office: Office): F[Unit] =
+  override def update(officeId: UUID, updateOffice: UpdateOffice): F[Office] =
     session.use { session =>
       for {
         sql <- session.prepare(updateSql)
         _ <- sql
-          .execute(office)
+          .execute(officeId *: updateOffice *: EmptyTuple)
           .ensureOr {
-            case Completion.Update(0) => OfficeNotFound(office.id)
+            case Completion.Update(0) => OfficeNotFound(officeId)
             case completion           => new RuntimeException(s"Expected 1 updated office, but got: $completion")
           }(_ == Completion.Update(1))
-      } yield ()
+        office <- read(officeId)
+      } yield office
     }
 
-  private lazy val updateSql: Command[Office] =
+  private lazy val updateSql: Command[UUID *: UpdateOffice *: EmptyTuple] =
     sql"""
       UPDATE office
       SET    name = $varchar,
@@ -84,16 +84,17 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
              country = $varchar
       WHERE  id = $uuid
     """.command
-      .contramap { office =>
-        office.name *:
-          Arr(office.notes: _*) *:
-          office.address.addressLine1 *:
-          office.address.addressLine2 *:
-          office.address.postalCode *:
-          office.address.city *:
-          office.address.country *:
-          office.id *:
-          EmptyTuple
+      .contramap {
+        case officeId *: updateOffice *: EmptyTuple =>
+          updateOffice.name *:
+            Arr(updateOffice.notes: _*) *:
+            updateOffice.address.addressLine1 *:
+            updateOffice.address.addressLine2 *:
+            updateOffice.address.postalCode *:
+            updateOffice.address.city *:
+            updateOffice.address.country *:
+            officeId *:
+            EmptyTuple
       }
 
   override def delete(officeId: UUID): F[Unit] =

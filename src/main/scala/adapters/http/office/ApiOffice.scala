@@ -2,7 +2,9 @@ package io.github.avapl
 package adapters.http.office
 
 import domain.model.office.Address
+import domain.model.office.CreateOffice
 import domain.model.office.Office
+import domain.model.office.UpdateOffice
 import io.scalaland.chimney.dsl._
 import java.util.UUID
 import sttp.tapir.Schema
@@ -25,9 +27,6 @@ object ApiOffice {
 
   def fromDomain(office: Office): ApiOffice =
     office.transformInto[ApiOffice]
-
-  def fromApiCreateOffice(officeId: UUID, apiCreateOffice: ApiCreateOffice): ApiOffice =
-    apiCreateOffice.toApiOffice(officeId)
 
   // TODO: Use derevo for schema
   implicit val tapirSchema: Schema[ApiOffice] = Schema.derived
@@ -58,11 +57,8 @@ case class ApiCreateOffice(
   address: ApiAddress
 ) {
 
-  def toApiOffice(officeId: UUID): ApiOffice =
-    this
-      .into[ApiOffice]
-      .withFieldConst(_.id, officeId)
-      .transform
+  lazy val toDomain: CreateOffice =
+    this.transformInto[CreateOffice]
 }
 
 object ApiCreateOffice {
@@ -77,11 +73,8 @@ case class ApiUpdateOffice(
   address: ApiAddress
 ) {
 
-  def toDomain(officeId: UUID): Office =
-    this
-      .into[Office]
-      .withFieldConst(_.id, officeId)
-      .transform
+  lazy val toDomain: UpdateOffice =
+    this.transformInto[UpdateOffice]
 }
 
 object ApiUpdateOffice {

@@ -65,8 +65,8 @@ class OfficeEndpoints[F[_]: Async](
 
   private def createOffice(apiCreateOffice: ApiCreateOffice) =
     officeService
-      .createOffice(apiCreateOffice.name, apiCreateOffice.notes, apiCreateOffice.address.toDomain)
-      .map(officeId => ApiOffice.fromApiCreateOffice(officeId, apiCreateOffice))
+      .createOffice(apiCreateOffice.toDomain)
+      .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case DuplicateOfficeName(name) => ApiError.Conflict(s"Office '$name' is already defined").asLeft
@@ -118,16 +118,14 @@ class OfficeEndpoints[F[_]: Async](
       )
       .serverLogic((updateOffice _).tupled)
 
-  private def updateOffice(officeId: UUID, apiUpdateOffice: ApiUpdateOffice) = {
-    val domainOffice = apiUpdateOffice.toDomain(officeId)
+  private def updateOffice(officeId: UUID, apiUpdateOffice: ApiUpdateOffice) =
     officeService
-      .updateOffice(domainOffice)
-      .as(ApiOffice.fromDomain(domainOffice))
+      .updateOffice(officeId, apiUpdateOffice.toDomain)
+      .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case OfficeNotFound(id: UUID) => ApiError.NotFound(s"Office [id: $id] was not found").asLeft
       }
-  }
 
   private lazy val deleteOfficeEndpoint =
     baseEndpoint.delete

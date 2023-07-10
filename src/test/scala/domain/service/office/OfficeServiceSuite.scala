@@ -3,7 +3,9 @@ package domain.service.office
 
 import cats.effect.IO
 import domain.model.office.Address
+import domain.model.office.CreateOffice
 import domain.model.office.Office
+import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
 import domain.repository.office.OfficeRepository.DuplicateOfficeName
 import domain.repository.office.OfficeRepository.OfficeNotFound
@@ -17,46 +19,42 @@ import weaver.SimpleIOSuite
 object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
 
   test(
-    """GIVEN name, notes and address
+    """GIVEN an office to create
       | WHEN createOffice is called
       | THEN a valid office is created via officeRepository
       |""".stripMargin
   ) {
-    val name = anyOfficeName
-    val notes = anyOfficeNotes
-    val address = anyOfficeAddress
+    val officeToCreate = anyCreateOffice
 
     val officeId = anyOfficeId
     implicit val fuuid: FUUID[IO] = whenF(mock[FUUID[IO]].randomUUID()) thenReturn officeId
     val officeRepository = mock[OfficeRepository[IO]]
-    whenF(officeRepository.create(any)) thenReturn ()
+    val office = officeToCreate.toOffice(officeId)
+    whenF(officeRepository.create(any)) thenReturn office
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      createdOfficeId <- officeService.createOffice(name, notes, address)
+      createdOffice <- officeService.createOffice(officeToCreate)
     } yield {
-      val expectedOffice = Office(officeId, name, notes, address)
-      verify(officeRepository, only).create(eqTo(expectedOffice))
-      expect(createdOfficeId == expectedOffice.id)
+      verify(officeRepository, only).create(eqTo(office))
+      expect(createdOffice == office)
     }
   }
 
   test(
-    """GIVEN name, notes and address
+    """GIVEN an office to create
       | WHEN createOffice is called and the repository fails
       | THEN the result should contain the failure
       |""".stripMargin
   ) {
-    val name = anyOfficeName
-    val notes = anyOfficeNotes
-    val address = anyOfficeAddress
+    val officeToCreate = anyCreateOffice
 
     val duplicateOfficeName = DuplicateOfficeName(name)
     val officeRepository = whenF(mock[OfficeRepository[IO]].create(any)) thenFailWith duplicateOfficeName
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      result <- officeService.createOffice(name, notes, address).attempt
+      result <- officeService.createOffice(officeToCreate).attempt
     } yield matches(result) {
       case Left(throwable) => expect(throwable == duplicateOfficeName)
     }
@@ -108,17 +106,19 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
       | THEN the office is updated via officeRepository
       |""".stripMargin
   ) {
-    val officeUpdate = anyOffice
+    val officeId = anyOfficeId
+    val officeUpdate = anyUpdateOffice
 
     val officeRepository = mock[OfficeRepository[IO]]
-    whenF(officeRepository.update(any)) thenReturn ()
+    val office = Office(officeId, officeUpdate.name, officeUpdate.notes, officeUpdate.address)
+    whenF(officeRepository.update(any, any)) thenReturn office
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      _ <- officeService.updateOffice(officeUpdate)
+      updatedOffice <- officeService.updateOffice(officeId, officeUpdate)
     } yield {
-      verify(officeRepository, only).update(eqTo(officeUpdate))
-      success
+      verify(officeRepository, only).update(eqTo(officeId), eqTo(officeUpdate))
+      expect(updatedOffice == office)
     }
   }
 
@@ -128,14 +128,15 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
       | THEN the result should contain the failure
       |""".stripMargin
   ) {
-    val officeUpdate = anyOffice
+    val officeId = anyOfficeId
+    val officeUpdate = anyUpdateOffice
 
-    val officeNotFound = OfficeNotFound(officeUpdate.id)
-    val officeRepository = whenF(mock[OfficeRepository[IO]].update(any)) thenFailWith officeNotFound
+    val officeNotFound = OfficeNotFound(officeId)
+    val officeRepository = whenF(mock[OfficeRepository[IO]].update(any, any)) thenFailWith officeNotFound
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      result <- officeService.updateOffice(officeUpdate).attempt
+      result <- officeService.updateOffice(officeId, officeUpdate).attempt
     } yield matches(result) {
       case Left(throwable) => expect(throwable == officeNotFound)
     }
@@ -182,6 +183,18 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
 
   private lazy val anyOffice = Office(
     id = anyOfficeId,
+    name = anyOfficeName,
+    notes = anyOfficeNotes,
+    address = anyOfficeAddress
+  )
+
+  private lazy val anyCreateOffice = CreateOffice(
+    name = anyOfficeName,
+    notes = anyOfficeNotes,
+    address = anyOfficeAddress
+  )
+
+  private lazy val anyUpdateOffice = UpdateOffice(
     name = anyOfficeName,
     notes = anyOfficeNotes,
     address = anyOfficeAddress
