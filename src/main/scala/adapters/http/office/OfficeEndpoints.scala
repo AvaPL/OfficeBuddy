@@ -6,7 +6,7 @@ import cats.effect.Async
 import cats.syntax.all._
 import domain.repository.office.OfficeRepository._
 import domain.service.office.OfficeService
-import io.circe.generic.auto._
+import io.circe.generic.auto._ // TODO: derevo should be used instead
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -99,7 +99,7 @@ class OfficeEndpoints[F[_]: Async](
       }
 
   private lazy val updateOfficeEndpoint =
-    baseEndpoint.put
+    baseEndpoint.patch
       .summary("Update an office")
       .in(
         path[UUID]("officeId") and jsonBody[ApiUpdateOffice]
