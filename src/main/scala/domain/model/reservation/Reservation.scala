@@ -12,7 +12,7 @@ sealed trait Reservation {
   def reservedFrom: OffsetDateTime
   def reservedTo: OffsetDateTime
   def state: ReservationState
-  def notes: List[String]
+  def notes: String
 }
 
 case class DeskReservation(
@@ -22,7 +22,7 @@ case class DeskReservation(
   reservedFrom: OffsetDateTime,
   reservedTo: OffsetDateTime,
   state: ReservationState,
-  notes: List[String],
+  notes: String,
   //
   deskId: UUID
 ) extends Reservation
@@ -34,7 +34,7 @@ case class ParkingSpotReservation(
   reservedFrom: OffsetDateTime,
   reservedTo: OffsetDateTime,
   state: ReservationState,
-  notes: List[String],
+  notes: String,
   //
   parkingSpotId: UUID,
   plateNumber: String
@@ -47,7 +47,7 @@ case class MeetingRoomReservation(
   reservedFrom: OffsetDateTime,
   reservedTo: OffsetDateTime,
   state: ReservationState,
-  notes: List[String],
+  notes: String,
   //
   meetingRoomId: UUID
 ) extends Reservation

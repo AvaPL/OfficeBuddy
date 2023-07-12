@@ -60,7 +60,7 @@ object Main extends IOApp.Simple {
       val officeService = new OfficeService[F](officeRepository)
       val officeEndpoints = new OfficeEndpoints[F](officeService)
       val docsEndpoints = SwaggerInterpreter(
-        // TODO: /api/internal/ is duplicated here and in the router, extract to config?
+        // TODO: /api/internal is duplicated here and in the router, extract to config?
         swaggerUIOptions = SwaggerUIOptions.default.contextPath(List("api", "internal"))
       )
         .fromServerEndpoints(officeEndpoints.endpoints, BuildInfo.name, BuildInfo.version)
@@ -78,7 +78,7 @@ object Main extends IOApp.Simple {
         .withHttpApp(
           Router(
             "/" -> docsRoutes,
-            "/api/internal/" -> apiInternalRoutes
+            "/api/internal" -> apiInternalRoutes
           ).orNotFound
         )
         .build
