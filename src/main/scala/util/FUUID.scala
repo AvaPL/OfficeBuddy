@@ -11,6 +11,8 @@ trait FUUID[F[_]] {
 
 object FUUID {
 
-  implicit def forSync[F[_]](implicit sync: Sync[F]): FUUID[F] =
-    () => sync.delay(UUID.randomUUID())
+  def apply[F[_]: FUUID]: FUUID[F] = implicitly
+
+  implicit def forSync[F[_]: Sync]: FUUID[F] =
+    () => Sync[F].delay(UUID.randomUUID())
 }

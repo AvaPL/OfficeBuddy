@@ -5,8 +5,10 @@ val catsEffectVersion = "3.5.0"
 val chimneyVersion = "0.7.5"
 val circeVersion = "3.8.15"
 val enumeratumVersion = "1.7.2"
-val fly4sVersion = "0.0.18"
+val flywayVersion = "9.20.0"
 val http4sVersion = "0.23.21"
+val log4catsVersion = "2.6.0"
+val logbackVersion = "1.4.8"
 val mockitoScalaVersion = "1.17.14"
 val quicklensVersion = "1.9.4"
 val postgresqlVersion = "42.6.0"
@@ -24,8 +26,10 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "io.scalaland" %% "chimney" % chimneyVersion,
       "com.beachape" %% "enumeratum" % enumeratumVersion,
-      "com.github.geirolz" %% "fly4s-core" % fly4sVersion,
+      "org.flywaydb" % "flyway-core" % flywayVersion,
       "org.http4s" %% "http4s-ember-server" % http4sVersion,
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+      "ch.qos.logback" % "logback-classic" % logbackVersion,
       "org.mockito" %% "mockito-scala" % mockitoScalaVersion,
       "org.mockito" %% "mockito-scala-cats" % mockitoScalaVersion,
       "org.postgresql" % "postgresql" % postgresqlVersion,

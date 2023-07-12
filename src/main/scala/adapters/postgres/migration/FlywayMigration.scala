@@ -1,11 +1,11 @@
 package io.github.avapl
 package adapters.postgres.migration
 
-import cats.effect.kernel.Async
-import fly4s.core.Fly4s
-import fly4s.core.data.MigrateResult
+import cats.effect.Sync
+import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.output.MigrateResult
 
-class FlywayMigration[F[_]: Async](
+class FlywayMigration[F[_]: Sync](
   host: String,
   port: Int,
   user: String,
@@ -13,12 +13,18 @@ class FlywayMigration[F[_]: Async](
   database: String
 ) {
 
-  private val fly4s = Fly4s.make[F](
-    url = s"jdbc:postgresql://$host:$port/$database",
-    user = Some(user),
-    password = Some(password.toCharArray)
-  )
+  private val flyway = Flyway
+    .configure()
+    .dataSource(
+      s"jdbc:postgresql://$host:$port/$database",
+      user,
+      password
+    )
+    .loggers("slf4j")
+    .load()
 
   def run(): F[MigrateResult] =
-    fly4s.use(_.migrate)
+    Sync[F].blocking {
+      flyway.migrate()
+    }
 }

@@ -7,6 +7,7 @@ import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.IOApp
+import cats.effect.Sync
 import cats.effect.std.Console
 import cats.implicits._
 import com.comcast.ip4s.IpLiteralSyntax
@@ -15,6 +16,8 @@ import io.circe.generic.auto._
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import skunk.Session
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.http4s.Http4sServerInterpreter
@@ -26,8 +29,9 @@ import util.BuildInfo
 
 object Main extends IOApp.Simple {
 
-  // TODO: Add logging
-  // TODO: Replace noop Skunk tracing with logs
+  implicit def logger[F[_]: Sync]: Logger[F] =
+    Slf4jLogger.getLogger[F]
+
   override def run: IO[Unit] = runF[IO]
 
   private def runF[F[_]: Async: Console] = {

@@ -10,13 +10,13 @@ import domain.repository.office.OfficeRepository
 import java.util.UUID
 import util.FUUID
 
-class OfficeService[F[_]: FlatMap](
+class OfficeService[F[_]: FlatMap: FUUID](
   officeRepository: OfficeRepository[F]
-)(implicit fuuid: FUUID[F]) {
+) {
 
   def createOffice(createOffice: CreateOffice): F[Office] =
     for {
-      officeId <- fuuid.randomUUID()
+      officeId <- FUUID[F].randomUUID()
       office = createOffice.toOffice(officeId)
       createdOffice <- officeRepository.create(office)
     } yield createdOffice
