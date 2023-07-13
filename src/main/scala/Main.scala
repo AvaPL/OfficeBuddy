@@ -4,13 +4,15 @@ import adapters.http.ApiError
 import adapters.http.office.OfficeEndpoints
 import adapters.postgres.migration.FlywayMigration
 import adapters.postgres.repository.office.PostgresOfficeRepository
-import cats.effect.Async
-import cats.effect.IO
-import cats.effect.IOApp
-import cats.effect.Sync
+import cats.Applicative
+import cats.FlatMap
+import cats.data.NonEmptyList
+import cats.effect._
 import cats.effect.std.Console
 import cats.implicits._
-import com.comcast.ip4s.IpLiteralSyntax
+import config.AppConfig
+import config.HttpConfig
+import config.PostgresConfig
 import domain.service.office.OfficeService
 import io.circe.generic.auto._
 import natchez.Trace.Implicits.noop
@@ -18,8 +20,11 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import pureconfig.ConfigSource
+import pureconfig.module.catseffect.syntax._
 import skunk.Session
 import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.server.http4s.Http4sServerOptions
 import sttp.tapir.server.model.ValuedEndpointOutput
@@ -34,54 +39,83 @@ object Main extends IOApp.Simple {
 
   override def run: IO[Unit] = runF[IO]
 
-  private def runF[F[_]: Async: Console] = {
-    val host = "localhost" // TODO: Introduce config
-    val port = 2345
-    val user = "postgres"
-    val password = "postgres"
-    val database = "office_buddy"
-    val session = Session.pooled(
-      host = host,
-      port = port,
-      user = user,
-      password = Some(password),
-      database = database,
-      max = 10
+  private def runF[F[_]: Async: Console] =
+    for {
+      config <- loadConfig()
+      _ <- runDatabaseMigrations(config.postgres)
+      session = createPostgresSessionPool(config.postgres)
+      endpoints <- session.use(createEndpoints(_))
+      _ <- runHttpServer(config.http, endpoints)
+    } yield ()
+
+  private def loadConfig[F[_]: Sync]() =
+    ConfigSource.default.loadF[F, AppConfig]()
+
+  private def runDatabaseMigrations[F[_]: Sync](config: PostgresConfig) =
+    new FlywayMigration[F](
+      host = config.host.show,
+      port = config.port.value,
+      user = config.user,
+      password = config.password,
+      database = config.database
+    ).run()
+
+  private def createPostgresSessionPool[F[_]: Async: Console](config: PostgresConfig) =
+    Session.pooled(
+      host = config.host.show,
+      port = config.port.value,
+      user = config.user,
+      password = Some(config.password),
+      database = config.database,
+      max = config.maxConcurrentSessions
     )
-    val migration = new FlywayMigration[F](
-      host = host,
-      port = port,
-      user = user,
-      password = password,
-      database = database
-    )
-    migration.run() *> [Nothing] session.flatMap { session =>
+
+  private def createEndpoints[F[_]: Async](session: Resource[F, Session[F]]) =
+    Applicative[F].pure {
       val officeRepository = new PostgresOfficeRepository[F](session)
       val officeService = new OfficeService[F](officeRepository)
       val officeEndpoints = new OfficeEndpoints[F](officeService)
-      val docsEndpoints = SwaggerInterpreter(
-        // TODO: /api/internal is duplicated here and in the router, extract to config?
-        swaggerUIOptions = SwaggerUIOptions.default.contextPath(List("api", "internal"))
-      )
-        .fromServerEndpoints(officeEndpoints.endpoints, BuildInfo.name, BuildInfo.version)
-      val apiInternalRoutes = Http4sServerInterpreter(
-        Http4sServerOptions.customiseInterceptors.defaultHandlers { errorMessage =>
-          ValuedEndpointOutput(jsonBody[ApiError.BadRequest], ApiError.BadRequest(errorMessage))
-        }.options
-      ).toRoutes(officeEndpoints.endpoints)
-      val docsRoutes = Http4sServerInterpreter().toRoutes(docsEndpoints)
+      officeEndpoints.endpoints
+    }
 
-      EmberServerBuilder
-        .default[F]
-        .withHost(ipv4"0.0.0.0") // TODO: Introduce config
-        .withPort(port"8080")
-        .withHttpApp(
-          Router(
-            "/" -> docsRoutes,
-            "/api/internal" -> apiInternalRoutes
-          ).orNotFound
-        )
-        .build
-    }.useForever
+  private def runHttpServer[F[_]: Async](
+    config: HttpConfig,
+    endpoints: List[ServerEndpoint[Any, F]]
+  ) =
+    EmberServerBuilder
+      .default[F]
+      .withHost(config.host)
+      .withPort(config.port)
+      .withHttpApp(router(config.internalApiBasePath, endpoints))
+      .build
+      .use[Unit](_ => Spawn[F].never)
+
+  private def router[F[_]: Async](
+    internalApiBasePath: NonEmptyList[String],
+    endpoints: List[ServerEndpoint[Any, F]]
+  ) =
+    Router(
+      "/" -> docsRoutes(internalApiBasePath, endpoints),
+      internalApiBasePath.mkString_("/", "/", "") -> internalApiRoutes(endpoints)
+    ).orNotFound
+
+  private def docsRoutes[F[_]: Async](
+    internalApiBasePath: NonEmptyList[String],
+    endpoints: List[ServerEndpoint[Any, F]]
+  ) = {
+    val options = SwaggerUIOptions.default.contextPath(internalApiBasePath.toList)
+    val swaggerInterpreter = SwaggerInterpreter(swaggerUIOptions = options)
+      .fromServerEndpoints(endpoints, BuildInfo.name, BuildInfo.version)
+    Http4sServerInterpreter().toRoutes(swaggerInterpreter)
   }
+
+  private def internalApiRoutes[F[_]: Async](endpoints: List[ServerEndpoint[Any, F]]) = {
+    val options = Http4sServerOptions.customiseInterceptors
+      .defaultHandlers(apiErrorHandler) // TODO: Move the handler (or server creation) somewhere else?
+      .options
+    Http4sServerInterpreter(options).toRoutes(endpoints)
+  }
+
+  private def apiErrorHandler(errorMessage: String) =
+    ValuedEndpointOutput(jsonBody[ApiError.BadRequest], ApiError.BadRequest(errorMessage))
 }

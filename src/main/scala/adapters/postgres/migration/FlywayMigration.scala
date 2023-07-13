@@ -5,6 +5,7 @@ import cats.effect.Sync
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.output.MigrateResult
 
+// TODO: Add an integration test to validate the migration?
 class FlywayMigration[F[_]: Sync](
   host: String,
   port: Int,

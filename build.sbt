@@ -12,6 +12,7 @@ val logbackVersion = "1.4.8"
 val mockitoScalaVersion = "1.17.14"
 val quicklensVersion = "1.9.4"
 val postgresqlVersion = "42.6.0"
+val pureconfigVersion = "0.17.4"
 val skunkVersion = "0.6.0"
 val tapirVersion = "1.5.5"
 val weaverCatsVersion = "0.8.3"
@@ -33,6 +34,10 @@ lazy val root = (project in file("."))
       "org.mockito" %% "mockito-scala" % mockitoScalaVersion,
       "org.mockito" %% "mockito-scala-cats" % mockitoScalaVersion,
       "org.postgresql" % "postgresql" % postgresqlVersion,
+      "com.github.pureconfig" %% "pureconfig" % pureconfigVersion,
+      "com.github.pureconfig" %% "pureconfig-cats" % pureconfigVersion,
+      "com.github.pureconfig" %% "pureconfig-cats-effect" % pureconfigVersion,
+      "com.github.pureconfig" %% "pureconfig-ip4s" % pureconfigVersion,
       "org.tpolecat" %% "skunk-core" % skunkVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
