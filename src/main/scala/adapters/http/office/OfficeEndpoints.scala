@@ -13,7 +13,6 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-// TODO: Add unit tests
 class OfficeEndpoints[F[_]: Async](
   officeService: OfficeService[F]
 ) {
