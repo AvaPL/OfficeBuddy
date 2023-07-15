@@ -7,8 +7,8 @@ import domain.model.office.CreateOffice
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
-import domain.repository.office.OfficeRepository.DuplicateOfficeName
-import domain.repository.office.OfficeRepository.OfficeNotFound
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar

@@ -4,8 +4,8 @@ package adapters.http.office
 import cats.effect.IO
 import domain.model.office.Address
 import domain.model.office.Office
-import domain.repository.office.OfficeRepository.DuplicateOfficeName
-import domain.repository.office.OfficeRepository.OfficeNotFound
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import domain.service.office.OfficeService
 import io.circe.generic.auto._
 import io.circe.parser._
@@ -138,6 +138,25 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
     """GIVEN update office endpoint
       | WHEN the office to update is not found (OfficeNotFound error)
       | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith DuplicateOfficeName(anyOfficeName)
+
+    val response = sendRequest(officeService) {
+      basicRequest
+        .patch(uri"http://test.com/office/$anyOfficeId")
+        .body(anyApiUpdateOffice)
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.Conflict)
+  }
+
+  test(
+    """GIVEN update office endpoint
+      | WHEN an office with the given name already exists
+      | THEN 409 Conflict is returned
       |""".stripMargin
   ) {
     val officeId = anyOfficeId

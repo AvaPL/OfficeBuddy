@@ -98,7 +98,6 @@ class OfficeEndpoints[F[_]: Async](
         case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
       }
 
-  // TODO: Handle name conflict
   private lazy val updateOfficeEndpoint =
     baseEndpoint.patch
       .summary("Update an office")
@@ -117,6 +116,12 @@ class OfficeEndpoints[F[_]: Async](
             .description("Office with the given ID was not found")
         )
       )
+      .errorOutVariantPrepend(
+        oneOfVariant(
+          statusCode(StatusCode.Conflict) and jsonBody[ApiError.Conflict]
+            .description("Office with the given name already exists")
+        )
+      )
       .serverLogic((updateOffice _).tupled)
 
   private def updateOffice(officeId: UUID, apiUpdateOffice: ApiUpdateOffice) =
@@ -125,7 +130,8 @@ class OfficeEndpoints[F[_]: Async](
       .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
-        case OfficeNotFound(id: UUID) => ApiError.NotFound(s"Office [id: $id] was not found").asLeft
+        case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
+        case DuplicateOfficeName(name) => ApiError.Conflict(s"Office '$name' is already defined").asLeft
       }
 
   private lazy val deleteOfficeEndpoint =

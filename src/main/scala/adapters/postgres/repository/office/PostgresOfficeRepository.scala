@@ -5,12 +5,12 @@ import cats.data.OptionT
 import cats.effect.Resource
 import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
-import domain.model.error.office.DuplicateOfficeName
-import domain.model.error.office.OfficeNotFound
 import java.util.UUID
 import skunk._
 import skunk.codec.all._
@@ -68,6 +68,10 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
             case Completion.Update(0) => OfficeNotFound(officeId)
             case completion           => new RuntimeException(s"Expected 1 updated office, but got: $completion")
           }(_ == Completion.Update(1))
+          .recoverWith {
+            case SqlState.UniqueViolation(e) if e.constraintName.contains("office_name_key") =>
+              DuplicateOfficeName(updateOffice.name).raiseError
+          }
         office <- read(officeId)
       } yield office
     }

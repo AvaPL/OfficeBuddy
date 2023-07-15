@@ -5,11 +5,11 @@ import adapters.postgres.migration.FlywayMigration
 import cats.effect.IO
 import cats.effect.Resource
 import com.softwaremill.quicklens._
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
-import domain.repository.office.OfficeRepository.DuplicateOfficeName
-import domain.repository.office.OfficeRepository.OfficeNotFound
 import java.util.UUID
 import natchez.Trace.Implicits.noop
 import skunk.Command
@@ -59,7 +59,7 @@ object PostgresOfficeRepositorySuite extends IOSuite {
   private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
     val sql: Command[Void] =
       sql"""
-        TRUNCATE TABLE office
+        TRUNCATE TABLE office CASCADE
       """.command
     session.use(_.execute(sql))
   }
@@ -164,6 +164,31 @@ object PostgresOfficeRepositorySuite extends IOSuite {
       case Left(throwable) =>
         val officeNotFound = OfficeNotFound(officeId)
         expect(throwable == officeNotFound)
+    }
+  }
+
+  beforeTest(
+    """
+      |GIVEN 2 existing offices and an update
+      | WHEN an office with the name given in the update already exists
+      | THEN the call should fail with DuplicateOfficeName
+      |""".stripMargin
+  ) { officeRepository =>
+    val office1 = anyOffice
+    val office2 = anyOffice.copy(
+      id = UUID.fromString("96cb8558-8fe8-4330-b50a-00e7e1917757"),
+      name = "other"
+    )
+    val officeUpdate = anyUpdateOffice.copy(name = office2.name)
+
+    for {
+      _ <- officeRepository.create(office1)
+      _ <- officeRepository.create(office2)
+      result <- officeRepository.update(office1.id, officeUpdate).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val duplicateOfficeName = DuplicateOfficeName(office2.name)
+        expect(throwable == duplicateOfficeName)
     }
   }
 
