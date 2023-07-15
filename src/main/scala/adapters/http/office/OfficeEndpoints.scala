@@ -2,6 +2,7 @@ package io.github.avapl
 package adapters.http.office
 
 import adapters.http.ApiError
+import adapters.http.BaseEndpoint
 import cats.effect.Async
 import cats.syntax.all._
 import domain.model.error.office.DuplicateOfficeName
@@ -16,7 +17,9 @@ import sttp.tapir.server.ServerEndpoint
 
 class OfficeEndpoints[F[_]: Async](
   officeService: OfficeService[F]
-) {
+) extends BaseEndpoint {
+
+  override protected val baseEndpointName: String = "office"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
     createOfficeEndpoint ::
@@ -24,24 +27,6 @@ class OfficeEndpoints[F[_]: Async](
       updateOfficeEndpoint ::
       deleteOfficeEndpoint ::
       Nil
-
-  // TODO: Probably the base endpoint should be defined in some central part
-  private lazy val baseEndpoint =
-    endpoint
-      .withTag("office")
-      .in("office")
-      .errorOut(
-        oneOf[ApiError](
-          oneOfVariant(
-            statusCode(StatusCode.BadRequest) and jsonBody[ApiError.BadRequest]
-              .description("Malformed parameters or request body")
-          ),
-          oneOfDefaultVariant(
-            statusCode(StatusCode.InternalServerError) and jsonBody[ApiError.InternalServerError]
-              .description("Internal server error")
-          )
-        )
-      )
 
   private lazy val createOfficeEndpoint =
     baseEndpoint.post
@@ -130,7 +115,7 @@ class OfficeEndpoints[F[_]: Async](
       .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
-        case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
+        case OfficeNotFound(officeId)  => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
         case DuplicateOfficeName(name) => ApiError.Conflict(s"Office '$name' is already defined").asLeft
       }
 

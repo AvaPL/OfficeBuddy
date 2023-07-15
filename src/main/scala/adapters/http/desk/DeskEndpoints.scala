@@ -2,6 +2,7 @@ package io.github.avapl
 package adapters.http.desk
 
 import adapters.http.ApiError
+import adapters.http.BaseEndpoint
 import cats.effect.Async
 import cats.syntax.all._
 import domain.model.error.desk.DeskNotFound
@@ -18,7 +19,9 @@ import sttp.tapir.server.ServerEndpoint
 // TODO: Add unit tests
 class DeskEndpoints[F[_]: Async](
   deskService: DeskService[F]
-) {
+) extends BaseEndpoint {
+
+  override protected val baseEndpointName: String = "desk"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
     createDeskEndpoint ::
@@ -26,24 +29,6 @@ class DeskEndpoints[F[_]: Async](
       updateDeskEndpoint ::
       archiveDeskEndpoint ::
       Nil
-
-  // TODO: Probably the base endpoint should be defined in some central part
-  private lazy val baseEndpoint =
-    endpoint
-      .withTag("desk")
-      .in("desk")
-      .errorOut(
-        oneOf[ApiError](
-          oneOfVariant(
-            statusCode(StatusCode.BadRequest) and jsonBody[ApiError.BadRequest]
-              .description("Malformed parameters or request body")
-          ),
-          oneOfDefaultVariant(
-            statusCode(StatusCode.InternalServerError) and jsonBody[ApiError.InternalServerError]
-              .description("Internal server error")
-          )
-        )
-      )
 
   private lazy val createDeskEndpoint =
     baseEndpoint.post

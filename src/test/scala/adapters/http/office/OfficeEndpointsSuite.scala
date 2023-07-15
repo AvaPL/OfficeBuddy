@@ -24,8 +24,6 @@ import weaver.SimpleIOSuite
 
 object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
 
-  // TODO: Base endpoint error handling is omitted, should be tested separately
-
   test(
     """GIVEN create office endpoint
       | WHEN an office is POSTed and created
