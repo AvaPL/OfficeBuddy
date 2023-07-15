@@ -4,9 +4,10 @@ package adapters.http.office
 import adapters.http.ApiError
 import cats.effect.Async
 import cats.syntax.all._
-import domain.repository.office.OfficeRepository._
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import domain.service.office.OfficeService
-import io.circe.generic.auto._ // TODO: derevo should be used instead
+import io.circe.generic.auto._
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -88,15 +89,16 @@ class OfficeEndpoints[F[_]: Async](
       )
       .serverLogic(readOffice)
 
-  private def readOffice(id: UUID) =
+  private def readOffice(officeId: UUID) =
     officeService
-      .readOffice(id)
+      .readOffice(officeId)
       .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
       }
 
+  // TODO: Handle name conflict
   private lazy val updateOfficeEndpoint =
     baseEndpoint.patch
       .summary("Update an office")
@@ -137,9 +139,9 @@ class OfficeEndpoints[F[_]: Async](
       )
       .serverLogic(deleteOffice)
 
-  private def deleteOffice(id: UUID) =
+  private def deleteOffice(officeId: UUID) =
     officeService
-      .deleteOffice(id)
+      .deleteOffice(officeId)
       .as(().asRight[ApiError])
 
   private lazy val apiOfficeExample = ApiOffice(

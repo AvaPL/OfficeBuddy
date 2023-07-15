@@ -1,11 +1,12 @@
 package io.github.avapl
 
 import adapters.http.ApiError
+import adapters.http.desk.DeskEndpoints
 import adapters.http.office.OfficeEndpoints
 import adapters.postgres.migration.FlywayMigration
+import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.Applicative
-import cats.FlatMap
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
@@ -13,6 +14,7 @@ import cats.implicits._
 import config.AppConfig
 import config.HttpConfig
 import config.PostgresConfig
+import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import io.circe.generic.auto._
 import natchez.Trace.Implicits.noop
@@ -73,9 +75,15 @@ object Main extends IOApp.Simple {
   private def createEndpoints[F[_]: Async](session: Resource[F, Session[F]]) =
     Applicative[F].pure {
       val officeRepository = new PostgresOfficeRepository[F](session)
+      val deskRepository = new PostgresDeskRepository[F](session)
+
       val officeService = new OfficeService[F](officeRepository)
+      val deskService = new DeskService[F](deskRepository)
+
       val officeEndpoints = new OfficeEndpoints[F](officeService)
-      officeEndpoints.endpoints
+      val deskEndpoints = new DeskEndpoints[F](deskService)
+
+      officeEndpoints.endpoints <+> deskEndpoints.endpoints
     }
 
   private def runHttpServer[F[_]: Async](

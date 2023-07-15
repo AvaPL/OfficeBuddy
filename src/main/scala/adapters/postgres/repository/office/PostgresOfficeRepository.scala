@@ -9,8 +9,8 @@ import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
-import domain.repository.office.OfficeRepository.DuplicateOfficeName
-import domain.repository.office.OfficeRepository.OfficeNotFound
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import java.util.UUID
 import skunk._
 import skunk.codec.all._
@@ -82,7 +82,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
              postal_code = $varchar,
              city = $varchar,
              country = $varchar
-      WHERE  id = $uuid
+      WHERE id = $uuid
     """.command
       .contramap {
         case officeId *: updateOffice *: EmptyTuple =>
@@ -116,7 +116,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
 
 object PostgresOfficeRepository {
 
-  private val officeEncoder: Encoder[Office] =
+  private lazy val officeEncoder: Encoder[Office] =
     (
       uuid *: // id
         varchar *: // name
@@ -138,7 +138,7 @@ object PostgresOfficeRepository {
         EmptyTuple
     }
 
-  private val officeDecoder: Decoder[Office] =
+  private lazy val officeDecoder: Decoder[Office] =
     (
       uuid *: // id
         varchar *: // name
