@@ -1,14 +1,18 @@
 package io.github.avapl
 package adapters.http.desk
 
-import domain.model.desk.{CreateDesk, Desk, UpdateDesk}
-
+import derevo.derive
+import domain.model.desk.CreateDesk
+import domain.model.desk.Desk
+import domain.model.desk.UpdateDesk
 import io.scalaland.chimney.dsl._
-
 import java.util.UUID
-import sttp.tapir.Schema
 import sttp.tapir.Schema.annotations.encodedName
+import util.derevo.circe.circeDecoder
+import util.derevo.circe.circeEncoder
+import util.derevo.tapir.tapirSchema
 
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Desk")
 case class ApiDesk(
   id: UUID,
@@ -27,10 +31,9 @@ object ApiDesk {
 
   def fromDomain(desk: Desk): ApiDesk =
     desk.transformInto[ApiDesk]
-
-  implicit val tapirSchema: Schema[ApiDesk] = Schema.derived
 }
 
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Desk (create)")
 case class ApiCreateDesk(
   name: String,
@@ -48,10 +51,7 @@ case class ApiCreateDesk(
     this.transformInto[CreateDesk]
 }
 
-object ApiCreateDesk {
-  implicit val tapirSchema: Schema[ApiCreateDesk] = Schema.derived
-}
-
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Desk (update)")
 case class ApiUpdateDesk(
   name: String,
@@ -67,8 +67,4 @@ case class ApiUpdateDesk(
 
   lazy val toDomain: UpdateDesk =
     this.transformInto[UpdateDesk]
-}
-
-object ApiUpdateDesk {
-  implicit val tapirSchema: Schema[ApiUpdateDesk] = Schema.derived
 }

@@ -1,7 +1,10 @@
 package io.github.avapl
 package adapters.http
 
-import sttp.tapir.Schema
+import derevo.derive
+import util.derevo.circe.circeDecoder
+import util.derevo.circe.circeEncoder
+import util.derevo.tapir.tapirSchema
 
 sealed trait ApiError {
   def message: String
@@ -9,27 +12,15 @@ sealed trait ApiError {
 
 object ApiError {
 
+  @derive(circeEncoder, circeDecoder, tapirSchema)
   case class BadRequest(message: String) extends ApiError
 
-  object BadRequest {
-    implicit val tapirSchema: Schema[BadRequest] = Schema.derived
-  }
-
+  @derive(circeEncoder, circeDecoder, tapirSchema)
   case class NotFound(message: String) extends ApiError
 
-  object NotFound {
-    implicit val tapirSchema: Schema[NotFound] = Schema.derived
-  }
-
+  @derive(circeEncoder, circeDecoder, tapirSchema)
   case class Conflict(message: String) extends ApiError
 
-  object Conflict {
-    implicit val tapirSchema: Schema[Conflict] = Schema.derived
-  }
-
+  @derive(circeEncoder, circeDecoder, tapirSchema)
   case class InternalServerError(message: String) extends ApiError
-
-  object InternalServerError {
-    implicit val tapirSchema: Schema[InternalServerError] = Schema.derived
-  }
 }

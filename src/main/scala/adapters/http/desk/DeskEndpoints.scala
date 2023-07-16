@@ -1,20 +1,19 @@
 package io.github.avapl
 package adapters.http.desk
 
-import adapters.http.ApiError
-import adapters.http.BaseEndpoint
-import cats.effect.Async
-import cats.syntax.all._
-import domain.model.error.desk.DeskNotFound
-import domain.model.error.desk.DuplicateDeskNameForOffice
+import adapters.http.{ApiError, BaseEndpoint}
+import domain.model.error.desk.{DeskNotFound, DuplicateDeskNameForOffice}
 import domain.model.error.office.OfficeNotFound
 import domain.service.desk.DeskService
-import io.circe.generic.auto._
-import java.util.UUID
+
+import cats.effect.Async
+import cats.syntax.all._
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
+
+import java.util.UUID
 
 // TODO: Add unit tests
 class DeskEndpoints[F[_]: Async](

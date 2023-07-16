@@ -8,7 +8,6 @@ import cats.syntax.all._
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.service.office.OfficeService
-import io.circe.generic.auto._
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._

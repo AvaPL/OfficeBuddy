@@ -1,15 +1,19 @@
 package io.github.avapl
 package adapters.http.office
 
+import derevo.derive
 import domain.model.office.Address
 import domain.model.office.CreateOffice
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import io.scalaland.chimney.dsl._
 import java.util.UUID
-import sttp.tapir.Schema
 import sttp.tapir.Schema.annotations.encodedName
+import util.derevo.circe.circeDecoder
+import util.derevo.circe.circeEncoder
+import util.derevo.tapir.tapirSchema
 
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Office")
 case class ApiOffice(
   id: UUID,
@@ -29,10 +33,9 @@ object ApiOffice {
 
   def fromDomain(office: Office): ApiOffice =
     office.transformInto[ApiOffice]
-
-  implicit val tapirSchema: Schema[ApiOffice] = Schema.derived
 }
 
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Address")
 case class ApiAddress(
   addressLine1: String,
@@ -46,10 +49,7 @@ case class ApiAddress(
     this.transformInto[Address]
 }
 
-object ApiAddress {
-  implicit val tapirSchema: Schema[ApiAddress] = Schema.derived
-}
-
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Office (create)")
 case class ApiCreateOffice(
   name: String,
@@ -62,10 +62,7 @@ case class ApiCreateOffice(
     this.transformInto[CreateOffice]
 }
 
-object ApiCreateOffice {
-  implicit val tapirSchema: Schema[ApiCreateOffice] = Schema.derived
-}
-
+@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Office (update)")
 case class ApiUpdateOffice(
   name: String,
@@ -78,8 +75,4 @@ case class ApiUpdateOffice(
 
   lazy val toDomain: UpdateOffice =
     this.transformInto[UpdateOffice]
-}
-
-object ApiUpdateOffice {
-  implicit val tapirSchema: Schema[ApiUpdateOffice] = Schema.derived
 }

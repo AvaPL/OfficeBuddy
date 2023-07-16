@@ -1,7 +1,6 @@
 package io.github.avapl
 package adapters.http
 
-import io.circe.generic.auto._
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._

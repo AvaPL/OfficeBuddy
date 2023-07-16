@@ -16,7 +16,6 @@ import config.HttpConfig
 import config.PostgresConfig
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
-import io.circe.generic.auto._
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router

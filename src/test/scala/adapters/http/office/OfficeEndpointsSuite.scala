@@ -2,12 +2,11 @@ package io.github.avapl
 package adapters.http.office
 
 import cats.effect.IO
-import domain.model.office.Address
-import domain.model.office.Office
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
+import domain.model.office.Address
+import domain.model.office.Office
 import domain.service.office.OfficeService
-import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import java.util.UUID
@@ -138,7 +137,8 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith DuplicateOfficeName(anyOfficeName)
+    val officeService =
+      whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith DuplicateOfficeName(anyOfficeName)
 
     val response = sendRequest(officeService) {
       basicRequest

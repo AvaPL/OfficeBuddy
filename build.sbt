@@ -4,6 +4,7 @@ ThisBuild / scalaVersion := "2.13.11"
 val catsEffectVersion = "3.5.0"
 val chimneyVersion = "0.7.5"
 val circeVersion = "3.8.15"
+val derevoVersion = "0.13.0"
 val enumeratumVersion = "1.7.2"
 val flywayVersion = "9.20.0"
 val http4sVersion = "0.23.21"
@@ -22,10 +23,14 @@ lazy val root = (project in file("."))
   .settings(
     idePackagePrefix := Some("io.github.avapl"),
     name := "OfficeBuddy",
-    scalacOptions ++= Seq("-deprecation"),
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-Ymacro-annotations"
+    ),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "io.scalaland" %% "chimney" % chimneyVersion,
+      "tf.tofu" %% "derevo-core" % derevoVersion,
       "com.beachape" %% "enumeratum" % enumeratumVersion,
       "org.flywaydb" % "flyway-core" % flywayVersion,
       "org.http4s" %% "http4s-ember-server" % http4sVersion,
