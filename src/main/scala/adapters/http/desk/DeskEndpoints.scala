@@ -165,7 +165,8 @@ class DeskEndpoints[F[_]: Async](
     isStanding = true,
     monitorsCount = 2,
     hasPhone = false,
-    officeId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+    officeId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
+    isArchived = false
   )
 
   private lazy val apiCreateDeskExample = ApiCreateDesk(
@@ -185,6 +186,7 @@ class DeskEndpoints[F[_]: Async](
     isStanding = true,
     monitorsCount = 2,
     hasPhone = false,
-    officeId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+    officeId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
+    isArchived = false
   )
 }

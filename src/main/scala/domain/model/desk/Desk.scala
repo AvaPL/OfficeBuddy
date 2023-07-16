@@ -14,7 +14,9 @@ case class Desk(
   monitorsCount: Short,
   hasPhone: Boolean,
   //
-  officeId: UUID
+  officeId: UUID,
+  //
+  isArchived: Boolean = false
 )
 
 case class CreateDesk(
@@ -33,6 +35,7 @@ case class CreateDesk(
     this
       .into[Desk]
       .withFieldConst(_.id, deskId)
+      .withFieldConst(_.isArchived, false)
       .transform
 }
 
@@ -45,5 +48,7 @@ case class UpdateDesk(
   monitorsCount: Short,
   hasPhone: Boolean,
   //
-  officeId: UUID
+  officeId: UUID,
+  //
+  isArchived: Boolean = false
 )

@@ -24,7 +24,9 @@ case class ApiDesk(
   monitorsCount: Short,
   hasPhone: Boolean,
   //
-  officeId: UUID
+  officeId: UUID,
+  //
+  isArchived: Boolean
 )
 
 object ApiDesk {
@@ -62,7 +64,9 @@ case class ApiUpdateDesk(
   monitorsCount: Short,
   hasPhone: Boolean,
   //
-  officeId: UUID
+  officeId: UUID,
+  //
+  isArchived: Boolean
 ) {
 
   lazy val toDomain: UpdateDesk =
