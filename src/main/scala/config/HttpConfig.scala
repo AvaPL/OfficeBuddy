@@ -17,6 +17,5 @@ case class HttpConfig(
 
 object HttpConfig {
 
-  // TODO: Use derevo
   implicit val reader: ConfigReader[HttpConfig] = deriveReader
 }

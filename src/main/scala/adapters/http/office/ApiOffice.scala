@@ -30,7 +30,6 @@ object ApiOffice {
   def fromDomain(office: Office): ApiOffice =
     office.transformInto[ApiOffice]
 
-  // TODO: Use derevo for schema
   implicit val tapirSchema: Schema[ApiOffice] = Schema.derived
 }
 
