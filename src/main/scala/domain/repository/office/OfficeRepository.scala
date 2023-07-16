@@ -10,5 +10,5 @@ trait OfficeRepository[F[_]] {
   def create(office: Office): F[Office]
   def read(officeId: UUID): F[Office]
   def update(officeId: UUID, updateOffice: UpdateOffice): F[Office]
-  def delete(officeId: UUID): F[Unit] // TODO: Archive instead of deleting
+  def archive(officeId: UUID): F[Unit]
 }

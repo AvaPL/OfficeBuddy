@@ -9,7 +9,9 @@ case class Office(
   name: String,
   notes: List[String],
   //
-  address: Address
+  address: Address,
+  //
+  isArchived: Boolean = false
 )
 
 case class CreateOffice(
@@ -23,6 +25,7 @@ case class CreateOffice(
     this
       .into[Office]
       .withFieldConst(_.id, officeId)
+      .withFieldConst(_.isArchived, false)
       .transform
 }
 
@@ -30,5 +33,7 @@ case class UpdateOffice(
   name: String,
   notes: List[String],
   //
-  address: Address
+  address: Address,
+  //
+  isArchived: Boolean = false
 )

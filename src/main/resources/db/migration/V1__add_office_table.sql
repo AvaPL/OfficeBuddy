@@ -6,5 +6,7 @@ CREATE TABLE office(
   address_line_2 varchar,
   postal_code    varchar,
   city           varchar,
-  country        varchar
+  country        varchar,
+
+  is_archived    bool      DEFAULT 'no'
 );

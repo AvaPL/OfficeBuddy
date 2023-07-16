@@ -16,7 +16,9 @@ case class ApiOffice(
   name: String,
   notes: List[String],
   //
-  address: ApiAddress
+  address: ApiAddress,
+  //
+  isArchived: Boolean
 ) {
 
   lazy val toDomain: Office =
@@ -70,7 +72,9 @@ case class ApiUpdateOffice(
   name: String,
   notes: List[String],
   //
-  address: ApiAddress
+  address: ApiAddress,
+  //
+  isArchived: Boolean
 ) {
 
   lazy val toDomain: UpdateOffice =

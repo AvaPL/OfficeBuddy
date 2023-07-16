@@ -172,12 +172,12 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
   }
 
   test(
-    """GIVEN delete office endpoint
-      | WHEN an existing office is deleted
+    """GIVEN archive office endpoint
+      | WHEN an existing office is archived
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val officeService = whenF(mock[OfficeService[IO]].deleteOffice(any)) thenReturn ()
+    val officeService = whenF(mock[OfficeService[IO]].archiveOffice(any)) thenReturn ()
 
     val response = sendRequest(officeService) {
       basicRequest.delete(uri"http://test.com/office/$anyOfficeId")
@@ -215,7 +215,8 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
   private lazy val anyApiUpdateOffice = ApiUpdateOffice(
     name = anyOfficeName,
     notes = anyOfficeNotes,
-    address = anyOfficeApiAddress
+    address = anyOfficeApiAddress,
+    isArchived = false
   )
 
   private lazy val anyOfficeId =

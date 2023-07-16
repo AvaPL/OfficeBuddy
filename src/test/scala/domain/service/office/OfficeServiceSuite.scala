@@ -144,40 +144,40 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
 
   test(
     """GIVEN an office ID
-      | WHEN deleteOffice is called
-      | THEN the office is deleted via officeRepository
+      | WHEN archiveOffice is called
+      | THEN the office is archived via officeRepository
       |""".stripMargin
   ) {
     val officeId = anyOfficeId
 
     val officeRepository = mock[OfficeRepository[IO]]
-    whenF(officeRepository.delete(any)) thenReturn ()
+    whenF(officeRepository.archive(any)) thenReturn ()
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      _ <- officeService.deleteOffice(officeId)
+      _ <- officeService.archiveOffice(officeId)
     } yield {
-      verify(officeRepository, only).delete(eqTo(officeId))
+      verify(officeRepository, only).archive(eqTo(officeId))
       success
     }
   }
 
   test(
     """GIVEN an office ID
-      | WHEN deleteOffice is called and the repository fails
+      | WHEN archiveOffice is called and the repository fails
       | THEN the result should contain the failure
       |""".stripMargin
   ) {
     val officeId = anyOfficeId
 
-    val officeNotFound = OfficeNotFound(officeId)
-    val officeRepository = whenF(mock[OfficeRepository[IO]].delete(any)) thenFailWith officeNotFound
+    val repositoryException = new RuntimeException("intended exception")
+    val officeRepository = whenF(mock[OfficeRepository[IO]].archive(any)) thenFailWith repositoryException
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      result <- officeService.deleteOffice(officeId).attempt
+      result <- officeService.archiveOffice(officeId).attempt
     } yield matches(result) {
-      case Left(throwable) => expect(throwable == officeNotFound)
+      case Left(throwable) => expect(throwable == repositoryException)
     }
   }
 

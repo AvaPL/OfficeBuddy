@@ -195,34 +195,29 @@ object PostgresOfficeRepositorySuite extends IOSuite {
   beforeTest(
     """
       |GIVEN an existing office
-      | WHEN delete is called on its ID
-      | THEN the office should be deleted
+      | WHEN archive is called on its ID
+      | THEN the office should be archived
       |""".stripMargin
   ) { officeRepository =>
     val office = anyOffice
 
     for {
       _ <- officeRepository.create(office)
-      _ <- officeRepository.delete(office.id)
-      result <- officeRepository.read(office.id).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val officeNotFound = OfficeNotFound(office.id)
-        println(throwable)
-        expect(throwable == officeNotFound)
-    }
+      _ <- officeRepository.archive(office.id)
+      office <- officeRepository.read(office.id)
+    } yield expect(office.isArchived)
   }
 
   beforeTest(
     """
-      |WHEN delete is called on nonexistent office ID
+      |WHEN archive is called on nonexistent office ID
       |THEN the call should not fail (no-op)
       |""".stripMargin
   ) { officeRepository =>
     val officeId = anyOfficeId
 
     for {
-      _ <- officeRepository.delete(officeId)
+      _ <- officeRepository.archive(officeId)
     } yield success
   }
 

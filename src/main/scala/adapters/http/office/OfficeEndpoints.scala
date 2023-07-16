@@ -25,7 +25,7 @@ class OfficeEndpoints[F[_]: Async](
     createOfficeEndpoint ::
       readOfficeEndpoint ::
       updateOfficeEndpoint ::
-      deleteOfficeEndpoint ::
+      archiveOfficeEndpoint ::
       Nil
 
   private lazy val createOfficeEndpoint =
@@ -119,27 +119,30 @@ class OfficeEndpoints[F[_]: Async](
         case DuplicateOfficeName(name) => ApiError.Conflict(s"Office '$name' is already defined").asLeft
       }
 
-  private lazy val deleteOfficeEndpoint =
+  private lazy val archiveOfficeEndpoint =
     baseEndpoint.delete
-      .summary("Delete an office")
-      .description("The deletion is idempotent ie. if the office doesn't exist, the operation doesn't fail.")
+      .summary("Archive an office")
+      .description(
+        "Archives an office. The office is NOT deleted. The operation is idempotent ie. if the office doesn't exist, the operation doesn't fail."
+      )
       .in(path[UUID]("officeId"))
       .out(
         statusCode(StatusCode.NoContent)
-          .description("Office deleted or not found")
+          .description("Office archived or not found")
       )
-      .serverLogic(deleteOffice)
+      .serverLogic(archiveOffice)
 
-  private def deleteOffice(officeId: UUID) =
+  private def archiveOffice(officeId: UUID) =
     officeService
-      .deleteOffice(officeId)
+      .archiveOffice(officeId)
       .as(().asRight[ApiError])
 
   private lazy val apiOfficeExample = ApiOffice(
     id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
     name = "Wroclaw",
     notes = List("Everyone's favorite", "The funniest one"),
-    address = apiAddressExample
+    address = apiAddressExample,
+    isArchived = false
   )
 
   private lazy val apiAddressExample = ApiAddress(
@@ -159,6 +162,7 @@ class OfficeEndpoints[F[_]: Async](
   private lazy val apiUpdateOfficeExample = ApiUpdateOffice(
     name = "Wroclaw",
     notes = List("Everyone's favorite", "The funniest one"),
-    address = apiAddressExample
+    address = apiAddressExample,
+    isArchived = false
   )
 }

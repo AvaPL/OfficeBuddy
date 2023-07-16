@@ -101,20 +101,21 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
             EmptyTuple
       }
 
-  override def delete(officeId: UUID): F[Unit] =
+  override def archive(officeId: UUID): F[Unit] =
     session.use { session =>
       session
-        .prepare(deleteSql)
+        .prepare(archiveSql)
         .flatMap { sql =>
           sql.execute(officeId)
         }
         .void
     }
 
-  private lazy val deleteSql: Command[UUID] =
+  private lazy val archiveSql: Command[UUID] =
     sql"""
-      DELETE FROM office
-      WHERE       id = $uuid
+      UPDATE office
+      SET    is_archived = 'yes'
+      WHERE id = $uuid
     """.command
 }
 
@@ -151,10 +152,11 @@ object PostgresOfficeRepository {
         varchar *: // address_line_2
         varchar *: // postal_code
         varchar *: // city
-        varchar // country
+        varchar *: // country
+        bool // is_archived
     ).map {
-      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: EmptyTuple =>
+      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: isArchived *: EmptyTuple =>
         val address = Address(addressLine1, addressLine2, postalCode, city, country)
-        Office(id, name, notes.flattenTo(List), address)
+        Office(id, name, notes.flattenTo(List), address, isArchived)
     }
 }
