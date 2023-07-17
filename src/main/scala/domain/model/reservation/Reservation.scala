@@ -27,6 +27,15 @@ case class DeskReservation(
   deskId: UUID
 ) extends Reservation
 
+case class CreateDeskReservation(
+  userId: UUID,
+  reservedFrom: OffsetDateTime,
+  reservedTo: OffsetDateTime,
+  notes: String,
+  //
+  deskId: UUID
+)
+
 case class ParkingSpotReservation(
   id: UUID,
   userId: UUID,
