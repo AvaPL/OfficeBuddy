@@ -2,8 +2,9 @@ package io.github.avapl
 package domain.model.reservation
 
 import io.scalaland.chimney.dsl._
+import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
+import java.time.LocalTime
 import java.util.UUID
 
 sealed trait Reservation {
@@ -31,8 +32,8 @@ case class DeskReservation(
 
 case class CreateDeskReservation(
   userId: UUID,
-  reservedFrom: LocalDateTime,
-  reservedTo: LocalDateTime,
+  reservedFrom: LocalDate,
+  reservedTo: LocalDate,
   notes: String,
   //
   deskId: UUID
@@ -43,6 +44,8 @@ case class CreateDeskReservation(
       .into[DeskReservation]
       .withFieldConst(_.id, reservationId)
       .withFieldConst(_.createdAt, createdAt)
+      .withFieldComputed(_.reservedFrom, _.reservedFrom.atStartOfDay())
+      .withFieldComputed(_.reservedTo, _.reservedTo.atTime(LocalTime.MAX))
       .withFieldConst(_.state, ReservationState.Pending)
       .transform
 }

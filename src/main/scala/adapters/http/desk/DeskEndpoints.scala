@@ -6,6 +6,7 @@ import domain.model.error.desk.{DeskNotFound, DuplicateDeskNameForOffice}
 import domain.model.error.office.OfficeNotFound
 import domain.service.desk.DeskService
 
+import cats.ApplicativeThrow
 import cats.effect.Async
 import cats.syntax.all._
 import sttp.model.StatusCode
@@ -16,7 +17,7 @@ import sttp.tapir.server.ServerEndpoint
 import java.util.UUID
 
 // TODO: Add unit tests
-class DeskEndpoints[F[_]: Async](
+class DeskEndpoints[F[_]: ApplicativeThrow](
   deskService: DeskService[F]
 ) extends BaseEndpoint {
 

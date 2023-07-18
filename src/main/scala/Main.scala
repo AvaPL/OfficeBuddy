@@ -3,9 +3,11 @@ package io.github.avapl
 import adapters.http.ApiError
 import adapters.http.desk.DeskEndpoints
 import adapters.http.office.OfficeEndpoints
+import adapters.http.reservation.ReservationEndpoints
 import adapters.postgres.migration.FlywayMigration
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
+import adapters.postgres.repository.reservation.PostgresReservationRepository
 import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect._
@@ -16,6 +18,7 @@ import config.HttpConfig
 import config.PostgresConfig
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
+import domain.service.reservation.ReservationService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -75,14 +78,17 @@ object Main extends IOApp.Simple {
     Applicative[F].pure {
       val officeRepository = new PostgresOfficeRepository[F](session)
       val deskRepository = new PostgresDeskRepository[F](session)
+      val reservationRepository = new PostgresReservationRepository[F](session)
 
       val officeService = new OfficeService[F](officeRepository)
       val deskService = new DeskService[F](deskRepository)
+      val reservationService = new ReservationService[F](reservationRepository)
 
-      val officeEndpoints = new OfficeEndpoints[F](officeService)
-      val deskEndpoints = new DeskEndpoints[F](deskService)
+      val officeEndpoints = new OfficeEndpoints[F](officeService).endpoints
+      val deskEndpoints = new DeskEndpoints[F](deskService).endpoints
+      val reservationEndpoints = new ReservationEndpoints[F](reservationService).endpoints
 
-      officeEndpoints.endpoints <+> deskEndpoints.endpoints
+      officeEndpoints <+> deskEndpoints <+> reservationEndpoints
     }
 
   private def runHttpServer[F[_]: Async](

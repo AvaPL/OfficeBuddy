@@ -3,7 +3,7 @@ package adapters.http.office
 
 import adapters.http.ApiError
 import adapters.http.BaseEndpoint
-import cats.effect.Async
+import cats.ApplicativeThrow
 import cats.syntax.all._
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
@@ -14,7 +14,7 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-class OfficeEndpoints[F[_]: Async](
+class OfficeEndpoints[F[_]: ApplicativeThrow](
   officeService: OfficeService[F]
 ) extends BaseEndpoint {
 
