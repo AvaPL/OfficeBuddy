@@ -7,7 +7,6 @@ import domain.model.error.office.OfficeNotFound
 import domain.service.desk.DeskService
 
 import cats.ApplicativeThrow
-import cats.effect.Async
 import cats.syntax.all._
 import sttp.model.StatusCode
 import sttp.tapir._

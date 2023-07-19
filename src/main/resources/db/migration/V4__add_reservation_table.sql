@@ -18,5 +18,5 @@ CREATE TABLE reservation(
 
   CONSTRAINT reservation_overlap_excl EXCLUDE USING gist(
     desk_id WITH =, tsrange(reserved_from, reserved_to) WITH &&
-  ) WHERE (state IN ('PENDING', 'CONFIRMED'))
+  ) WHERE (state IN ('Pending', 'Confirmed'))
 );
