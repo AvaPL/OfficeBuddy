@@ -99,12 +99,14 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
       WHERE  id = $uuid
     """.query(reservationStateCodec)
 
+  // TODO: This part of business logic has to be extracted to the service
   private def isValidStateTransition(currentState: ReservationState, newState: ReservationState) = {
     import ReservationState._
     val validStateTransitions: Set[ReservationState] = currentState match {
-      case Pending              => Set(Cancelled, Confirmed, Rejected)
-      case Confirmed            => Set(Cancelled, Rejected)
-      case Cancelled | Rejected => Set()
+      case Pending   => Set(Pending, Cancelled, Confirmed, Rejected)
+      case Confirmed => Set(Confirmed, Cancelled, Rejected)
+      case Cancelled => Set(Cancelled)
+      case Rejected  => Set(Rejected)
     }
     validStateTransitions.contains(newState)
   }

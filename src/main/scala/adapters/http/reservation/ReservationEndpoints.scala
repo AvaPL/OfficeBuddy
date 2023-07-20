@@ -3,8 +3,9 @@ package adapters.http.reservation
 
 import adapters.http.ApiError
 import adapters.http.BaseEndpoint
-import cats.Functor
+import cats.ApplicativeThrow
 import cats.syntax.all._
+import domain.model.error.reservation._
 import domain.service.reservation.ReservationService
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -14,9 +15,8 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-// TODO: Add error handling
 // TODO: Add unit tests
-class ReservationEndpoints[F[_]: Functor](
+class ReservationEndpoints[F[_]: ApplicativeThrow](
   reservationService: ReservationService[F]
 ) extends BaseEndpoint {
 
@@ -62,6 +62,14 @@ class ReservationEndpoints[F[_]: Functor](
       .reserveDesk(apiCreateDeskReservation.toDomain)
       .map(ApiDeskReservation.fromDomain)
       .map(_.asRight[ApiError])
+      .recover {
+        case DeskNotFound(deskId) =>
+          ApiError.BadRequest(s"Desk [id: $deskId] was not found").asLeft
+        case UserNotFound(userId) =>
+          ApiError.BadRequest(s"User [id: $userId] was not found").asLeft
+        case OverlappingReservations =>
+          ApiError.Conflict("There is an overlapping reservation, try another reservation date range").asLeft
+      }
 
   private lazy val readDeskReservationEndpoint =
     baseEndpoint.get
@@ -85,6 +93,10 @@ class ReservationEndpoints[F[_]: Functor](
       .readDeskReservation(reservationId)
       .map(ApiDeskReservation.fromDomain)
       .map(_.asRight[ApiError])
+      .recover {
+        case ReservationNotFound(reservationId) =>
+          ApiError.NotFound(s"Reservation [id: $reservationId] was not found").asLeft
+      }
 
   private lazy val cancelReservationEndpoint =
     baseEndpoint.put
@@ -115,6 +127,12 @@ class ReservationEndpoints[F[_]: Functor](
     reservationService
       .cancelReservation(reservationId)
       .map(_.asRight[ApiError])
+      .recover(recoverOnInvalidStateTransition)
+
+  private lazy val recoverOnInvalidStateTransition: PartialFunction[Throwable, Either[ApiError, Nothing]] = {
+    case InvalidStateTransition(reservationId, currentState, newState) =>
+      ApiError.BadRequest(s"Reservation [id: $reservationId] cannot transition from $currentState to $newState").asLeft
+  }
 
   private lazy val confirmReservationEndpoint =
     baseEndpoint.put
@@ -145,6 +163,7 @@ class ReservationEndpoints[F[_]: Functor](
     reservationService
       .confirmReservation(reservationId)
       .map(_.asRight[ApiError])
+      .recover(recoverOnInvalidStateTransition)
 
   private lazy val rejectReservationEndpoint =
     baseEndpoint.put
@@ -175,6 +194,7 @@ class ReservationEndpoints[F[_]: Functor](
     reservationService
       .rejectReservation(reservationId)
       .map(_.asRight[ApiError])
+      .recover(recoverOnInvalidStateTransition)
 
   private lazy val apiDeskReservationExample = ApiDeskReservation(
     id = UUID.fromString("dcd64f97-a57a-4b57-9e63-dbe56187b557"),
