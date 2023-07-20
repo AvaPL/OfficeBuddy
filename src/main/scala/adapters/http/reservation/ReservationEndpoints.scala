@@ -202,7 +202,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
     createdAt = LocalDateTime.parse("2023-07-18T20:41:00"),
     reservedFrom = LocalDateTime.parse("2023-07-19T00:00:00"),
     reservedTo = LocalDateTime.parse("2023-07-20T23:59:59"),
-    state = "Pending",
+    state = ApiReservationState.Pending,
     notes = "Please remove the duck from the desk, it scares me",
     deskId = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")
   )

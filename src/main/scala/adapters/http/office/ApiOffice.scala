@@ -2,7 +2,6 @@ package io.github.avapl
 package adapters.http.office
 
 import derevo.derive
-import domain.model.office.Address
 import domain.model.office.CreateOffice
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
@@ -33,20 +32,6 @@ object ApiOffice {
 
   def fromDomain(office: Office): ApiOffice =
     office.transformInto[ApiOffice]
-}
-
-@derive(circeEncoder, circeDecoder, tapirSchema)
-@encodedName("Address")
-case class ApiAddress(
-  addressLine1: String,
-  addressLine2: String,
-  postalCode: String,
-  city: String,
-  country: String
-) {
-
-  lazy val toDomain: Address =
-    this.transformInto[Address]
 }
 
 @derive(circeEncoder, circeDecoder, tapirSchema)

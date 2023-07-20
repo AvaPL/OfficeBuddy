@@ -4,7 +4,6 @@ package adapters.http.reservation
 import derevo.derive
 import domain.model.reservation.CreateDeskReservation
 import domain.model.reservation.DeskReservation
-import domain.model.reservation.ReservationState
 import io.scalaland.chimney.dsl._
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,26 +21,20 @@ case class ApiDeskReservation(
   createdAt: LocalDateTime,
   reservedFrom: LocalDateTime,
   reservedTo: LocalDateTime,
-  state: String, // TODO: Use enumeration instead of String
+  state: ApiReservationState,
   notes: String,
   //
   deskId: UUID
 ) {
 
   lazy val toDomain: DeskReservation =
-    this
-      .into[DeskReservation]
-      .withFieldComputed(_.state, r => ReservationState.withNameInsensitive(r.state))
-      .transform
+    this.transformInto[DeskReservation]
 }
 
 object ApiDeskReservation {
 
   def fromDomain(deskReservation: DeskReservation): ApiDeskReservation =
-    deskReservation
-      .into[ApiDeskReservation]
-      .withFieldComputed(_.state, _.state.entryName)
-      .transform
+    deskReservation.transformInto[ApiDeskReservation]
 }
 
 @derive(circeEncoder, circeDecoder, tapirSchema)
