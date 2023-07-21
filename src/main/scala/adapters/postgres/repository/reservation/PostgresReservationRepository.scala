@@ -65,7 +65,6 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
   override def updateReservationState(reservationId: UUID, newState: ReservationState): F[Unit] =
     session.use { session =>
       for {
-        _ <- validateReservationStateTransition(reservationId, newState)
         sql <- session.prepare(updateReservationStateSql)
         _ <- sql
           .execute(reservationId *: newState *: EmptyTuple)
@@ -76,15 +75,7 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
       } yield ()
     }
 
-  private def validateReservationStateTransition(reservationId: UUID, newState: ReservationState) =
-    for {
-      currentState <- readReservationState(reservationId)
-      _ <- ApplicativeThrow[F].raiseWhen(
-        !isValidStateTransition(currentState, newState)
-      )(InvalidStateTransition(reservationId, currentState, newState))
-    } yield ()
-
-  private def readReservationState(reservationId: UUID) =
+  override def readReservationState(reservationId: UUID): F[ReservationState] =
     session.use { session =>
       for {
         sql <- session.prepare(readReservationStateSql)
@@ -98,18 +89,6 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
       FROM   reservation
       WHERE  id = $uuid
     """.query(reservationStateCodec)
-
-  // TODO: This part of business logic has to be extracted to the service
-  private def isValidStateTransition(currentState: ReservationState, newState: ReservationState) = {
-    import ReservationState._
-    val validStateTransitions: Set[ReservationState] = currentState match {
-      case Pending   => Set(Pending, Cancelled, Confirmed, Rejected)
-      case Confirmed => Set(Confirmed, Cancelled, Rejected)
-      case Cancelled => Set(Cancelled)
-      case Rejected  => Set(Rejected)
-    }
-    validStateTransitions.contains(newState)
-  }
 
   private lazy val updateReservationStateSql: Command[UUID *: ReservationState *: EmptyTuple] =
     sql"""
