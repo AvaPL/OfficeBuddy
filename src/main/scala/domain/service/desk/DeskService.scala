@@ -10,7 +10,6 @@ import domain.repository.desk.DeskRepository
 import java.util.UUID
 import util.FUUID
 
-// TODO: Add unit tests
 class DeskService[F[_]: FlatMap: FUUID](
   deskRepository: DeskRepository[F]
 ) {
