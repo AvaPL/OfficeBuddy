@@ -18,7 +18,6 @@ import skunk.data.Arr
 import skunk.data.Completion
 import skunk.implicits._
 
-// TODO: Add integration tests
 class PostgresDeskRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
 ) extends DeskRepository[F] {
@@ -160,7 +159,7 @@ object PostgresDeskRepository {
         uuid *: // office_id
         bool // is_archived
     ).map {
-      case id *: name *: isAvailable *: notes *: isStanding *: monitorsCount *: hasPhone *: officeId *: _ *: EmptyTuple =>
-        Desk(id, name, isAvailable, notes.flattenTo(List), isStanding, monitorsCount, hasPhone, officeId)
+      case id *: name *: isAvailable *: notes *: isStanding *: monitorsCount *: hasPhone *: officeId *: isArchived *: EmptyTuple =>
+        Desk(id, name, isAvailable, notes.flattenTo(List), isStanding, monitorsCount, hasPhone, officeId, isArchived)
     }
 }
