@@ -15,7 +15,6 @@ import sttp.tapir.server.ServerEndpoint
 
 import java.util.UUID
 
-// TODO: Add unit tests
 class DeskEndpoints[F[_]: ApplicativeThrow](
   deskService: DeskService[F]
 ) extends BaseEndpoint {

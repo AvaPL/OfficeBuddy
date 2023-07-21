@@ -18,7 +18,7 @@ import weaver.SimpleIOSuite
 object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
 
   test(
-    """GIVEN an desk to create
+    """GIVEN a desk to create
       | WHEN createDesk is called
       | THEN a valid desk is created via deskRepository
       |""".stripMargin
@@ -41,7 +41,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk to create
+    """GIVEN a desk to create
       | WHEN createDesk is called and the repository fails
       | THEN the result should contain the failure
       |""".stripMargin
@@ -60,7 +60,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk ID
+    """GIVEN a desk ID
       | WHEN readDesk is called
       | THEN the desk is read via deskRepository
       |""".stripMargin
@@ -81,7 +81,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk ID
+    """GIVEN a desk ID
       | WHEN readDesk is called and the repository fails
       | THEN the result should contain the failure
       |""".stripMargin
@@ -100,7 +100,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk update
+    """GIVEN a desk update
       | WHEN updateDesk is called
       | THEN the desk is updated via deskRepository
       |""".stripMargin
@@ -131,7 +131,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk update
+    """GIVEN a desk update
       | WHEN updateDesk is called and the repository fails
       | THEN the result should contain the failure
       |""".stripMargin
@@ -151,7 +151,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk ID
+    """GIVEN a desk ID
       | WHEN archiveDesk is called
       | THEN the desk is archived via deskRepository
       |""".stripMargin
@@ -171,7 +171,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   }
 
   test(
-    """GIVEN an desk ID
+    """GIVEN a desk ID
       | WHEN archiveDesk is called and the repository fails
       | THEN the result should contain the failure
       |""".stripMargin

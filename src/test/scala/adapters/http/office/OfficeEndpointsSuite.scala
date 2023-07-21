@@ -137,26 +137,6 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val officeService =
-      whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith DuplicateOfficeName(anyOfficeName)
-
-    val response = sendRequest(officeService) {
-      basicRequest
-        .patch(uri"http://test.com/office/$anyOfficeId")
-        .body(anyApiUpdateOffice)
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.Conflict)
-  }
-
-  test(
-    """GIVEN update office endpoint
-      | WHEN an office with the given name already exists
-      | THEN 409 Conflict is returned
-      |""".stripMargin
-  ) {
     val officeId = anyOfficeId
     val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith OfficeNotFound(officeId)
 
@@ -169,6 +149,26 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
     for {
       response <- response
     } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
+    """GIVEN update office endpoint
+      | WHEN an office with the given name already exists
+      | THEN 409 Conflict is returned
+      |""".stripMargin
+  ) {
+    val officeService =
+      whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith DuplicateOfficeName(anyOfficeName)
+
+    val response = sendRequest(officeService) {
+      basicRequest
+        .patch(uri"http://test.com/office/$anyOfficeId")
+        .body(anyApiUpdateOffice)
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.Conflict)
   }
 
   test(
