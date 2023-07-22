@@ -7,8 +7,6 @@ import scala.util.control.NoStackTrace
 
 package object reservation {
 
-  case class DeskNotFound(deskId: UUID) extends NoStackTrace
-  case class UserNotFound(userId: UUID) extends NoStackTrace
   case object OverlappingReservations extends NoStackTrace
   case class ReservationNotFound(reservationId: UUID) extends NoStackTrace
   case class InvalidStateTransition(

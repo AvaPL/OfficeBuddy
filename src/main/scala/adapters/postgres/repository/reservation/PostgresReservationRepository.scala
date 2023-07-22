@@ -1,12 +1,13 @@
 package io.github.avapl
 package adapters.postgres.repository.reservation
 
-import cats.ApplicativeThrow
 import cats.data.OptionT
 import cats.effect.kernel.MonadCancelThrow
 import cats.effect.kernel.Resource
 import cats.syntax.all._
+import domain.model.error.desk.DeskNotFound
 import domain.model.error.reservation._
+import domain.model.error.user.UserNotFound
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
 import domain.repository.reservation.ReservationRepository

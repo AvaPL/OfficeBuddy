@@ -5,7 +5,9 @@ import adapters.http.ApiError
 import adapters.http.BaseEndpoint
 import cats.ApplicativeThrow
 import cats.syntax.all._
+import domain.model.error.desk.DeskNotFound
 import domain.model.error.reservation._
+import domain.model.error.user.UserNotFound
 import domain.service.reservation.ReservationService
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -15,7 +17,6 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-// TODO: Add unit tests
 class ReservationEndpoints[F[_]: ApplicativeThrow](
   reservationService: ReservationService[F]
 ) extends BaseEndpoint {
@@ -93,10 +94,12 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       .readDeskReservation(reservationId)
       .map(ApiDeskReservation.fromDomain)
       .map(_.asRight[ApiError])
-      .recover {
-        case ReservationNotFound(reservationId) =>
-          ApiError.NotFound(s"Reservation [id: $reservationId] was not found").asLeft
-      }
+      .recover(recoverOnNotFound)
+
+  private lazy val recoverOnNotFound: PartialFunction[Throwable, Either[ApiError, Nothing]] = {
+    case ReservationNotFound(reservationId) =>
+      ApiError.NotFound(s"Reservation [id: $reservationId] was not found").asLeft
+  }
 
   private lazy val cancelReservationEndpoint =
     baseEndpoint.put
@@ -127,6 +130,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
     reservationService
       .cancelReservation(reservationId)
       .map(_.asRight[ApiError])
+      .recover(recoverOnNotFound)
       .recover(recoverOnInvalidStateTransition)
 
   private lazy val recoverOnInvalidStateTransition: PartialFunction[Throwable, Either[ApiError, Nothing]] = {
@@ -163,6 +167,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
     reservationService
       .confirmReservation(reservationId)
       .map(_.asRight[ApiError])
+      .recover(recoverOnNotFound)
       .recover(recoverOnInvalidStateTransition)
 
   private lazy val rejectReservationEndpoint =
@@ -194,6 +199,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
     reservationService
       .rejectReservation(reservationId)
       .map(_.asRight[ApiError])
+      .recover(recoverOnNotFound)
       .recover(recoverOnInvalidStateTransition)
 
   private lazy val apiDeskReservationExample = ApiDeskReservation(
