@@ -5,13 +5,11 @@ import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
-
-// TODO: Add unit tests for error handling
 trait BaseEndpoint {
 
   protected def baseEndpointName: String
 
-  protected lazy val baseEndpoint: Endpoint[Unit, Unit, ApiError, Unit, Any] =
+  protected[http] lazy val baseEndpoint: Endpoint[Unit, Unit, ApiError, Unit, Any] =
     endpoint
       .withTag(baseEndpointName)
       .in(baseEndpointName)
