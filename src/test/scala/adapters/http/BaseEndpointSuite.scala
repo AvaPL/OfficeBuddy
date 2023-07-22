@@ -22,7 +22,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
       response <- sendRequest(().asRight.pure[IO])
     } yield expect.all(
       response.code == StatusCode.Ok,
-      response.body == Right("")
+      response.body == "".asRight
     )
   }
 
@@ -38,7 +38,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
       response <- sendRequest(error.asLeft.pure[IO])
     } yield expect.all(
       response.code == StatusCode.BadRequest,
-      response.body == Left(s"""{"message":"${error.message}"}""")
+      response.body == s"""{"message":"${error.message}"}""".asLeft
     )
   }
 
@@ -54,7 +54,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
       response <- sendRequest(error.asLeft.pure[IO])
     } yield expect.all(
       response.code == StatusCode.InternalServerError,
-      response.body == Left(s"""{"message":"${error.message}"}""")
+      response.body == s"""{"message":"${error.message}"}""".asLeft
     )
   }
 
@@ -70,7 +70,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
       response <- sendRequest(exception.raiseError)
     } yield expect.all(
       response.code == StatusCode.InternalServerError,
-      response.body == Left("Internal server error")
+      response.body == "Internal server error".asLeft
     )
   }
 

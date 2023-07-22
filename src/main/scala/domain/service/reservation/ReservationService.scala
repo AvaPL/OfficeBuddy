@@ -15,7 +15,6 @@ import java.time.ZoneOffset
 import java.util.UUID
 import util.FUUID
 
-// TODO: Add unit tests
 class ReservationService[F[_]: MonadThrow: Clock: FUUID](
   reservationRepository: ReservationRepository[F]
 ) {
