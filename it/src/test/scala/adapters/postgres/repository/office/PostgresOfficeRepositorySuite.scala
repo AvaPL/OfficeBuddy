@@ -10,6 +10,7 @@ import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
+import io.github.avapl.adapters.postgres.fixture.PostgresFixture
 import java.util.UUID
 import natchez.Trace.Implicits.noop
 import skunk.Command
@@ -20,36 +21,8 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object PostgresOfficeRepositorySuite extends IOSuite {
+object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
 
-  override val maxParallelism: Int = 1
-  override type Res = Resource[IO, Session[IO]]
-  override def sharedResource: Resource[IO, Res] = { // TODO: Extract to a common place and simplify
-    val host = "localhost"
-    val port = 2345
-    val user = "postgres"
-    val password = "postgres"
-    val database = "office_buddy"
-    val session = Session.pooled(
-      host = host,
-      port = port,
-      user = user,
-      password = Some(password),
-      database = database,
-      max = 10
-    )
-    val migration = new FlywayMigration[IO](
-      host = host,
-      port = port,
-      user = user,
-      password = password,
-      database = database
-    )
-    session
-      .evalTap(_ => migration.run())
-  }
-
-  // TODO: Extract to a common place and simplify
   private def beforeTest(name: TestName)(run: PostgresOfficeRepository[IO] => IO[Expectations]): Unit =
     test(name) { session =>
       lazy val postgresOfficeRepository = new PostgresOfficeRepository[IO](session)

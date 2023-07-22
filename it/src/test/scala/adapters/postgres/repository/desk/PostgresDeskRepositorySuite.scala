@@ -1,10 +1,11 @@
 package io.github.avapl
 package adapters.postgres.repository.desk
 
-import adapters.postgres.migration.FlywayMigration
+import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.IO
 import cats.effect.Resource
+import cats.syntax.all._
 import com.softwaremill.quicklens._
 import domain.model.desk.Desk
 import domain.model.desk.UpdateDesk
@@ -13,7 +14,6 @@ import domain.model.error.desk.DuplicateDeskNameForOffice
 import domain.model.office.Address
 import domain.model.office.Office
 import java.util.UUID
-import natchez.Trace.Implicits.noop
 import skunk.Command
 import skunk.Session
 import skunk.Void
@@ -22,53 +22,16 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object PostgresDeskRepositorySuite extends IOSuite {
+object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
 
-  override val maxParallelism: Int = 1
-  override type Res = Resource[IO, Session[IO]]
-
-  override def sharedResource: Resource[IO, Res] = { // TODO: Extract to a common place and simplify
-    val host = "localhost"
-    val port = 2345
-    val user = "postgres"
-    val password = "postgres"
-    val database = "office_buddy"
-    val session = Session.pooled(
-      host = host,
-      port = port,
-      user = user,
-      password = Some(password),
-      database = database,
-      max = 10
-    )
-    val migration = new FlywayMigration[IO](
-      host = host,
-      port = port,
-      user = user,
-      password = password,
-      database = database
-    )
-    session
-      .evalTap(_ => migration.run())
-  }
-
-  // TODO: Extract to a common place and simplify
-  private def beforeTest(
-    name: TestName
-  )(run: (PostgresOfficeRepository[IO], PostgresDeskRepository[IO]) => IO[Expectations]): Unit =
+  private def beforeTest(name: TestName)(run: PostgresDeskRepository[IO] => IO[Expectations]): Unit =
     test(name) { session =>
       lazy val postgresDeskRepository = new PostgresDeskRepository[IO](session)
-      lazy val officeRepository = new PostgresOfficeRepository[IO](session)
-      truncateDeskTable(session) >> truncateOfficeTable(session) >> run(officeRepository, postgresDeskRepository)
+      truncateDeskTable(session) >>
+        truncateOfficeTable(session) >>
+        insertOffices(session) >>
+        run(postgresDeskRepository)
     }
-
-  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
-    val sql: Command[Void] =
-      sql"""
-      TRUNCATE TABLE office CASCADE
-    """.command
-    session.use(_.execute(sql))
-  }
 
   private def truncateDeskTable(session: Resource[IO, Session[IO]]) = {
     val sql: Command[Void] =
@@ -78,17 +41,44 @@ object PostgresDeskRepositorySuite extends IOSuite {
     session.use(_.execute(sql))
   }
 
+  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE office CASCADE
+      """.command
+    session.use(_.execute(sql))
+  }
+
+  private def insertOffices(session: Resource[IO, Session[IO]]) = {
+    val officeRepository = new PostgresOfficeRepository[IO](session)
+    val office1 = anyOffice(officeId1, "office1")
+    val office2 = anyOffice(officeId2, "office2")
+    List(office1, office2).parTraverse_(officeRepository.create)
+  }
+
+  private def anyOffice(officeId: UUID, name: String) = Office(
+    id = officeId,
+    name = name,
+    notes = List("Test", "Notes"),
+    address = Address(
+      addressLine1 = "Test Street",
+      addressLine2 = "Building 42",
+      postalCode = "12-345",
+      city = "Wroclaw",
+      country = "Poland"
+    )
+  )
+
   beforeTest(
     """
       |GIVEN a desk to create
       | WHEN create is called
       | THEN the desk should be inserted into Postgres
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk = anyDesk
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk.officeId)) // required by foreign key
       _ <- deskRepository.create(desk)
       readDesk <- deskRepository.read(desk.id)
     } yield expect(readDesk == desk)
@@ -100,14 +90,13 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN create is called
       | THEN the call should fail with DuplicateDeskNameForOffice
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk = anyDesk
     val deskWithTheSameName = desk.copy(
       id = UUID.fromString("fe58cb74-1125-4e19-a087-6dbbd7165811")
     )
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk.officeId)) // required by foreign key
       _ <- deskRepository.create(desk)
       result <- deskRepository.create(deskWithTheSameName).attempt
     } yield matches(result) {
@@ -123,19 +112,15 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN create is called
       | THEN both desk should be inserted successfully
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk = anyDesk
     val deskWithTheSameName = desk.copy(
       id = UUID.fromString("fe58cb74-1125-4e19-a087-6dbbd7165811"),
-      officeId = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
+      officeId = officeId2
     )
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk.officeId)) // required by foreign key
       _ <- deskRepository.create(desk)
-      _ <- officeRepository.create( // required by foreign key
-        anyOffice.copy(id = deskWithTheSameName.officeId, name = "other")
-      )
       _ <- deskRepository.create(deskWithTheSameName)
     } yield success
   }
@@ -146,10 +131,10 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN update is called
       | THEN the desk should be updated
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk = anyDesk
     val deskUpdate = anyUpdateDesk
-      .copy(officeId = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04"))
+      .copy(officeId = officeId2)
       .modify(_.name)
       .using(_ + "updated")
       .modify(_.notes)
@@ -164,9 +149,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
       .using(!_)
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk.officeId)) // required by foreign key
       _ <- deskRepository.create(desk)
-      _ <- officeRepository.create(anyOffice.copy(id = deskUpdate.officeId, name = "other")) // required by foreign key
       _ <- deskRepository.update(desk.id, deskUpdate)
       readDesk <- deskRepository.read(desk.id)
     } yield {
@@ -190,7 +173,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN update is called without any changes
       | THEN the call should not fail (no-op)
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk = anyDesk
     val deskUpdate = UpdateDesk(
       name = desk.name,
@@ -203,7 +186,6 @@ object PostgresDeskRepositorySuite extends IOSuite {
     )
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk.officeId)) // required by foreign key
       _ <- deskRepository.create(desk)
       _ <- deskRepository.update(desk.id, deskUpdate)
     } yield success
@@ -215,7 +197,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN update is called
       | THEN the call should fail with DeskNotFound
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val deskId = anyDeskId
     val deskUpdate = anyUpdateDesk
 
@@ -234,7 +216,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN a desk with the name given in the update already exists for the given office
       | THEN the call should fail with DuplicateDeskName
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk1 = anyDesk
     val desk2 = desk1.copy(
       id = UUID.fromString("96cb8558-8fe8-4330-b50a-00e7e1917757"),
@@ -243,7 +225,6 @@ object PostgresDeskRepositorySuite extends IOSuite {
     val deskUpdate = anyUpdateDesk.copy(name = desk2.name)
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk1.officeId)) // required by foreign key
       _ <- deskRepository.create(desk1)
       _ <- deskRepository.create(desk2)
       result <- deskRepository.update(desk1.id, deskUpdate).attempt
@@ -260,19 +241,17 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN a desk with the name given in the update exists in another office
       | THEN the call should succeed
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk1 = anyDesk
     val desk2 = desk1.copy(
       id = UUID.fromString("96cb8558-8fe8-4330-b50a-00e7e1917757"),
       name = "other",
-      officeId = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
+      officeId = officeId2
     )
     val deskUpdate = anyUpdateDesk.copy(name = desk2.name)
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk1.officeId)) // required by foreign key
       _ <- deskRepository.create(desk1)
-      _ <- officeRepository.create(anyOffice.copy(id = desk2.officeId, name = "other")) // required by foreign key
       _ <- deskRepository.create(desk2)
       _ <- deskRepository.update(desk1.id, deskUpdate).attempt
     } yield success
@@ -284,11 +263,10 @@ object PostgresDeskRepositorySuite extends IOSuite {
       | WHEN archive is called on its ID
       | THEN the desk should be archived
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val desk = anyDesk
 
     for {
-      _ <- officeRepository.create(anyOffice.copy(id = desk.officeId)) // required by foreign key
       _ <- deskRepository.create(desk)
       _ <- deskRepository.archive(desk.id)
       desk <- deskRepository.read(desk.id)
@@ -300,7 +278,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
       |WHEN archive is called on nonexistent desk ID
       |THEN the call should not fail (no-op)
       |""".stripMargin
-  ) { (officeRepository, deskRepository) =>
+  ) { deskRepository =>
     val deskId = anyDeskId
 
     for {
@@ -308,20 +286,9 @@ object PostgresDeskRepositorySuite extends IOSuite {
     } yield success
   }
 
-  private lazy val anyOffice = Office(
-    id = anyOfficeId,
-    name = "Test Office",
-    notes = List("Test", "Notes"),
-    address = Address(
-      addressLine1 = "Test Street",
-      addressLine2 = "Building 42",
-      postalCode = "12-345",
-      city = "Wroclaw",
-      country = "Poland"
-    )
-  )
+  private lazy val officeId1: UUID = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
 
-  private lazy val anyOfficeId: UUID = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+  private lazy val officeId2: UUID = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
 
   private lazy val anyDesk = Desk(
     id = anyDeskId,
@@ -331,7 +298,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
     isStanding = true,
     monitorsCount = 2,
     hasPhone = false,
-    officeId = anyOfficeId
+    officeId = officeId1
   )
 
   private lazy val anyUpdateDesk = UpdateDesk(
@@ -341,7 +308,7 @@ object PostgresDeskRepositorySuite extends IOSuite {
     isStanding = true,
     monitorsCount = 2,
     hasPhone = false,
-    officeId = anyOfficeId
+    officeId = officeId1
   )
 
   private lazy val anyDeskId = UUID.fromString("4f99984c-e371-4b77-a184-7003f6281b8d")
