@@ -6,7 +6,6 @@ import enumeratum.Enum
 
 sealed trait ReservationState extends EnumEntry
 
-// TODO: Add backward compatibility tests
 object ReservationState extends Enum[ReservationState]{
 
   case object Pending extends ReservationState

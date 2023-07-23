@@ -11,6 +11,7 @@ import domain.model.desk.Desk
 import domain.model.desk.UpdateDesk
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.desk.DuplicateDeskNameForOffice
+import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import java.util.UUID
@@ -27,47 +28,10 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
   private def beforeTest(name: TestName)(run: PostgresDeskRepository[IO] => IO[Expectations]): Unit =
     test(name) { session =>
       lazy val postgresDeskRepository = new PostgresDeskRepository[IO](session)
-      truncateDeskTable(session) >>
-        truncateOfficeTable(session) >>
+      truncateTables(session) >>
         insertOffices(session) >>
         run(postgresDeskRepository)
     }
-
-  private def truncateDeskTable(session: Resource[IO, Session[IO]]) = {
-    val sql: Command[Void] =
-      sql"""
-        TRUNCATE TABLE desk CASCADE
-      """.command
-    session.use(_.execute(sql))
-  }
-
-  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
-    val sql: Command[Void] =
-      sql"""
-        TRUNCATE TABLE office CASCADE
-      """.command
-    session.use(_.execute(sql))
-  }
-
-  private def insertOffices(session: Resource[IO, Session[IO]]) = {
-    val officeRepository = new PostgresOfficeRepository[IO](session)
-    val office1 = anyOffice(officeId1, "office1")
-    val office2 = anyOffice(officeId2, "office2")
-    List(office1, office2).parTraverse_(officeRepository.create)
-  }
-
-  private def anyOffice(officeId: UUID, name: String) = Office(
-    id = officeId,
-    name = name,
-    notes = List("Test", "Notes"),
-    address = Address(
-      addressLine1 = "Test Street",
-      addressLine2 = "Building 42",
-      postalCode = "12-345",
-      city = "Wroclaw",
-      country = "Poland"
-    )
-  )
 
   beforeTest(
     """
@@ -82,6 +46,25 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       _ <- deskRepository.create(desk)
       readDesk <- deskRepository.read(desk.id)
     } yield expect(readDesk == desk)
+  }
+
+  beforeTest(
+    """
+      |GIVEN a desk with non-existent office ID
+      | WHEN create is called
+      | THEN the call should fail with OfficeNotFound
+      |""".stripMargin
+  ) { deskRepository =>
+    val officeId = UUID.fromString("3a75af1c-dee0-431b-ab41-7e551d77277c")
+    val desk = anyDesk.copy(officeId = officeId)
+
+    for {
+      result <- deskRepository.create(desk).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val officeNotFound = OfficeNotFound(officeId)
+        expect(throwable == officeNotFound)
+    }
   }
 
   beforeTest(
@@ -123,6 +106,24 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       _ <- deskRepository.create(desk)
       _ <- deskRepository.create(deskWithTheSameName)
     } yield success
+  }
+
+  beforeTest(
+    """
+      |GIVEN a non-existent desk ID
+      | WHEN read is called
+      | THEN the call should fail with DeskNotFound
+      |""".stripMargin
+  ) { deskRepository =>
+    val deskId = anyDeskId
+
+    for {
+      result <- deskRepository.read(deskId).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val deskNotFound = DeskNotFound(deskId)
+        expect(throwable == deskNotFound)
+    }
   }
 
   beforeTest(
@@ -286,9 +287,49 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
     } yield success
   }
 
-  private lazy val officeId1: UUID = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+  private def truncateTables(session: Resource[IO, Session[IO]]) =
+    truncateDeskTable(session) >>
+      truncateOfficeTable(session)
 
-  private lazy val officeId2: UUID = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
+  private def truncateDeskTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE desk CASCADE
+      """.command
+    session.use(_.execute(sql))
+  }
+
+  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE office CASCADE
+      """.command
+    session.use(_.execute(sql))
+  }
+
+  private def insertOffices(session: Resource[IO, Session[IO]]) = {
+    val officeRepository = new PostgresOfficeRepository[IO](session)
+    val office1 = anyOffice(officeId1, "office1")
+    val office2 = anyOffice(officeId2, "office2")
+    List(office1, office2).parTraverse_(officeRepository.create)
+  }
+
+  private def anyOffice(officeId: UUID, name: String) = Office(
+    id = officeId,
+    name = name,
+    notes = List("Test", "Notes"),
+    address = Address(
+      addressLine1 = "Test Street",
+      addressLine2 = "Building 42",
+      postalCode = "12-345",
+      city = "Wroclaw",
+      country = "Poland"
+    )
+  )
+
+  private lazy val officeId1 = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+
+  private lazy val officeId2 = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
 
   private lazy val anyDesk = Desk(
     id = anyDeskId,

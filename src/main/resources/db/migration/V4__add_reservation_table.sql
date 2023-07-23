@@ -9,7 +9,6 @@ CREATE TABLE reservation(
   state          varchar,
   notes          varchar,
 
-  -- TODO: Add integration tests for the possible types
   type           varchar,
 
   -- desk

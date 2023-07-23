@@ -1,7 +1,7 @@
 package io.github.avapl
 package adapters.postgres.repository.office
 
-import adapters.postgres.migration.FlywayMigration
+import adapters.postgres.fixture.PostgresFixture
 import cats.effect.IO
 import cats.effect.Resource
 import com.softwaremill.quicklens._
@@ -10,9 +10,7 @@ import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
-import io.github.avapl.adapters.postgres.fixture.PostgresFixture
 import java.util.UUID
-import natchez.Trace.Implicits.noop
 import skunk.Command
 import skunk.Session
 import skunk.Void
@@ -28,14 +26,6 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
       lazy val postgresOfficeRepository = new PostgresOfficeRepository[IO](session)
       truncateOfficeTable(session) >> run(postgresOfficeRepository)
     }
-
-  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
-    val sql: Command[Void] =
-      sql"""
-        TRUNCATE TABLE office CASCADE
-      """.command
-    session.use(_.execute(sql))
-  }
 
   beforeTest(
     """
@@ -71,6 +61,24 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
       case Left(throwable) =>
         val duplicateOfficeName = DuplicateOfficeName(office.name)
         expect(throwable == duplicateOfficeName)
+    }
+  }
+
+  beforeTest(
+    """
+      |GIVEN a non-existent office ID
+      | WHEN read is called
+      | THEN the call should fail with OfficeNotFound
+      |""".stripMargin
+  ) { officeRepository =>
+    val officeId = anyOfficeId
+
+    for {
+      result <- officeRepository.read(officeId).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val officeNotFound = OfficeNotFound(officeId)
+        expect(throwable == officeNotFound)
     }
   }
 
@@ -192,6 +200,14 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
     for {
       _ <- officeRepository.archive(officeId)
     } yield success
+  }
+
+  private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE office CASCADE
+      """.command
+    session.use(_.execute(sql))
   }
 
   private lazy val anyOffice = Office(

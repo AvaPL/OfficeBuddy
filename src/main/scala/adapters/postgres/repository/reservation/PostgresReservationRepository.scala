@@ -17,7 +17,6 @@ import skunk.codec.all._
 import skunk.data.Completion
 import skunk.implicits._
 
-// TODO: Add integration tests
 class PostgresReservationRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
 ) extends ReservationRepository[F] {
