@@ -1,3 +1,5 @@
+import scala.sys.process._
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion := "2.13.11"
 
@@ -17,6 +19,7 @@ val pureconfigVersion = "0.17.4"
 val skunkVersion = "0.6.0"
 val tapirVersion = "1.5.5"
 val weaverCatsVersion = "0.8.3"
+val zitadelVersion = "2.31.1"
 
 lazy val root = (project in file("."))
   .enablePlugins(BuildInfoPlugin)
@@ -69,4 +72,15 @@ lazy val integrationTests = (project in file("it"))
       "com.disneystreaming" %% "weaver-cats" % weaverCatsVersion % Test
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect")
+  )
+
+lazy val generateProto = taskKey[Unit]("Generate Scala sources from *.proto files")
+lazy val zitadelGenerated = (project in file("zitadel-generated"))
+  .settings(
+    generateProto := {
+      val templatePath = (baseDirectory.value / "buf.gen.yaml").getAbsolutePath
+      val outputPath = baseDirectory.value.getAbsolutePath
+      val status = (s"buf generate https://github.com/zitadel/zitadel#format=git,tag=v$zitadelVersion --template $templatePath --output $outputPath" !)
+      if (status != 0) throw new RuntimeException(s"Status code: $status")
+    }
   )

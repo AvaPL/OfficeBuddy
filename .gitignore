@@ -3,6 +3,7 @@
 /project/target/
 /target/
 /it/target/
+/zitadel-generated/target/
 
 /.bsp/
 /.idea/
