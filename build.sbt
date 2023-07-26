@@ -75,7 +75,7 @@ lazy val integrationTests = (project in file("it"))
   )
 
 lazy val generateProto = taskKey[Unit]("Generate Scala sources from *.proto files")
-lazy val zitadelGenerated = (project in file("zitadel-generated"))
+lazy val zitadelProto = (project in file("zitadel-proto"))
   .settings(
     generateProto := {
       val templatePath = (baseDirectory.value / "buf.gen.yaml").getAbsolutePath
