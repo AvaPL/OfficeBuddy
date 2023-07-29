@@ -1,11 +1,11 @@
 version: "3.8"
-# TODO: Use .env for ports and environment
 services:
   postgres:
     restart: always
     image: postgres:14-alpine
     ports:
       - "2345:5432"
+    command: ["postgres", "-c", "log_statement=all"]
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -18,7 +18,6 @@ services:
       POSTGRES_ZITADEL_PASSWORD: ${POSTGRES_ZITADEL_PASSWORD}
     volumes:
       - ./postgres:/docker-entrypoint-initdb.d
-    command: ["postgres", "-c", "log_statement=all"]
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -27,6 +26,8 @@ services:
   zitadel:
     restart: always
     image: ghcr.io/zitadel/zitadel:v2.31.1
+    ports:
+      - '8888:8080'
     command: ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "disabled"]
     environment:
       ZITADEL_EXTERNALPORT: ${ZITADEL_EXTERNALPORT}
@@ -40,9 +41,12 @@ services:
       ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
       ZITADEL_DATABASE_POSTGRES_USER_USERNAME: ${POSTGRES_ZITADEL_USER}
       ZITADEL_EXTERNAL_SECURE: 'false'
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_FIRSTNAME: zitadel
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_LASTNAME: admin
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_ADMIN_PASSWORD}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: ${ZITADEL_ADMIN_PASSWORD_CHANGE_REQUIRED}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_ADMIN_USER}
       ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
     depends_on:
       postgres:
         condition: 'service_healthy'
-    ports:
-      - '8888:8080'
