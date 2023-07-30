@@ -9,6 +9,7 @@ trait ReservationRepository[F[_]] {
 
   def createDeskReservation(deskReservation: DeskReservation): F[DeskReservation]
   def readDeskReservation(reservationId: UUID): F[DeskReservation]
+
   def readReservationState(reservationId: UUID): F[ReservationState]
-  def updateReservationState(reservationId: UUID, newState: ReservationState): F[Unit]
+  def updateReservationState(reservationId: UUID, newState: ReservationState): F[Unit] // TODO: Return the updated reservation?
 }

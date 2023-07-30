@@ -1,5 +1,5 @@
 package io.github.avapl
-package domain.model.user
+package domain.model.account
 
 import java.util.UUID
 
@@ -9,6 +9,8 @@ sealed trait Account {
   def firstName: String
   def lastName: String
   def email: String
+  //
+  def isArchived: Boolean
 }
 
 case class UserAccount(
@@ -17,7 +19,9 @@ case class UserAccount(
   lastName: String,
   email: String,
   //
-  assignedOfficeId: UUID
+  isArchived: Boolean = false,
+  //
+  assignedOfficeId: Option[UUID]
 ) extends Account
 
 case class OfficeManagerAccount(
@@ -26,12 +30,16 @@ case class OfficeManagerAccount(
   lastName: String,
   email: String,
   //
-  managedOfficeIds: List[UUID]
+  isArchived: Boolean = false,
+  //
+  managedOfficeIds: List[UUID],
 ) extends Account
 
 case class SuperAdminAccount(
   id: UUID,
   firstName: String,
   lastName: String,
-  email: String
+  email: String,
+  //
+  isArchived: Boolean = false
 ) extends Account

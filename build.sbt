@@ -3,7 +3,6 @@ ThisBuild / scalaVersion := "2.13.11"
 
 val catsEffectVersion = "3.5.0"
 val chimneyVersion = "0.7.5"
-val circeVersion = "3.8.15"
 val derevoVersion = "0.13.0"
 val enumeratumVersion = "1.7.2"
 val flywayVersion = "9.20.0"
@@ -16,8 +15,8 @@ val postgresqlVersion = "42.6.0"
 val pureconfigVersion = "0.17.4"
 val skunkVersion = "0.6.0"
 val tapirVersion = "1.5.5"
+val sttpClientVersion = "3.8.15"
 val weaverCatsVersion = "0.8.3"
-val zitadelVersion = "2.31.1"
 
 lazy val root = (project in file("."))
   .enablePlugins(BuildInfoPlugin)
@@ -50,9 +49,9 @@ lazy val root = (project in file("."))
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
-      "com.disneystreaming" %% "weaver-cats" % weaverCatsVersion % Test,
+      "com.softwaremill.sttp.client3" %% "circe" % sttpClientVersion % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub-server" % tapirVersion % Test,
-      "com.softwaremill.sttp.client3" %% "circe" % circeVersion % Test
+      "com.disneystreaming" %% "weaver-cats" % weaverCatsVersion % Test
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     buildInfoKeys := Seq[BuildInfoKey](name, version),

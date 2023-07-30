@@ -5,7 +5,7 @@ services:
     image: postgres:14-alpine
     ports:
       - "2345:5432"
-    command: ["postgres", "-c", "log_statement=all"]
+    command: [ "postgres", "-c", "log_statement=all" ]
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -23,12 +23,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  # TODO: Replace Zitadel with Keycloak
   zitadel:
     restart: always
     image: ghcr.io/zitadel/zitadel:v2.31.1
     ports:
       - '8888:8080'
-    command: ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "disabled"]
+    command: [ "start-from-init", "--masterkeyFromEnv", "--tlsMode", "disabled" ]
     environment:
       ZITADEL_EXTERNALPORT: ${ZITADEL_EXTERNALPORT}
       ZITADEL_DATABASE_POSTGRES_HOST: postgres
