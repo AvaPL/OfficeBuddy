@@ -7,6 +7,7 @@ val derevoVersion = "0.13.0"
 val enumeratumVersion = "1.7.2"
 val flywayVersion = "9.20.0"
 val http4sVersion = "0.23.21"
+val keycloakAdminClientVersion = "22.0.1"
 val log4catsVersion = "2.6.0"
 val logbackVersion = "1.4.8"
 val mockitoScalaVersion = "1.17.14"
@@ -35,6 +36,7 @@ lazy val root = (project in file("."))
       "com.beachape" %% "enumeratum-circe" % enumeratumVersion,
       "org.flywaydb" % "flyway-core" % flywayVersion,
       "org.http4s" %% "http4s-ember-server" % http4sVersion,
+      "org.keycloak" % "keycloak-admin-client" % keycloakAdminClientVersion,
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
       "ch.qos.logback" % "logback-classic" % logbackVersion,
       "org.mockito" %% "mockito-scala" % mockitoScalaVersion,
