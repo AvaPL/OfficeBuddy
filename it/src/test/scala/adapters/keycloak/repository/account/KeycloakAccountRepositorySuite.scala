@@ -3,28 +3,30 @@ package adapters.keycloak.repository.account
 
 import cats.effect.IO
 import cats.effect.Resource
+import cats.syntax.all._
 import domain.model.error.account.DuplicateAccountEmail
+import io.github.avapl.adapters.keycloak.fixture.KeycloakFixture
 import org.keycloak.admin.client.Keycloak
+import scala.jdk.CollectionConverters._
+import weaver.Expectations
 import weaver.IOSuite
+import weaver.TestName
 
-object KeycloakAccountRepositorySuite extends IOSuite {
+object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
 
-  override type Res = Keycloak
+  private def beforeTest(name: TestName)(run: KeycloakAccountRepository[IO] => IO[Expectations]): Unit =
+    test(name) { keycloak =>
+      lazy val keycloakAccountRepository = new KeycloakAccountRepository[IO](keycloak, realmName)
+      deleteAllUsers(keycloak) >>
+        run(keycloakAccountRepository)
+    }
 
-  override def sharedResource: Resource[IO, Res] =
-    Resource.make(
-      IO(Keycloak.getInstance("http://localhost:8888", "master", "keycloak", "keycloak", "admin-cli"))
-    )(keycloak => IO(keycloak.close()))
-
-  // TODO: Add beforeEach cleanup
-
-  test(
+  beforeTest(
     """GIVEN a user to create
       | WHEN createUser is called
       | THEN the user is properly created in Keycloak
       |""".stripMargin
-  ) { keycloak =>
-    val keycloakAccountRepository = new KeycloakAccountRepository[IO](keycloak, "office-buddy")
+  ) { keycloakAccountRepository =>
     val user = anyUser
 
     for {
@@ -33,13 +35,12 @@ object KeycloakAccountRepositorySuite extends IOSuite {
     } yield expect(readUser == user)
   }
 
-  test(
+  beforeTest(
     """GIVEN a user that already exists in Keycloak
       | WHEN createUser is called
       | THEN the call should fail with DuplicateAccountEmail
       |""".stripMargin
-  ) { keycloak =>
-    val keycloakAccountRepository = new KeycloakAccountRepository[IO](keycloak, "office-buddy")
+  ) { keycloakAccountRepository =>
     val user = anyUser
     val userWithTheSameEmail = user.copy(firstName = "Other")
 
@@ -52,6 +53,18 @@ object KeycloakAccountRepositorySuite extends IOSuite {
         expect(throwable == duplicateAccountEmail)
     }
   }
+
+  private def deleteAllUsers(keycloak: Keycloak) =
+    for {
+      existingUserIds <- IO(safeGetAllUserIds(keycloak))
+      _ <- existingUserIds.traverse(safeDeleteUser(keycloak))
+    } yield ()
+
+  private def safeGetAllUserIds(keycloak: Keycloak) =
+    keycloak.realm(realmName).users().list().asScala.toList.map(_.getId)
+
+  private def safeDeleteUser(keycloak: Keycloak)(id: String) =
+    IO(keycloak.realm(realmName).users().delete(id))
 
   private lazy val anyUser = KeycloakUser(
     email = "test.user@keycloak.localhost",
