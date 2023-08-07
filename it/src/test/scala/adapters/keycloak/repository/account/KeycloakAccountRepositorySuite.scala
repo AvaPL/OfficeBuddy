@@ -54,6 +54,61 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
     }
   }
 
+  beforeTest(
+    """WHEN findUserByEmail is called with non-existent user email
+      | THEN the call should fail with KeycloakUserNotFound
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val email = anyEmail
+
+    for {
+      result <- keycloakAccountRepository.findUserByEmail(email).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val keycloakUserNotFound = KeycloakUserNotFound(email)
+        expect(throwable == keycloakUserNotFound)
+    }
+  }
+
+  beforeTest(
+    """GIVEN an existing user and new attributes
+      | WHEN updateUserAttributes is called
+      | THEN the user attributes are properly updated in Keycloak
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val attributes = Map(
+      "one" -> List("1"),
+      "two" -> List("2", "22")
+    )
+    val user = anyUser.copy(attributes = attributes)
+    val newAttributes = Map(
+      "two" -> List("22", "222"),
+      "three" -> List("3")
+    )
+
+    for {
+      _ <- keycloakAccountRepository.createUser(user)
+      _ <- keycloakAccountRepository.updateUserAttributes(user.email, newAttributes)
+      readUser <- keycloakAccountRepository.findUserByEmail(user.email)
+    } yield expect(readUser.attributes == newAttributes)
+  }
+
+  beforeTest(
+    """WHEN updateUserAttributes is called with non-existent user email
+      | THEN the call should fail with KeycloakUserNotFound
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val email = anyEmail
+
+    for {
+      result <- keycloakAccountRepository.updateUserAttributes(email, anyAttributes).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val keycloakUserNotFound = KeycloakUserNotFound(email)
+        expect(throwable == keycloakUserNotFound)
+    }
+  }
+
   private def deleteAllUsers(keycloak: Keycloak) =
     for {
       existingUserIds <- IO(safeGetAllUserIds(keycloak))
@@ -67,8 +122,15 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
     IO(keycloak.realm(realmName).users().delete(id))
 
   private lazy val anyUser = KeycloakUser(
-    email = "test.user@keycloak.localhost",
+    email = anyEmail,
     firstName = "Test",
-    lastName = "User"
+    lastName = "User",
+    attributes = anyAttributes
+  )
+
+  private lazy val anyEmail = "test.user@keycloak.localhost"
+
+  private lazy val anyAttributes: Map[String, List[String]] = Map(
+    "test_attribute" -> List("test", "values")
   )
 }

@@ -6,6 +6,7 @@ import cats.syntax.all._
 import domain.model.error.account.DuplicateAccountEmail
 import jakarta.ws.rs.core.Response
 import org.keycloak.admin.client.Keycloak
+import org.keycloak.admin.client.resource.UserResource
 import org.keycloak.representations.idm.UserRepresentation
 import scala.jdk.CollectionConverters._
 import sttp.model.StatusCode
@@ -37,11 +38,18 @@ class KeycloakAccountRepository[F[_]: Sync](
 
   def findUserByEmail(email: String): F[KeycloakUser] =
     safeFindUserByEmail(email)
+      .map(KeycloakUser.fromUserRepresentation)
+
+  private def safeFindUserByEmail(email: String) =
+    Sync[F]
+      .delay {
+        keycloak.realm(realmName).users().search(email).asScala.toList
+      }
       .flatMap(toSingleUser(email))
 
-  private def toSingleUser(email: String)(userRepresentations: List[UserRepresentation]): F[KeycloakUser] =
+  private def toSingleUser(email: String)(userRepresentations: List[UserRepresentation]): F[UserRepresentation] =
     userRepresentations match {
-      case List(userRepresentation) => KeycloakUser.fromUserRepresentation(userRepresentation).pure
+      case List(userRepresentation) => userRepresentation.pure
       case Nil                      => KeycloakUserNotFound(email).raiseError
       case userRepresentations =>
         new RuntimeException(
@@ -49,27 +57,25 @@ class KeycloakAccountRepository[F[_]: Sync](
         ).raiseError
     }
 
-  private def safeFindUserByEmail(email: String) =
+  def updateUserAttributes(email: String, newAttributes: Map[String, List[String]]): F[KeycloakUser] =
+    for {
+      userRepresentation <- safeFindUserByEmail(email)
+      userResource <- safeGetUserResource(userRepresentation)
+      _ = userRepresentation.setAttributes(newAttributes)
+      _ <- safeUpdateUser(userResource, userRepresentation)
+    } yield KeycloakUser.fromUserRepresentation(userRepresentation)
+
+  private def safeGetUserResource(userRepresentation: UserRepresentation) =
     Sync[F].delay {
-      keycloak.realm(realmName).users().search(email).asScala.toList
+      keycloak.realm(realmName).users().get(userRepresentation.getId)
+    }
+
+  private def safeUpdateUser(userResource: UserResource, userRepresentation: UserRepresentation) =
+    Sync[F].delay {
+      userResource.update(userRepresentation)
     }
 
   // TODO: Remove commented out code
-//  override def updateUserAssignedOffice(userId: UUID, officeId: Option[UUID]): F[UserAccount] = ???
-//
-//  override def createOfficeManager(officeManager: OfficeManagerAccount): F[OfficeManagerAccount] = ???
-//
-//  override def readOfficeManager(officeManagerId: UUID): F[OfficeManagerAccount] = ???
-//
-//  override def updateOfficeManagerManagedOffices(
-//    officeManagerId: UUID,
-//    officeIds: List[UUID]
-//  ): F[OfficeManagerAccount] = ???
-//
-//  override def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount] = ???
-//
-//  override def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount] = ???
-//
 //  override def updateAccountRoles(accountId: UUID, roles: List[Role]): F[Account] = ???
 //
 //  override def archiveAccount(accountId: UUID): F[Unit] = ???
