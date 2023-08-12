@@ -1,6 +1,7 @@
 version: "3.8"
 services:
   postgres:
+    container_name: office_buddy_postgres
     restart: always
     image: postgres:14-alpine
     ports:
@@ -24,11 +25,12 @@ services:
       timeout: 5s
       retries: 5
   keycloak:
+    container_name: office_buddy_keycloak
     restart: always
     image: quay.io/keycloak/keycloak:22.0
     ports:
       - '8888:8080'
-    command: [ "start-dev" ]
+    command: [ "start-dev", "--import-realm" ]
     environment:
       KC_DB: postgres
       KC_DB_PASSWORD: ${POSTGRES_KEYCLOAK_PASSWORD}
@@ -36,6 +38,8 @@ services:
       KC_DB_USERNAME: ${POSTGRES_KEYCLOAK_USER}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    volumes:
+      - ./keycloak/office-buddy-realm.json:/opt/keycloak/data/import/office-buddy-realm.json
     depends_on:
       postgres:
         condition: 'service_healthy'
