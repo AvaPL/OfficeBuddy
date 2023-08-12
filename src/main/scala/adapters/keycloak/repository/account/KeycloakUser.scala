@@ -1,18 +1,21 @@
 package io.github.avapl
 package adapters.keycloak.repository.account
 
+import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
+import adapters.keycloak.repository.account.KeycloakAttributeKey.ManagedOfficeIdsKey
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
 import java.util.UUID
 import org.keycloak.representations.idm.UserRepresentation
+import scala.jdk.CollectionConverters._
 
 case class KeycloakUser(
   email: String,
   firstName: String,
   lastName: String,
-  // TODO: Add roles
-  attributes: Map[String, List[String]] = Map.empty
+  roles: List[KeycloakRole] = Nil,
+  attributes: List[KeycloakAttribute] = Nil
 ) {
 
   lazy val toUserRepresentation: UserRepresentation = {
@@ -21,7 +24,7 @@ case class KeycloakUser(
     userRepresentation.setEmail(email)
     userRepresentation.setFirstName(firstName)
     userRepresentation.setLastName(lastName)
-    userRepresentation.setAttributes(attributes)
+    userRepresentation.setAttributes(KeycloakAttribute.toAttributesMap(attributes))
     userRepresentation
   }
 }
@@ -40,7 +43,7 @@ object KeycloakUser {
       email = officeManagerAccount.email,
       firstName = officeManagerAccount.firstName,
       lastName = officeManagerAccount.lastName,
-      attributes = managedOfficeIdsToAttributes(officeManagerAccount.managedOfficeIds)
+      attributes = List(ManagedOfficeIds(officeManagerAccount.managedOfficeIds))
     )
 
   def fromSuperAdminAccount(superAdminAccount: SuperAdminAccount): KeycloakUser =
@@ -50,18 +53,33 @@ object KeycloakUser {
       lastName = superAdminAccount.lastName
     )
 
-  def fromUserRepresentation(userRepresentation: UserRepresentation): KeycloakUser =
+  def fromUserRepresentation(userRepresentation: UserRepresentation): KeycloakUser = {
+    val roles = parseRoles(userRepresentation)
+    val attributes = parseAttributes(userRepresentation)
     KeycloakUser(
       email = userRepresentation.getEmail,
       firstName = userRepresentation.getFirstName,
       lastName = userRepresentation.getLastName,
-      attributes = userRepresentation.getAttributes
+      roles = roles.flatMap(KeycloakRole.withValueOpt),
+      attributes = attributes
     )
+  }
 
-  private val managedOfficeIdsAttributeKey = "managed_office_ids"
+  private def parseRoles(userRepresentation: UserRepresentation) =
+    Option(userRepresentation.getRealmRoles)
+      .map(_.asScala.toList)
+      .getOrElse(Nil)
 
-  def managedOfficeIdsToAttributes(managedOfficeIds: List[UUID]): Map[String, List[String]] =
-    Map(
-      managedOfficeIdsAttributeKey -> managedOfficeIds.map(_.toString)
-    )
+  private def parseAttributes(userRepresentation: UserRepresentation) = {
+    Option(userRepresentation.getAttributes)
+      .map(javaMapListToScala)
+      .getOrElse(Map.empty)
+      .flatMap {
+        case (key, values) => KeycloakAttributeKey.withValueOpt(key).map(_ -> values)
+      }
+      .map {
+        case (ManagedOfficeIdsKey, officeIds) => ManagedOfficeIds(officeIds.map(UUID.fromString))
+      }
+      .toList
+  }
 }

@@ -1,11 +1,15 @@
 package io.github.avapl
 package adapters.keycloak.repository.account
 
+import adapters.keycloak.fixture.KeycloakFixture
+import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
+import adapters.keycloak.repository.account.KeycloakRole.OfficeManager
+import adapters.keycloak.repository.account.KeycloakRole.SuperAdmin
+import adapters.keycloak.repository.account.KeycloakRole.User
 import cats.effect.IO
-import cats.effect.Resource
 import cats.syntax.all._
 import domain.model.error.account.DuplicateAccountEmail
-import io.github.avapl.adapters.keycloak.fixture.KeycloakFixture
+import java.util.UUID
 import org.keycloak.admin.client.Keycloak
 import scala.jdk.CollectionConverters._
 import weaver.Expectations
@@ -76,14 +80,9 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
       | THEN the user attributes are properly updated in Keycloak
       |""".stripMargin
   ) { keycloakAccountRepository =>
-    val attributes = Map(
-      "one" -> List("1"),
-      "two" -> List("2", "22")
-    )
-    val user = anyUser.copy(attributes = attributes)
-    val newAttributes = Map(
-      "two" -> List("22", "222"),
-      "three" -> List("3")
+    val user = anyUser.copy(attributes = Nil)
+    val newAttributes = List(
+      ManagedOfficeIds(List(UUID.fromString("fa9def50-3021-4784-957e-555f10b8f5fd")))
     )
 
     for {
@@ -109,6 +108,41 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
     }
   }
 
+  beforeTest(
+    """GIVEN an existing user and new roles
+      | WHEN updateUserRoles is called
+      | THEN the user roles are properly updated in Keycloak
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val roles = List(User)
+    val user = anyUser.copy(roles = roles)
+    val newRoles = SuperAdmin :: OfficeManager :: roles
+
+    for {
+      _ <- keycloakAccountRepository.createUser(user)
+      _ <- keycloakAccountRepository.updateUserRoles(user.email, newRoles)
+      readUser <- keycloakAccountRepository.findUserByEmail(user.email)
+    } yield forEach(newRoles) { newRole =>
+      expect(readUser.roles.contains(newRole))
+    }
+  }
+
+  beforeTest(
+    """WHEN updateUserRoles is called with non-existent user email
+      | THEN the call should fail with KeycloakUserNotFound
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val email = anyEmail
+
+    for {
+      result <- keycloakAccountRepository.updateUserRoles(email, anyRoles).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val keycloakUserNotFound = KeycloakUserNotFound(email)
+        expect(throwable == keycloakUserNotFound)
+    }
+  }
+
   private def deleteAllUsers(keycloak: Keycloak) =
     for {
       existingUserIds <- IO(safeGetAllUserIds(keycloak))
@@ -125,12 +159,15 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
     email = anyEmail,
     firstName = "Test",
     lastName = "User",
+    roles = anyRoles,
     attributes = anyAttributes
   )
 
   private lazy val anyEmail = "test.user@keycloak.localhost"
 
-  private lazy val anyAttributes: Map[String, List[String]] = Map(
-    "test_attribute" -> List("test", "values")
+  private lazy val anyRoles = List(User)
+
+  private lazy val anyAttributes = List(
+    ManagedOfficeIds(List(UUID.fromString("8d719346-4b99-485b-b4d7-2117f422dae3")))
   )
 }
