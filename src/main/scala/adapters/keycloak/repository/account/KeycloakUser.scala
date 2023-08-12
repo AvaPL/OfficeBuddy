@@ -15,7 +15,8 @@ case class KeycloakUser(
   firstName: String,
   lastName: String,
   roles: List[KeycloakRole] = Nil,
-  attributes: List[KeycloakAttribute] = Nil
+  attributes: List[KeycloakAttribute] = Nil,
+  isEnabled: Boolean = true
 ) {
 
   lazy val toUserRepresentation: UserRepresentation = {
@@ -25,6 +26,7 @@ case class KeycloakUser(
     userRepresentation.setFirstName(firstName)
     userRepresentation.setLastName(lastName)
     userRepresentation.setAttributes(KeycloakAttribute.toAttributesMap(attributes))
+    userRepresentation.setEnabled(isEnabled)
     userRepresentation
   }
 }
@@ -61,7 +63,8 @@ object KeycloakUser {
       firstName = userRepresentation.getFirstName,
       lastName = userRepresentation.getLastName,
       roles = roles.flatMap(KeycloakRole.withValueOpt),
-      attributes = attributes
+      attributes = attributes,
+      isEnabled = userRepresentation.isEnabled
     )
   }
 

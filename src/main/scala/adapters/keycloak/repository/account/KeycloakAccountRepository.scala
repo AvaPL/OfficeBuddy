@@ -135,7 +135,14 @@ class KeycloakAccountRepository[F[_]: Sync](
       userResource.roles().realmLevel().add(newRoleRepresentations.asJava)
     }
 
-  // TODO: Remove commented out code
-//  override def archiveAccount(accountId: UUID): F[Unit] = ???
-
+  def disableUser(email: String): F[Unit] = {
+    for {
+      userRepresentation <- safeFindUserByEmail(email)
+      userResource <- safeGetUserResource(userRepresentation)
+      _ = userRepresentation.setEnabled(false)
+      _ <- safeUpdateUser(userResource, userRepresentation)
+    } yield KeycloakUser.fromUserRepresentation(userRepresentation)
+  }.void.recover {
+    case KeycloakUserNotFound(_) => ()
+  }
 }

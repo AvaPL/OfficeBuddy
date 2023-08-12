@@ -60,7 +60,7 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
 
   beforeTest(
     """WHEN findUserByEmail is called with non-existent user email
-      | THEN the call should fail with KeycloakUserNotFound
+      |THEN the call should fail with KeycloakUserNotFound
       |""".stripMargin
   ) { keycloakAccountRepository =>
     val email = anyEmail
@@ -94,7 +94,7 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
 
   beforeTest(
     """WHEN updateUserAttributes is called with non-existent user email
-      | THEN the call should fail with KeycloakUserNotFound
+      |THEN the call should fail with KeycloakUserNotFound
       |""".stripMargin
   ) { keycloakAccountRepository =>
     val email = anyEmail
@@ -129,7 +129,7 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
 
   beforeTest(
     """WHEN updateUserRoles is called with non-existent user email
-      | THEN the call should fail with KeycloakUserNotFound
+      |THEN the call should fail with KeycloakUserNotFound
       |""".stripMargin
   ) { keycloakAccountRepository =>
     val email = anyEmail
@@ -141,6 +141,33 @@ object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
         val keycloakUserNotFound = KeycloakUserNotFound(email)
         expect(throwable == keycloakUserNotFound)
     }
+  }
+
+  beforeTest(
+    """GIVEN an existing user
+      | WHEN disableUser is called
+      | THEN the user is disabled in Keycloak
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val user = anyUser
+
+    for {
+      _ <- keycloakAccountRepository.createUser(user)
+      _ <- keycloakAccountRepository.disableUser(user.email)
+      readUser <- keycloakAccountRepository.findUserByEmail(user.email)
+    } yield expect(!readUser.isEnabled)
+  }
+
+  beforeTest(
+    """WHEN disableUser is called with non-existent user email
+      |THEN the call should not fail (no-op)
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val email = anyEmail
+
+    for {
+      _ <- keycloakAccountRepository.disableUser(email)
+    } yield success
   }
 
   private def deleteAllUsers(keycloak: Keycloak) =
