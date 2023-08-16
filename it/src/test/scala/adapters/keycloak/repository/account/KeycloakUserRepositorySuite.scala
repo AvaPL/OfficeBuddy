@@ -16,11 +16,11 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object KeycloakAccountRepositorySuite extends IOSuite with KeycloakFixture {
+object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
 
-  private def beforeTest(name: TestName)(run: KeycloakAccountRepository[IO] => IO[Expectations]): Unit =
+  private def beforeTest(name: TestName)(run: KeycloakUserRepository[IO] => IO[Expectations]): Unit =
     test(name) { keycloak =>
-      lazy val keycloakAccountRepository = new KeycloakAccountRepository[IO](keycloak, realmName)
+      lazy val keycloakAccountRepository = new KeycloakUserRepository[IO](keycloak, realmName)
       deleteAllUsers(keycloak) >>
         run(keycloakAccountRepository)
     }

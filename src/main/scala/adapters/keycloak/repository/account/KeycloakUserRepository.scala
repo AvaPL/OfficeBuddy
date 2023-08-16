@@ -14,7 +14,7 @@ import scala.jdk.CollectionConverters._
 import sttp.model.StatusCode
 
 // TODO: Add a composite repository that will combine IAM and DB data
-class KeycloakAccountRepository[F[_]: Sync](
+class KeycloakUserRepository[F[_]: Sync](
   keycloak: Keycloak,
   realmName: String
 ) {
