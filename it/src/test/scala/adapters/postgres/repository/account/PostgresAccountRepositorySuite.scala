@@ -262,6 +262,33 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     }
   }
 
+  beforeTest(
+    """GIVEN an existing account
+      | WHEN archive is called on its ID
+      | THEN the account should be archived
+      |""".stripMargin
+  ) { accountRepository =>
+    val user = anyUserAccount
+
+    for {
+      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.archive(user.id)
+      user <- accountRepository.readUser(user.id)
+    } yield expect(user.isArchived)
+  }
+
+  beforeTest(
+    """WHEN archive is called on nonexistent account ID
+      |THEN the call should not fail (no-op)
+      |""".stripMargin
+  ) { accountRepository =>
+    val accountId = anyAccountId
+
+    for {
+      _ <- accountRepository.archive(accountId)
+    } yield success
+  }
+
   private def truncateTables(session: Resource[IO, Session[IO]]) =
     truncateAccountTable(session) >>
       truncateOfficeTable(session)
@@ -324,4 +351,6 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     email = "test.super.admin@postgres.localhost",
     isArchived = false
   )
+
+  private lazy val anyAccountId = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
 }

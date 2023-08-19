@@ -17,6 +17,6 @@ trait AccountRepository[F[_]] {
   def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount]
   def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount]
 
-  def updateAccountRoles(accountId: UUID, roles: List[Role]): F[Account]
-  def archiveAccount(accountId: UUID): F[Unit]
+  def updateRoles(accountId: UUID, roles: List[Role]): F[Account]
+  def archive(accountId: UUID): F[Unit]
 }

@@ -151,6 +151,22 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
     """.query(PostgresSuperAdminAccount.decoder)
 
   // TODO: Remove commented out code
-//  def updateAccountRoles(accountId: UUID, roles: List[Role]): F[Account]
-//  def archiveAccount(accountId: UUID): F[Unit]
+//  def updateRoles(accountId: UUID, roles: List[Role]): F[Account]
+
+  def archive(accountId: UUID): F[Unit] =
+    session.use { session =>
+      session
+        .prepare(archiveSql)
+        .flatMap { sql =>
+          sql.execute(accountId)
+        }
+        .void
+    }
+
+  private lazy val archiveSql: Command[UUID] =
+    sql"""
+      UPDATE account
+      SET    is_archived = 'yes'
+      WHERE id = $uuid
+    """.command
 }
