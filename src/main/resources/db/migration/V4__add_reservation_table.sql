@@ -2,7 +2,7 @@ CREATE EXTENSION btree_gist; -- adds more options for exclusion operators
 
 CREATE TABLE reservation(
   id             uuid      PRIMARY KEY,
-  user_id        uuid, -- TODO: REFERENCES user_account(id),
+  user_id        uuid      REFERENCES account(id),
   created_at     timestamp,
   reserved_from  timestamp,
   reserved_to    timestamp,

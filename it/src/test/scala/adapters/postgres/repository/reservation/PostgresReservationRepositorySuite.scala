@@ -2,6 +2,8 @@ package io.github.avapl
 package adapters.postgres.repository.reservation
 
 import adapters.postgres.fixture.PostgresFixture
+import adapters.postgres.repository.account.PostgresAccountRepository
+import adapters.postgres.repository.account.PostgresUserAccount
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.IO
@@ -35,6 +37,8 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     test(name) { session =>
       lazy val postgresReservationRepository = new PostgresReservationRepository[IO](session)
       truncateTables(session) >>
+        insertOffices(session) >>
+        insertUsers(session) >>
         insertDesks(session) >>
         run(postgresReservationRepository)
     }
@@ -75,7 +79,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     """GIVEN a desk reservation with non-existent user ID
       | WHEN createDeskReservation is called
       | THEN the call should fail with UserNotFound
-      |""".stripMargin.ignore // TODO: Unignore after user foreign key is added to the table
+      |""".stripMargin
   ) { reservationRepository =>
     val userId = UUID.fromString("fe124fff-e7fa-4ac8-a6c0-a2357aaa2dd9")
     val deskReservation = anyDeskReservation.copy(userId = userId)
@@ -239,6 +243,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
   private def truncateTables(session: Resource[IO, Session[IO]]) =
     truncateReservationTable(session) >>
       truncateDeskTable(session) >>
+      truncateAccountTable(session) >>
       truncateOfficeTable(session)
 
   private def truncateReservationTable(session: Resource[IO, Session[IO]]) = {
@@ -257,6 +262,14 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     session.use(_.execute(sql))
   }
 
+  private def truncateAccountTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE account CASCADE
+      """.command
+    session.use(_.execute(sql))
+  }
+
   private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
     val sql: Command[Void] =
       sql"""
@@ -265,14 +278,10 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     session.use(_.execute(sql))
   }
 
-  private def insertDesks(session: Resource[IO, Session[IO]]) = {
+  private def insertOffices(session: Resource[IO, Session[IO]]) = {
     val officeRepository = new PostgresOfficeRepository[IO](session)
-    val officeId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
-    val office = anyOffice(officeId)
-    val deskRepository = new PostgresDeskRepository[IO](session)
-    val desk1 = anyDesk(deskId1, "desk1", officeId)
-    val desk2 = anyDesk(deskId2, "desk2", officeId)
-    officeRepository.create(office) >> List(desk1, desk2).parTraverse_(deskRepository.create)
+    val office = anyOffice(officeId1)
+    officeRepository.create(office)
   }
 
   private def anyOffice(officeId: UUID) = Office(
@@ -288,6 +297,26 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     )
   )
 
+  private def insertUsers(session: Resource[IO, Session[IO]]) = {
+    val accountRepository = new PostgresAccountRepository[IO](session)
+    val user = anyUser(userId1)
+    accountRepository.createUser(user)
+  }
+
+  private def anyUser(userId: UUID) = PostgresUserAccount(
+    id = userId,
+    email = "test.user@postgres.localhost",
+    isArchived = false,
+    assignedOfficeId = Some(officeId1)
+  )
+
+  private def insertDesks(session: Resource[IO, Session[IO]]) = {
+    val deskRepository = new PostgresDeskRepository[IO](session)
+    val desk1 = anyDesk(deskId1, "desk1", officeId1)
+    val desk2 = anyDesk(deskId2, "desk2", officeId1)
+    List(desk1, desk2).parTraverse_(deskRepository.create)
+  }
+
   private def anyDesk(deskId: UUID, name: String, officeId: UUID) = Desk(
     id = deskId,
     name = name,
@@ -299,13 +328,17 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     officeId = officeId
   )
 
+  private lazy val officeId1 = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+
+  private lazy val userId1 = UUID.fromString("8c229781-4235-4e59-bc20-04abb620cbfa")
+
   private lazy val deskId1 = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")
 
   private lazy val deskId2 = UUID.fromString("75f0c1ff-8cf0-4161-a82a-0cae74078d46")
 
   private lazy val anyDeskReservation = DeskReservation(
     id = anyReservationId,
-    userId = UUID.fromString("0f0cdeb7-c6f0-4f1e-93a5-b3fd34506dc5"),
+    userId = userId1,
     createdAt = LocalDateTime.parse("2023-07-18T20:41:00"),
     reservedFrom = LocalDateTime.parse("2023-07-19T00:00:00"),
     reservedTo = LocalDateTime.parse("2023-07-20T23:59:59"),
