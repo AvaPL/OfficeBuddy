@@ -28,11 +28,13 @@ object PostgresUserAccount {
       uuid *: // id
         varchar *: // email
         bool *: // is_archived
+        varchar *: // type
         uuid.opt // assigned_office_id
     ).contramap { postgresUserAccount =>
       postgresUserAccount.id *:
         postgresUserAccount.email *:
         postgresUserAccount.isArchived *:
+        "User" *:
         postgresUserAccount.assignedOfficeId *:
         EmptyTuple
     }
@@ -42,9 +44,10 @@ object PostgresUserAccount {
       uuid *: // id
         varchar *: // email
         bool *: // is_archived
+        varchar *: // type
         uuid.opt // assigned_office_id
     ).map {
-      case id *: email *: isArchived *: assignedOfficeId *: EmptyTuple =>
+      case id *: email *: isArchived *: _ *: assignedOfficeId *: EmptyTuple =>
         PostgresUserAccount(id, email, isArchived, assignedOfficeId)
     }
 }

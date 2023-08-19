@@ -17,8 +17,8 @@ trait PostgresFixture {
   override def sharedResource: Resource[IO, Res] = {
     val host = "localhost"
     val port = 2345
-    val user = "postgres"
-    val password = "postgres"
+    val user = "office_buddy"
+    val password = "office_buddy"
     val database = "office_buddy"
     val session = Session.pooled(
       host = host,

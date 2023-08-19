@@ -1,14 +1,14 @@
 package io.github.avapl
 package adapters.postgres.repository.account
 
-import domain.model.error.account.DuplicateAccountEmail
-import domain.model.error.account.AccountNotFound
 import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.IO
 import cats.effect.Resource
 import cats.instances.all._
 import cats.syntax.all._
+import domain.model.error.account.AccountNotFound
+import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
@@ -105,7 +105,14 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       | THEN the office should be assigned to the user
       |""".stripMargin
   ) { accountRepository =>
-    IO(failure("implement"))
+    val user = anyUserAccount.copy(assignedOfficeId = None)
+    val newOfficeId = officeId1
+
+    for {
+      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.updateUserAssignedOffice(user.id, Some(newOfficeId))
+      readUser <- accountRepository.readUser(user.id)
+    } yield expect(readUser.assignedOfficeId.contains(newOfficeId))
   }
 
   beforeTest(
@@ -114,7 +121,14 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       | THEN the assigned office should be updated
       |""".stripMargin
   ) { accountRepository =>
-    IO(failure("implement"))
+    val user = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
+    val newOfficeId = officeId2
+
+    for {
+      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.updateUserAssignedOffice(user.id, Some(newOfficeId))
+      readUser <- accountRepository.readUser(user.id)
+    } yield expect(readUser.assignedOfficeId.contains(newOfficeId))
   }
 
   beforeTest(
@@ -123,7 +137,13 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       | THEN the assigned office should be removed
       |""".stripMargin
   ) { accountRepository =>
-    IO(failure("implement"))
+    val user = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
+
+    for {
+      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.updateUserAssignedOffice(user.id, None)
+      readUser <- accountRepository.readUser(user.id)
+    } yield expect(readUser.assignedOfficeId.isEmpty)
   }
 
   beforeTest(
@@ -131,7 +151,15 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       |THEN the call should fail with AccountNotFound
       |""".stripMargin
   ) { accountRepository =>
-    IO(failure("implement"))
+    val userId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
+
+    for {
+      result <- accountRepository.updateUserAssignedOffice(userId, Some(officeId1)).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(userId)
+        expect(throwable == accountNotFound)
+    }
   }
 
   private def truncateTables(session: Resource[IO, Session[IO]]) =
