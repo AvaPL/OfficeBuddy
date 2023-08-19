@@ -3,10 +3,14 @@ package adapters.postgres.repository.account
 
 import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.office.PostgresOfficeRepository
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.Resource
 import cats.instances.all._
 import cats.syntax.all._
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
@@ -258,6 +262,122 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     } yield matches(result) {
       case Left(throwable) =>
         val accountNotFound = AccountNotFound(superAdminId)
+        expect(throwable == accountNotFound)
+    }
+  }
+
+  beforeTest(
+    """GIVEN a user account
+      | WHEN updateRoles is called with OfficeManager role
+      | THEN the user should be promoted to an office manager
+      |""".stripMargin
+  ) { accountRepository =>
+    val user = anyUserAccount
+
+    for {
+      _ <- accountRepository.createUser(user)
+      officeManager <- accountRepository.updateRoles(user.id, NonEmptyList.one(OfficeManager))
+    } yield {
+      val expectedOfficeManager = PostgresOfficeManagerAccount(
+        id = user.id,
+        email = user.email,
+        isArchived = user.isArchived
+      )
+      expect(officeManager == expectedOfficeManager)
+    }
+  }
+
+  beforeTest(
+    """GIVEN an office manager account
+      | WHEN updateRoles is called with User role
+      | THEN the office manager should be demoted to a user
+      |""".stripMargin
+  ) { accountRepository =>
+    val officeManager = anyOfficeManagerAccount
+
+    for {
+      _ <- accountRepository.createOfficeManager(officeManager)
+      user <- accountRepository.updateRoles(officeManager.id, NonEmptyList.one(User))
+    } yield {
+      val expectedUser = PostgresUserAccount(
+        id = officeManager.id,
+        email = officeManager.email,
+        isArchived = officeManager.isArchived,
+        assignedOfficeId = None
+      )
+      expect(user == expectedUser)
+    }
+  }
+
+  beforeTest(
+    """GIVEN a user account
+      | WHEN updateRoles is called with OfficeManager and SuperAdmin roles
+      | THEN the user should be promoted to a super admin
+      |""".stripMargin
+  ) { accountRepository =>
+    val user = anyUserAccount
+
+    for {
+      _ <- accountRepository.createUser(user)
+      superAdmin <- accountRepository.updateRoles(user.id, NonEmptyList.of(OfficeManager, SuperAdmin))
+    } yield {
+      val expectedSuperAdmin = PostgresSuperAdminAccount(
+        id = user.id,
+        email = user.email,
+        isArchived = user.isArchived
+      )
+      expect(superAdmin == expectedSuperAdmin)
+    }
+  }
+
+  beforeTest(
+    """GIVEN a super admin account
+      | WHEN updateRoles is called with User and OfficeManager roles
+      | THEN the super admin should be demoted to an office manager
+      |""".stripMargin
+  ) { accountRepository =>
+    val superAdmin = anyUserAccount
+
+    for {
+      _ <- accountRepository.createUser(superAdmin)
+      officeManager <- accountRepository.updateRoles(superAdmin.id, NonEmptyList.of(User, OfficeManager))
+    } yield {
+      val expectedOfficeManager = PostgresOfficeManagerAccount(
+        id = superAdmin.id,
+        email = superAdmin.email,
+        isArchived = superAdmin.isArchived
+      )
+      expect(officeManager == expectedOfficeManager)
+    }
+  }
+
+  beforeTest(
+    """GIVEN a user account
+      | WHEN updateRoles is called with User role
+      | THEN the call should not fail (no-op)
+      |""".stripMargin
+  ) { accountRepository =>
+    val user = anyUserAccount
+
+    for {
+      _ <- accountRepository.createUser(user)
+      updatedUser <- accountRepository.updateRoles(user.id, NonEmptyList.one(User))
+    } yield expect(updatedUser == user)
+  }
+
+  beforeTest(
+    """GIVEN a non-existent account ID
+      | WHEN updateRoles is called
+      | THEN the call should fail with AccountNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val accountId = anyAccountId
+
+    for {
+      result <- accountRepository.updateRoles(accountId, NonEmptyList.one(User)).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(accountId)
         expect(throwable == accountNotFound)
     }
   }

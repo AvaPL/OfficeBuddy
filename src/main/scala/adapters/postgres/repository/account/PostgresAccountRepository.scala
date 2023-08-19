@@ -1,10 +1,15 @@
 package io.github.avapl
 package adapters.postgres.repository.account
 
+import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.kernel.MonadCancelThrow
 import cats.effect.kernel.Resource
 import cats.syntax.all._
+import domain.model.account.Role
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
@@ -150,8 +155,38 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
              type = 'SuperAdmin'
     """.query(PostgresSuperAdminAccount.decoder)
 
-  // TODO: Remove commented out code
-//  def updateRoles(accountId: UUID, roles: List[Role]): F[Account]
+  def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[PostgresAccount] = {
+    val (_, newType, readAccount) = roles
+      .map {
+        case SuperAdmin    => (0, "SuperAdmin", readSuperAdmin _)
+        case OfficeManager => (1, "OfficeManager", readOfficeManager _)
+        case User          => (2, "User", readUser _)
+      }
+      .sortBy {
+        case (roleOrder, _, _) => roleOrder
+      }
+      .head
+
+    session.use { session =>
+      for {
+        sql <- session.prepare(updateRolesSql)
+        _ <- sql
+          .execute(newType *: accountId *: EmptyTuple)
+          .ensureOr {
+            case Completion.Update(0) => AccountNotFound(accountId)
+            case completion           => new RuntimeException(s"Expected 1 updated account, but got: $completion")
+          }(_ == Completion.Update(1))
+        account <- readAccount(accountId)
+      } yield account
+    }
+  }
+
+  private lazy val updateRolesSql: Command[String *: UUID *: EmptyTuple] =
+    sql"""
+      UPDATE account
+      SET    type = $varchar
+      WHERE id = $uuid
+    """.command
 
   def archive(accountId: UUID): F[Unit] =
     session.use { session =>
