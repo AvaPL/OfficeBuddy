@@ -115,10 +115,42 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
              type = 'OfficeManager'
     """.query(PostgresOfficeManagerAccount.decoder)
 
+  def createSuperAdmin(superAdmin: PostgresSuperAdminAccount): F[PostgresSuperAdminAccount] =
+    session.use { session =>
+      for {
+        sql <- session.prepare(createSuperAdminSql)
+        _ <- sql
+          .execute(superAdmin)
+          .recoverWith {
+            case SqlState.UniqueViolation(e) if e.constraintName.contains("account_email_key") =>
+              DuplicateAccountEmail(superAdmin.email).raiseError
+          }
+      } yield superAdmin
+    }
+
+  private lazy val createSuperAdminSql: Command[PostgresSuperAdminAccount] =
+    sql"""
+      INSERT INTO account
+      VALUES      (${PostgresSuperAdminAccount.encoder})
+    """.command
+
+  def readSuperAdmin(superAdminId: UUID): F[PostgresSuperAdminAccount] =
+    session.use { session =>
+      for {
+        sql <- session.prepare(readSuperAdminSql)
+        user <- OptionT(sql.option(superAdminId)).getOrRaise(AccountNotFound(superAdminId))
+      } yield user
+    }
+
+  private lazy val readSuperAdminSql: Query[UUID, PostgresSuperAdminAccount] =
+    sql"""
+      SELECT *
+      FROM   account
+      WHERE  id = $uuid AND
+             type = 'SuperAdmin'
+    """.query(PostgresSuperAdminAccount.decoder)
+
   // TODO: Remove commented out code
-//  def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount]
-//  def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount]
-//
 //  def updateAccountRoles(accountId: UUID, roles: List[Role]): F[Account]
 //  def archiveAccount(accountId: UUID): F[Unit]
 }

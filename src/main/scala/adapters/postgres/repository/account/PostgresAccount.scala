@@ -98,6 +98,37 @@ case class PostgresSuperAdminAccount(
   isArchived: Boolean
 ) extends PostgresAccount
 
+object PostgresSuperAdminAccount {
+
+  lazy val encoder: Encoder[PostgresSuperAdminAccount] =
+    (
+      uuid *: // id
+        varchar *: // email
+        bool *: // is_archived
+        varchar *: // type
+        uuid.opt // assigned_office_id
+      ).contramap { postgresSuperAdminAccount =>
+      postgresSuperAdminAccount.id *:
+        postgresSuperAdminAccount.email *:
+        postgresSuperAdminAccount.isArchived *:
+        "SuperAdmin" *:
+        Option.empty[UUID] *:
+        EmptyTuple
+    }
+
+  lazy val decoder: Decoder[PostgresSuperAdminAccount] =
+    (
+      uuid *: // id
+        varchar *: // email
+        bool *: // is_archived
+        varchar *: // type
+        uuid.opt // assigned_office_id
+      ).map {
+      case id *: email *: isArchived *: _ *: _ *: EmptyTuple =>
+        PostgresSuperAdminAccount(id, email, isArchived)
+    }
+}
+
 object PostgresAccount {
 
   def fromUserAccount(userAccount: UserAccount): PostgresUserAccount =

@@ -212,6 +212,56 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     }
   }
 
+  beforeTest(
+    """GIVEN a super admin account to create
+      | WHEN createSuperAdmin is called
+      | THEN the super admin should be inserted into Postgres
+      |""".stripMargin
+  ) { accountRepository =>
+    val superAdmin = anySuperAdminAccount
+
+    for {
+      _ <- accountRepository.createSuperAdmin(superAdmin)
+      readSuperAdmin <- accountRepository.readSuperAdmin(superAdmin.id)
+    } yield expect(readSuperAdmin == superAdmin)
+  }
+
+  beforeTest(
+    """GIVEN an existing super admin account and a new super admin account with the same email
+      | WHEN createSuperAdmin is called
+      | THEN the call should fail with DuplicateAccountEmail
+      |""".stripMargin
+  ) { accountRepository =>
+    val superAdmin = anySuperAdminAccount
+    val superAdminWithTheSameEmail = superAdmin.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
+
+    for {
+      _ <- accountRepository.createSuperAdmin(superAdmin)
+      result <- accountRepository.createSuperAdmin(superAdminWithTheSameEmail).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val duplicateAccountEmail = DuplicateAccountEmail(superAdmin.email)
+        expect(throwable == duplicateAccountEmail)
+    }
+  }
+
+  beforeTest(
+    """GIVEN a non-existent super admin ID
+      | WHEN readSuperAdmin is called
+      | THEN the call should fail with AccountNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val superAdminId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
+
+    for {
+      result <- accountRepository.readSuperAdmin(superAdminId).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(superAdminId)
+        expect(throwable == accountNotFound)
+    }
+  }
+
   private def truncateTables(session: Resource[IO, Session[IO]]) =
     truncateAccountTable(session) >>
       truncateOfficeTable(session)
@@ -264,8 +314,14 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   )
 
   private lazy val anyOfficeManagerAccount = PostgresOfficeManagerAccount(
-    id = UUID.fromString("8b7a9bdd-b729-4427-83c3-6eaee3c97171"),
+    id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
     email = "test.office.manager@postgres.localhost",
+    isArchived = false
+  )
+
+  private lazy val anySuperAdminAccount = PostgresSuperAdminAccount(
+    id = UUID.fromString("78aef5b8-e7e7-4880-a4d7-3535eaa00c6a"),
+    email = "test.super.admin@postgres.localhost",
     isArchived = false
   )
 }
