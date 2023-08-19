@@ -162,6 +162,56 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     }
   }
 
+  beforeTest(
+    """GIVEN an office manager account to create
+      | WHEN createOfficeManager is called
+      | THEN the office manager should be inserted into Postgres
+      |""".stripMargin
+  ) { accountRepository =>
+    val officeManager = anyOfficeManagerAccount
+
+    for {
+      _ <- accountRepository.createOfficeManager(officeManager)
+      readOfficeManager <- accountRepository.readOfficeManager(officeManager.id)
+    } yield expect(readOfficeManager == officeManager)
+  }
+
+  beforeTest(
+    """GIVEN an existing office manager account and a new office manager account with the same email
+      | WHEN createOfficeManager is called
+      | THEN the call should fail with DuplicateAccountEmail
+      |""".stripMargin
+  ) { accountRepository =>
+    val officeManager = anyOfficeManagerAccount
+    val officeManagerWithTheSameEmail = officeManager.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
+
+    for {
+      _ <- accountRepository.createOfficeManager(officeManager)
+      result <- accountRepository.createOfficeManager(officeManagerWithTheSameEmail).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val duplicateAccountEmail = DuplicateAccountEmail(officeManager.email)
+        expect(throwable == duplicateAccountEmail)
+    }
+  }
+
+  beforeTest(
+    """GIVEN a non-existent office manager ID
+      | WHEN readOfficeManager is called
+      | THEN the call should fail with AccountNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val officeManagerId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
+
+    for {
+      result <- accountRepository.readOfficeManager(officeManagerId).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(officeManagerId)
+        expect(throwable == accountNotFound)
+    }
+  }
+
   private def truncateTables(session: Resource[IO, Session[IO]]) =
     truncateAccountTable(session) >>
       truncateOfficeTable(session)
@@ -211,5 +261,11 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     email = "test.user@postgres.localhost",
     isArchived = false,
     assignedOfficeId = Some(officeId1)
+  )
+
+  private lazy val anyOfficeManagerAccount = PostgresOfficeManagerAccount(
+    id = UUID.fromString("8b7a9bdd-b729-4427-83c3-6eaee3c97171"),
+    email = "test.office.manager@postgres.localhost",
+    isArchived = false
   )
 }

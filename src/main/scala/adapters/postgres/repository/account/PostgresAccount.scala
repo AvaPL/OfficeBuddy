@@ -1,6 +1,7 @@
 package io.github.avapl
 package adapters.postgres.repository.account
 
+import cats.syntax.all._
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
@@ -58,6 +59,37 @@ case class PostgresOfficeManagerAccount(
   //
   isArchived: Boolean
 ) extends PostgresAccount
+
+object PostgresOfficeManagerAccount {
+
+  lazy val encoder: Encoder[PostgresOfficeManagerAccount] =
+    (
+      uuid *: // id
+        varchar *: // email
+        bool *: // is_archived
+        varchar *: // type
+        uuid.opt // assigned_office_id
+    ).contramap { postgresOfficeManagerAccount =>
+      postgresOfficeManagerAccount.id *:
+        postgresOfficeManagerAccount.email *:
+        postgresOfficeManagerAccount.isArchived *:
+        "OfficeManager" *:
+        Option.empty[UUID] *:
+        EmptyTuple
+    }
+
+  lazy val decoder: Decoder[PostgresOfficeManagerAccount] =
+    (
+      uuid *: // id
+        varchar *: // email
+        bool *: // is_archived
+        varchar *: // type
+        uuid.opt // assigned_office_id
+    ).map {
+      case id *: email *: isArchived *: _ *: _ *: EmptyTuple =>
+        PostgresOfficeManagerAccount(id, email, isArchived)
+    }
+}
 
 case class PostgresSuperAdminAccount(
   id: UUID,

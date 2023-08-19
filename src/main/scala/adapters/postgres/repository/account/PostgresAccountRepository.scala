@@ -51,7 +51,8 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
     sql"""
       SELECT *
       FROM   account
-      WHERE  id = $uuid
+      WHERE  id = $uuid AND
+             type = 'User'
     """.query(PostgresUserAccount.decoder)
 
   def updateUserAssignedOffice(userId: UUID, officeId: Option[UUID]): F[PostgresUserAccount] =
@@ -79,11 +80,42 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
       WHERE id = $uuid
     """.command
 
+  def createOfficeManager(officeManager: PostgresOfficeManagerAccount): F[PostgresOfficeManagerAccount] =
+    session.use { session =>
+      for {
+        sql <- session.prepare(createOfficeManagerSql)
+        _ <- sql
+          .execute(officeManager)
+          .recoverWith {
+            case SqlState.UniqueViolation(e) if e.constraintName.contains("account_email_key") =>
+              DuplicateAccountEmail(officeManager.email).raiseError
+          }
+      } yield officeManager
+    }
+
+  private lazy val createOfficeManagerSql: Command[PostgresOfficeManagerAccount] =
+    sql"""
+      INSERT INTO account
+      VALUES      (${PostgresOfficeManagerAccount.encoder})
+    """.command
+
+  def readOfficeManager(officeManagerId: UUID): F[PostgresOfficeManagerAccount] =
+    session.use { session =>
+      for {
+        sql <- session.prepare(readOfficeManagerSql)
+        user <- OptionT(sql.option(officeManagerId)).getOrRaise(AccountNotFound(officeManagerId))
+      } yield user
+    }
+
+  private lazy val readOfficeManagerSql: Query[UUID, PostgresOfficeManagerAccount] =
+    sql"""
+      SELECT *
+      FROM   account
+      WHERE  id = $uuid AND
+             type = 'OfficeManager'
+    """.query(PostgresOfficeManagerAccount.decoder)
+
   // TODO: Remove commented out code
-//  def createOfficeManager(officeManager: OfficeManagerAccount): F[OfficeManagerAccount]
-//  def readOfficeManager(officeManagerId: UUID): F[OfficeManagerAccount]
-//  def updateOfficeManagerManagedOffices(officeManagerId: UUID, officeIds: List[UUID]): F[OfficeManagerAccount]
-//
 //  def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount]
 //  def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount]
 //
