@@ -11,12 +11,15 @@ import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
+
 import java.util.UUID
 import skunk._
 import skunk.codec.all._
 import skunk.data.Arr
 import skunk.data.Completion
 import skunk.implicits._
+
+import scala.annotation.nowarn
 
 class PostgresOfficeRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
@@ -76,6 +79,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
       } yield office
     }
 
+  @nowarn("msg=match may not be exhaustive")
   private lazy val updateSql: Command[UUID *: UpdateOffice *: EmptyTuple] =
     sql"""
       UPDATE office
@@ -143,6 +147,7 @@ object PostgresOfficeRepository {
         EmptyTuple
     }
 
+  @nowarn("msg=match may not be exhaustive")
   private lazy val officeDecoder: Decoder[Office] =
     (
       uuid *: // id

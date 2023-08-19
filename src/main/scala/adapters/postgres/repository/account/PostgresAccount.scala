@@ -5,11 +5,14 @@ import cats.syntax.all._
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
+
 import java.util.UUID
 import skunk._
 import skunk.Encoder
 import skunk.codec.all._
 import skunk.implicits._
+
+import scala.annotation.nowarn
 
 sealed trait PostgresAccount
 
@@ -40,6 +43,7 @@ object PostgresUserAccount {
         EmptyTuple
     }
 
+  @nowarn("msg=match may not be exhaustive")
   lazy val decoder: Decoder[PostgresUserAccount] =
     (
       uuid *: // id
@@ -78,6 +82,7 @@ object PostgresOfficeManagerAccount {
         EmptyTuple
     }
 
+  @nowarn("msg=match may not be exhaustive")
   lazy val decoder: Decoder[PostgresOfficeManagerAccount] =
     (
       uuid *: // id
@@ -116,6 +121,7 @@ object PostgresSuperAdminAccount {
         EmptyTuple
     }
 
+  @nowarn("msg=match may not be exhaustive")
   lazy val decoder: Decoder[PostgresSuperAdminAccount] =
     (
       uuid *: // id

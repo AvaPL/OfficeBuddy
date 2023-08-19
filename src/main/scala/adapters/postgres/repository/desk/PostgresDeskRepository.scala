@@ -11,12 +11,15 @@ import domain.model.error.desk.DeskNotFound
 import domain.model.error.desk.DuplicateDeskNameForOffice
 import domain.model.error.office.OfficeNotFound
 import domain.repository.desk.DeskRepository
+
 import java.util.UUID
 import skunk._
 import skunk.codec.all._
 import skunk.data.Arr
 import skunk.data.Completion
 import skunk.implicits._
+
+import scala.annotation.nowarn
 
 class PostgresDeskRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
@@ -80,6 +83,7 @@ class PostgresDeskRepository[F[_]: MonadCancelThrow](
       } yield desk
     }
 
+  @nowarn("msg=match may not be exhaustive")
   private lazy val updateSql: Command[UUID *: UpdateDesk *: EmptyTuple] =
     sql"""
       UPDATE desk   
@@ -147,6 +151,7 @@ object PostgresDeskRepository {
         EmptyTuple
     }
 
+  @nowarn("msg=match may not be exhaustive")
   private lazy val deskDecoder: Decoder[Desk] =
     (
       uuid *: // id

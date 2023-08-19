@@ -11,11 +11,14 @@ import domain.model.error.user.UserNotFound
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
 import domain.repository.reservation.ReservationRepository
+
 import java.util.UUID
 import skunk._
 import skunk.codec.all._
 import skunk.data.Completion
 import skunk.implicits._
+
+import scala.annotation.nowarn
 
 class PostgresReservationRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
@@ -90,6 +93,7 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
       WHERE  id = $uuid
     """.query(reservationStateCodec)
 
+  @nowarn("msg=match may not be exhaustive")
   private lazy val updateReservationStateSql: Command[UUID *: ReservationState *: EmptyTuple] =
     sql"""
       UPDATE reservation
@@ -128,6 +132,7 @@ object PostgresReservationRepository {
         EmptyTuple
     }
 
+  @nowarn("msg=match may not be exhaustive")
   private lazy val deskReservationDecoder: Decoder[DeskReservation] =
     (
       uuid *: // id
