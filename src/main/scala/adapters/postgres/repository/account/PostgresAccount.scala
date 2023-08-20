@@ -1,18 +1,14 @@
 package io.github.avapl
 package adapters.postgres.repository.account
 
-import cats.syntax.all._
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
-
 import java.util.UUID
+import scala.annotation.nowarn
 import skunk._
 import skunk.Encoder
 import skunk.codec.all._
-import skunk.implicits._
-
-import scala.annotation.nowarn
 
 sealed trait PostgresAccount
 
@@ -26,6 +22,14 @@ case class PostgresUserAccount(
 ) extends PostgresAccount
 
 object PostgresUserAccount {
+
+  def fromUserAccount(userAccount: UserAccount): PostgresUserAccount =
+    PostgresUserAccount(
+      id = userAccount.id,
+      email = userAccount.email,
+      isArchived = userAccount.isArchived,
+      assignedOfficeId = userAccount.assignedOfficeId
+    )
 
   lazy val encoder: Encoder[PostgresUserAccount] =
     (
@@ -66,6 +70,13 @@ case class PostgresOfficeManagerAccount(
 
 object PostgresOfficeManagerAccount {
 
+  def fromOfficeManagerAccount(officeManager: OfficeManagerAccount): PostgresOfficeManagerAccount =
+    PostgresOfficeManagerAccount(
+      id = officeManager.id,
+      email = officeManager.email,
+      isArchived = officeManager.isArchived
+    )
+
   lazy val encoder: Encoder[PostgresOfficeManagerAccount] =
     (
       uuid *: // id
@@ -105,6 +116,13 @@ case class PostgresSuperAdminAccount(
 
 object PostgresSuperAdminAccount {
 
+  def fromSuperAdminAccount(superAdmin: SuperAdminAccount): PostgresSuperAdminAccount =
+    PostgresSuperAdminAccount(
+      id = superAdmin.id,
+      email = superAdmin.email,
+      isArchived = superAdmin.isArchived
+    )
+
   lazy val encoder: Encoder[PostgresSuperAdminAccount] =
     (
       uuid *: // id
@@ -112,7 +130,7 @@ object PostgresSuperAdminAccount {
         bool *: // is_archived
         varchar *: // type
         uuid.opt // assigned_office_id
-      ).contramap { postgresSuperAdminAccount =>
+    ).contramap { postgresSuperAdminAccount =>
       postgresSuperAdminAccount.id *:
         postgresSuperAdminAccount.email *:
         postgresSuperAdminAccount.isArchived *:
@@ -129,7 +147,7 @@ object PostgresSuperAdminAccount {
         bool *: // is_archived
         varchar *: // type
         uuid.opt // assigned_office_id
-      ).map {
+    ).map {
       case id *: email *: isArchived *: _ *: _ *: EmptyTuple =>
         PostgresSuperAdminAccount(id, email, isArchived)
     }

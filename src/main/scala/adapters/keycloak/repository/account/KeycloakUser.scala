@@ -38,6 +38,7 @@ object KeycloakUser {
       email = userAccount.email,
       firstName = userAccount.firstName,
       lastName = userAccount.lastName
+      // TODO: Assign user role
     )
 
   def fromOfficeManagerAccount(officeManagerAccount: OfficeManagerAccount): KeycloakUser =
@@ -46,6 +47,7 @@ object KeycloakUser {
       firstName = officeManagerAccount.firstName,
       lastName = officeManagerAccount.lastName,
       attributes = List(ManagedOfficeIds(officeManagerAccount.managedOfficeIds))
+      // TODO: Assign office manager role
     )
 
   def fromSuperAdminAccount(superAdminAccount: SuperAdminAccount): KeycloakUser =
@@ -53,6 +55,7 @@ object KeycloakUser {
       email = superAdminAccount.email,
       firstName = superAdminAccount.firstName,
       lastName = superAdminAccount.lastName
+      // TODO: Assign super admin role
     )
 
   def fromUserRepresentation(userRepresentation: UserRepresentation): KeycloakUser = {
