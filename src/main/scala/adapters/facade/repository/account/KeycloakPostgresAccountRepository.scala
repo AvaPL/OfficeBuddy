@@ -2,20 +2,19 @@ package io.github.avapl
 package adapters.facade.repository.account
 
 import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
+import adapters.keycloak.repository.account.KeycloakRole
 import adapters.keycloak.repository.account.KeycloakUser
 import adapters.keycloak.repository.account.KeycloakUserRepository
-import adapters.postgres.repository.account.PostgresAccount
-import adapters.postgres.repository.account.PostgresAccountRepository
-import adapters.postgres.repository.account.PostgresOfficeManagerAccount
-import adapters.postgres.repository.account.PostgresSuperAdminAccount
-import adapters.postgres.repository.account.PostgresUserAccount
-import cats.FlatMap
+import adapters.postgres.repository.account._
+import cats.MonadThrow
+import cats.data.NonEmptyList
 import cats.syntax.all._
 import domain.model.account._
+import domain.model.error.account.AccountNotFound
 import domain.repository.account.AccountRepository
 import java.util.UUID
 
-class KeycloakPostgresAccountRepository[F[_]: FlatMap](
+class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
   keycloakUserRepository: KeycloakUserRepository[F],
   postgresAccountRepository: PostgresAccountRepository[F]
 ) extends AccountRepository[F] {
@@ -108,10 +107,11 @@ class KeycloakPostgresAccountRepository[F[_]: FlatMap](
       isArchived = postgresSuperAdmin.isArchived
     )
 
-  override def updateRoles(accountId: UUID, roles: List[Role]): F[Account] =
+  override def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[Account] =
     for {
       postgresAccount <- postgresAccountRepository.updateRoles(accountId, roles)
-      keycloakUser <- keycloakUserRepository.updateUserRoles(postgresAccount.email)
+      keycloakRoles = roles.map(KeycloakRole.fromDomain).toList
+      keycloakUser <- keycloakUserRepository.updateUserRoles(postgresAccount.email, keycloakRoles)
     } yield toAccount(postgresAccount, keycloakUser)
 
   private def toAccount(account: PostgresAccount, keycloakUser: KeycloakUser) =
@@ -121,9 +121,13 @@ class KeycloakPostgresAccountRepository[F[_]: FlatMap](
       case superAdmin: PostgresSuperAdminAccount       => toSuperAdminAccount(superAdmin, keycloakUser)
     }
 
-  override def archive(accountId: UUID): F[Unit] =
+  override def archive(accountId: UUID): F[Unit] = {
     for {
-      postgresAccount <- postgresAccountRepository.archive(accountId)
-      _ <- keycloakUserRepository.disableUser(postgresAccount.email)
+      _ <- postgresAccountRepository.archive(accountId)
+      email <- postgresAccountRepository.readAccountEmail(accountId)
+      _ <- keycloakUserRepository.disableUser(email)
     } yield ()
+  }.recoverWith {
+    case AccountNotFound(_) => ().pure
+  }
 }

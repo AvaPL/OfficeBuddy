@@ -371,7 +371,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       | THEN the call should fail with AccountNotFound
       |""".stripMargin
   ) { accountRepository =>
-    val accountId = anyAccountId
+    val accountId = UUID.fromString("1ee19aea-51ec-4d51-93d5-f2d3da1c40ac")
 
     for {
       result <- accountRepository.updateRoles(accountId, NonEmptyList.one(User)).attempt
@@ -402,11 +402,42 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       |THEN the call should not fail (no-op)
       |""".stripMargin
   ) { accountRepository =>
-    val accountId = anyAccountId
+    val accountId = UUID.fromString("0b2285ed-c806-44c8-9f9c-e041dec61178")
 
     for {
       _ <- accountRepository.archive(accountId)
     } yield success
+  }
+
+  beforeTest(
+    """GIVEN a existing account ID
+      | WHEN readAccountEmail is called
+      | THEN the account email should be returned
+      |""".stripMargin
+  ) { accountRepository =>
+    val user = anyUserAccount
+
+    for {
+      _ <- accountRepository.createUser(user)
+      email <- accountRepository.readAccountEmail(user.id)
+    } yield expect(email == user.email)
+  }
+
+  beforeTest(
+    """GIVEN a non-existent account ID
+      | WHEN readAccountEmail is called
+      | THEN the call should fail with AccountNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val accountId = UUID.fromString("5058343a-e7cb-469b-8c6f-e4c3de86384d")
+
+    for {
+      result <- accountRepository.readAccountEmail(accountId).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(accountId)
+        expect(throwable == accountNotFound)
+    }
   }
 
   private def truncateTables(session: Resource[IO, Session[IO]]) =

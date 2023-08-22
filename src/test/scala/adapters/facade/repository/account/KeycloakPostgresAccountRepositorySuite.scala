@@ -20,6 +20,7 @@ import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import weaver.SimpleIOSuite
+import domain.model.error.account.AccountNotFound
 
 object KeycloakPostgresAccountRepositorySuite
   extends SimpleIOSuite
@@ -273,6 +274,7 @@ object KeycloakPostgresAccountRepositorySuite
     val keycloakUser = KeycloakUser.fromOfficeManagerAccount(expectedOfficeManager)
 
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
+    whenF(postgresAccountRepository.readAccountEmail(any)) thenReturn postgresOfficeManagerAccount.email
     whenF(postgresAccountRepository.updateRoles(any, any)) thenReturn postgresOfficeManagerAccount
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
     whenF(keycloakUserRepository.updateUserRoles(any, any)) thenReturn keycloakUser
@@ -282,8 +284,8 @@ object KeycloakPostgresAccountRepositorySuite
     for {
       officeManager <- keycloakPostgresAccountRepository.updateRoles(userId, roles)
     } yield {
-      verify(postgresAccountRepository, only).updateRoles(eqTo(userId), eqTo(roles))
-      val keycloakRoles = ???
+      verify(postgresAccountRepository, times(1)).updateRoles(eqTo(userId), eqTo(roles))
+      val keycloakRoles = roles.map(KeycloakRole.fromDomain).toList
       verify(keycloakUserRepository, only).updateUserRoles(
         eqTo(postgresOfficeManagerAccount.email),
         eqTo(keycloakRoles)
@@ -300,10 +302,11 @@ object KeycloakPostgresAccountRepositorySuite
   ) {
     val userId = anyAccountId
 
-    val postgresUserAccount = PostgresUserAccount.fromUserAccount(anyUserAccount.copy(id = userId))
+    val email = anyEmail
 
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
-    whenF(postgresAccountRepository.archive(any)) thenReturn postgresUserAccount
+    whenF(postgresAccountRepository.archive(any)) thenReturn ()
+    whenF(postgresAccountRepository.readAccountEmail(any)) thenReturn email
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
     whenF(keycloakUserRepository.disableUser(any)) thenReturn ()
     val keycloakPostgresAccountRepository =
@@ -312,10 +315,30 @@ object KeycloakPostgresAccountRepositorySuite
     for {
       _ <- keycloakPostgresAccountRepository.archive(userId)
     } yield {
-      verify(postgresAccountRepository, only).archive(userId)
-      verify(keycloakUserRepository, only).disableUser(postgresUserAccount.email)
+      verify(postgresAccountRepository, times(1)).archive(userId)
+      verify(keycloakUserRepository, only).disableUser(email)
       success
     }
+  }
+
+  test(
+    """GIVEN a user ID
+      | WHEN archive is called and Postgres fails with AccountNotFound error
+      | THEN the call should recover and be successful
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+
+    val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
+    whenF(postgresAccountRepository.archive(any)) thenReturn ()
+    whenF(postgresAccountRepository.readAccountEmail(any)) thenFailWith AccountNotFound(userId)
+    val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
+    val keycloakPostgresAccountRepository =
+      new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
+
+    for {
+      _ <- keycloakPostgresAccountRepository.archive(userId)
+    } yield success
   }
 
   private lazy val anyUserAccount = UserAccount(
@@ -342,6 +365,8 @@ object KeycloakPostgresAccountRepositorySuite
   )
 
   private lazy val anyAccountId = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
+
+  private lazy val anyEmail: String = "test.account@localhost"
 
   private lazy val anyOfficeId = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed")
 }

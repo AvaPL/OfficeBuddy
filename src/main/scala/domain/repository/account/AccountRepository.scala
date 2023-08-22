@@ -1,6 +1,7 @@
 package io.github.avapl
 package domain.repository.account
 
+import cats.data.NonEmptyList
 import domain.model.account._
 import java.util.UUID
 
@@ -17,6 +18,6 @@ trait AccountRepository[F[_]] {
   def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount]
   def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount]
 
-  def updateRoles(accountId: UUID, roles: List[Role]): F[Account]
+  def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[Account]
   def archive(accountId: UUID): F[Unit]
 }

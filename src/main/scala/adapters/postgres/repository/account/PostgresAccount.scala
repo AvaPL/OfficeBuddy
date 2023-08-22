@@ -10,7 +10,13 @@ import skunk._
 import skunk.Encoder
 import skunk.codec.all._
 
-sealed trait PostgresAccount
+sealed trait PostgresAccount {
+
+  def id: UUID
+  def email: String
+  //
+  def isArchived: Boolean
+}
 
 case class PostgresUserAccount(
   id: UUID,

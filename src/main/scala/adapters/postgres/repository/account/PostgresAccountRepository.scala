@@ -204,4 +204,19 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
       SET    is_archived = 'yes'
       WHERE id = $uuid
     """.command
+
+  def readAccountEmail(accountId: UUID): F[String] =
+    session.use { session =>
+      for {
+        sql <- session.prepare(readAccountEmailSql)
+        email <- OptionT(sql.option(accountId)).getOrRaise(AccountNotFound(accountId))
+      } yield email
+    }
+
+  private lazy val readAccountEmailSql: Query[UUID, String] =
+    sql"""
+      SELECT email   
+      FROM   account
+      WHERE id = $uuid
+    """.query(varchar)
 }
