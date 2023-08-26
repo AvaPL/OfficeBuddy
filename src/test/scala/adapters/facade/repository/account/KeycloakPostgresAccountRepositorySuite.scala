@@ -346,7 +346,7 @@ object KeycloakPostgresAccountRepositorySuite
     firstName = "Test",
     lastName = "User",
     email = "test.user@localhost",
-    assignedOfficeId = Some(UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"))
+    assignedOfficeId = Some(anyOfficeId)
   )
 
   private lazy val anyOfficeManagerAccount = OfficeManagerAccount(
