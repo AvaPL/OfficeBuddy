@@ -6,6 +6,7 @@ import pureconfig.generic.semiauto._
 
 case class AppConfig(
   postgres: PostgresConfig,
+  keycloak: KeycloakConfig,
   http: HttpConfig
 )
 

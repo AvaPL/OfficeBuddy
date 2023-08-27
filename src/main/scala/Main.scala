@@ -15,13 +15,18 @@ import cats.effect.std.Console
 import cats.implicits._
 import config.AppConfig
 import config.HttpConfig
+import config.KeycloakConfig
 import config.PostgresConfig
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
+import io.github.avapl.adapters.facade.repository.account.KeycloakPostgresAccountRepository
+import io.github.avapl.adapters.http.account.AccountEndpoints
+import io.github.avapl.domain.service.account.AccountService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import org.keycloak.admin.client.Keycloak
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import pureconfig.ConfigSource
@@ -48,7 +53,8 @@ object Main extends IOApp.Simple {
       config <- loadConfig()
       _ <- runDatabaseMigrations(config.postgres)
       session = createPostgresSessionPool(config.postgres)
-      endpoints <- session.use(createEndpoints(_))
+      keycloak = createKeycloakClient(config.keycloak)
+      endpoints <- session.use(createEndpoints(_, keycloak, config.keycloak.appRealmName))
       _ <- runHttpServer(config.http, endpoints)
     } yield ()
 
@@ -74,21 +80,37 @@ object Main extends IOApp.Simple {
       max = config.maxConcurrentSessions
     )
 
-  private def createEndpoints[F[_]: Async](session: Resource[F, Session[F]]) =
+  private def createKeycloakClient(config: KeycloakConfig) =
+    Keycloak.getInstance(
+      config.serverUrl,
+      config.masterRealmName,
+      config.adminUser,
+      config.adminPassword,
+      config.adminClientId
+    )
+
+  private def createEndpoints[F[_]: Async](
+    session: Resource[F, Session[F]],
+    keycloak: Keycloak,
+    appRealmName: String
+  ) =
     Applicative[F].pure {
       val officeRepository = new PostgresOfficeRepository[F](session)
       val deskRepository = new PostgresDeskRepository[F](session)
       val reservationRepository = new PostgresReservationRepository[F](session)
+      val accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session)
 
       val officeService = new OfficeService[F](officeRepository)
       val deskService = new DeskService[F](deskRepository)
       val reservationService = new ReservationService[F](reservationRepository)
+      val accountService = new AccountService[F](accountRepository)
 
       val officeEndpoints = new OfficeEndpoints[F](officeService).endpoints
       val deskEndpoints = new DeskEndpoints[F](deskService).endpoints
       val reservationEndpoints = new ReservationEndpoints[F](reservationService).endpoints
+      val accountEndpoints = new AccountEndpoints[F](accountService).endpoints
 
-      officeEndpoints <+> deskEndpoints <+> reservationEndpoints
+      officeEndpoints <+> deskEndpoints <+> reservationEndpoints <+> accountEndpoints
     }
 
   private def runHttpServer[F[_]: Async](

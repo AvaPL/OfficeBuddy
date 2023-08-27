@@ -8,11 +8,16 @@ import adapters.keycloak.repository.account.KeycloakUserRepository
 import adapters.postgres.repository.account._
 import cats.MonadThrow
 import cats.data.NonEmptyList
+import cats.effect.Resource
+import cats.effect.Sync
+import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import domain.model.account._
 import domain.model.error.account.AccountNotFound
 import domain.repository.account.AccountRepository
 import java.util.UUID
+import org.keycloak.admin.client.Keycloak
+import skunk.Session
 
 class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
   keycloakUserRepository: KeycloakUserRepository[F],
@@ -129,5 +134,18 @@ class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
     } yield ()
   }.recoverWith {
     case AccountNotFound(_) => ().pure
+  }
+}
+
+object KeycloakPostgresAccountRepository {
+
+  def apply[F[_]: Sync](
+    keycloak: Keycloak,
+    realmName: String,
+    session: Resource[F, Session[F]]
+  ): KeycloakPostgresAccountRepository[F] = {
+    val keycloakUserRepository = new KeycloakUserRepository[F](keycloak, realmName)
+    val postgresAccountRepository = new PostgresAccountRepository[F](session)
+    new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
   }
 }
