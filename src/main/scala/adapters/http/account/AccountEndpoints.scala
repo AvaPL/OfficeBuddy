@@ -6,16 +6,12 @@ import adapters.http.BaseEndpoint
 import cats.ApplicativeThrow
 import cats.data.NonEmptyList
 import cats.syntax.all._
+import domain.model.account.Role
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
-import io.github.avapl.domain.model.account.OfficeManagerAccount
-import io.github.avapl.domain.model.account.Role
-import io.github.avapl.domain.model.account.SuperAdminAccount
-import io.github.avapl.domain.model.account.UserAccount
 import java.util.UUID
-import scala.annotation.tailrec
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -181,6 +177,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
           .description("Office manager created")
           .example(apiOfficeManagerAccountExample)
       )
+      // TODO: Validate office manager managed office IDs
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.Conflict) and jsonBody[ApiError.Conflict]
