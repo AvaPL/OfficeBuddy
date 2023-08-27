@@ -314,6 +314,86 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     } yield expect(response.code == StatusCode.NotFound)
   }
 
+  test(
+    """GIVEN update roles endpoint
+      | WHEN the roles are successfully updated
+      | THEN 204 NoContent is returned
+      |""".stripMargin
+  ) {
+    val accountId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateRoles(any, any)) thenReturn anyUserAccount
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .put(uri"http://test.com/account/$accountId/roles")
+        .body(anyApiAccountRoles)
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NoContent)
+  }
+
+  test(
+    """GIVEN update roles endpoint
+      | WHEN an empty list of roles is supplied
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateRoles(any, any)) thenReturn anyUserAccount
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .put(uri"http://test.com/account/$accountId/roles")
+        .body(List.empty[ApiRole])
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN update roles endpoint
+      | WHEN the account is not found (AccountNotFound error)
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val accountId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateRoles(any, any)) thenFailWith AccountNotFound(accountId)
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .put(uri"http://test.com/account/$accountId/roles")
+        .body(anyApiAccountRoles)
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
+    """GIVEN archive account endpoint
+      | WHEN an existing account is archived
+      | THEN 204 NoContent is returned
+      |""".stripMargin
+  ) {
+    val deskService = whenF(mock[AccountService[IO]].archive(any)) thenReturn()
+
+    val response = sendRequest(deskService) {
+      basicRequest.delete(uri"http://test.com/account/$anyAccountId")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NoContent)
+  }
+
   private def sendRequest(accountService: AccountService[IO])(request: Request[Either[String, String], Any]) = {
     val accountEndpoints = new AccountEndpoints[IO](accountService)
     val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
@@ -379,4 +459,8 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
   private lazy val anyEmail = "john.doe@example.com"
 
   private lazy val anyOfficeId: UUID = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed")
+
+  private lazy val anyApiAccountRoles = List[ApiRole](
+    ApiRole.OfficeManager
+  )
 }
