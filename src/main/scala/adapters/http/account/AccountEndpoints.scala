@@ -4,12 +4,18 @@ package adapters.http.account
 import adapters.http.ApiError
 import adapters.http.BaseEndpoint
 import cats.ApplicativeThrow
+import cats.data.NonEmptyList
 import cats.syntax.all._
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
+import io.github.avapl.domain.model.account.OfficeManagerAccount
+import io.github.avapl.domain.model.account.Role
+import io.github.avapl.domain.model.account.SuperAdminAccount
+import io.github.avapl.domain.model.account.UserAccount
 import java.util.UUID
+import scala.annotation.tailrec
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -31,7 +37,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       updateOfficeManagerManagedOfficesEndpoint ::
       createSuperAdminEndpoint ::
       readSuperAdminEndpoint ::
-//      updateRolesEndpoint :: // TODO: Include role update endpoint
+      updateRolesEndpoint ::
       archiveAccountEndpoint ::
       Nil
 
@@ -307,7 +313,49 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
         case AccountNotFound(accountId) => ApiError.NotFound(s"Super admin [id: $accountId] was not found").asLeft
       }
 
-  private lazy val updateRolesEndpoint = ???
+  private lazy val updateRolesEndpoint =
+    baseEndpoint.put
+      .summary("Update account roles")
+      .description(
+        "Updates account roles. The account can be promoted or demoted depending on the roles provided."
+      )
+      .in(path[UUID]("accountId") / "roles")
+      .in(
+        jsonBody[List[ApiRole]]
+          .description("Non-empty list of roles")
+          .example(apiAccountRolesExample)
+      )
+      .out(
+        statusCode(StatusCode.NoContent)
+          .description("Roles updated")
+      )
+      .errorOutVariantPrepend(
+        oneOfVariant(
+          statusCode(StatusCode.BadRequest) and jsonBody[ApiError.BadRequest]
+            .description("Roles list cannot be empty")
+        )
+      )
+      .errorOutVariantPrepend(
+        oneOfVariant(
+          statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
+            .description("Account with the given ID was not found")
+        )
+      )
+      .serverLogic((updateRoles _).tupled)
+
+  private def updateRoles(accountId: UUID, apiRoles: List[ApiRole]): F[Either[ApiError, Unit]] =
+    apiRoles.map(_.toDomain) match {
+      case head :: tail => updateRolesNel(accountId, NonEmptyList.of(head, tail: _*))
+      case Nil          => ApiError.BadRequest("Roles list cannot be empty").asLeft.pure[F].widen
+    }
+
+  private def updateRolesNel(accountId: UUID, roles: NonEmptyList[Role]) =
+    accountService
+      .updateRoles(accountId, roles)
+      .as(().asRight[ApiError])
+      .recover {
+        case AccountNotFound(accountId) => ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
+      }
 
   private lazy val archiveAccountEndpoint =
     baseEndpoint.delete
@@ -382,5 +430,9 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
     firstName = "John",
     lastName = "Doe",
     email = "john.doe@example.com"
+  )
+
+  private lazy val apiAccountRolesExample = List(
+    ApiRole.OfficeManager
   )
 }

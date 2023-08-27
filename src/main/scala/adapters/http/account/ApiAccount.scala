@@ -2,10 +2,8 @@ package io.github.avapl
 package adapters.http.account
 
 import derevo.derive
-import domain.model.account.{CreateOfficeManagerAccount, CreateSuperAdminAccount, CreateUserAccount, OfficeManagerAccount, SuperAdminAccount, UserAccount}
-
+import domain.model.account._
 import io.scalaland.chimney.dsl._
-
 import java.util.UUID
 import sttp.tapir.Schema.annotations.encodedName
 import util.derevo.circe.circeDecoder
@@ -112,7 +110,7 @@ object ApiSuperAdminAccount {
 case class ApiCreateSuperAdminAccount(
   firstName: String,
   lastName: String,
-  email: String,
+  email: String
 ) {
 
   lazy val toDomain: CreateSuperAdminAccount =
