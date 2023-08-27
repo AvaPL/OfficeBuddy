@@ -57,7 +57,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create user endpoint
-      | WHEN creating the user fail with OfficeNotFound error
+      | WHEN creating the user fails with OfficeNotFound error
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
@@ -76,7 +76,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create user endpoint
-      | WHEN creating the user fail with DuplicateAccountEmail error
+      | WHEN creating the user fails with DuplicateAccountEmail error
       | THEN 409 Conflict is returned
       |""".stripMargin
   ) {
@@ -134,6 +134,110 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
   }
 
   test(
+    """GIVEN assign office to user endpoint
+      | WHEN the office is successfully assigned
+      | THEN 200 OK and the updated user is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val officeId = anyOfficeId
+    val user = anyUserAccount.copy(id = userId, assignedOfficeId = Some(officeId))
+    val accountService =
+      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenReturn user
+
+    val response = sendRequest(accountService) {
+      basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$officeId")
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
+    )
+  }
+
+  test(
+    """GIVEN assign office to user endpoint
+      | WHEN assigning the office fails with OfficeNotFound error
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenFailWith OfficeNotFound(officeId)
+
+    val response = sendRequest(accountService) {
+      basicRequest.put(uri"http://test.com/account/user/$anyAccountId/assigned-office-id/$officeId")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN assign office to user endpoint
+      | WHEN assigning the office fails with AccountNotFound error
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
+
+    val response = sendRequest(accountService) {
+      basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$anyOfficeId")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
+    """GIVEN unassign user office endpoint
+      | WHEN the office is successfully unassigned
+      | THEN 200 OK and the updated user is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val user = anyUserAccount.copy(id = userId, assignedOfficeId = None)
+    val accountService =
+      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenReturn user
+
+    val response = sendRequest(accountService) {
+      basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
+    )
+  }
+
+  test(
+    """GIVEN unassign user office endpoint
+      | WHEN unassigning the office fails with AccountNotFound error
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
+
+    val response = sendRequest(accountService) {
+      basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
     """GIVEN create office manager endpoint
       | WHEN a office manager is POSTed and created
       | THEN 201 Created and the created office manager is returned
@@ -165,7 +269,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create office manager endpoint
-      | WHEN creating the office manager fail with DuplicateAccountEmail error
+      | WHEN creating the office manager fails with DuplicateAccountEmail error
       | THEN 409 Conflict is returned
       |""".stripMargin
   ) {
@@ -225,6 +329,53 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
   }
 
   test(
+    """GIVEN update office manager managed offices endpoint
+      | WHEN the offices are successfully assigned
+      | THEN 200 OK and the updated office manager is returned
+      |""".stripMargin
+  ) {
+    val officeManagerId = anyAccountId
+    val managedOfficeIds = List(anyOfficeId)
+    val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId, managedOfficeIds = managedOfficeIds)
+    val accountService =
+      whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenReturn officeManager
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .put(uri"http://test.com/account/office-manager/$officeManagerId/managed-office-ids")
+        .body(managedOfficeIds)
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiOfficeManagerAccount.fromDomain(officeManager).asJson
+    )
+  }
+
+  test(
+    """GIVEN update office manager managed offices endpoint
+      | WHEN assigning the offices fails with AccountNotFound error
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val officeManagerId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenFailWith AccountNotFound(officeManagerId)
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .put(uri"http://test.com/account/office-manager/$officeManagerId/managed-office-ids")
+        .body(List(anyOfficeId))
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
     """GIVEN create super admin endpoint
       | WHEN a super admin is POSTed and created
       | THEN 201 Created and the created super admin is returned
@@ -255,7 +406,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create super admin endpoint
-      | WHEN creating the super admin fail with DuplicateAccountEmail error
+      | WHEN creating the super admin fails with DuplicateAccountEmail error
       | THEN 409 Conflict is returned
       |""".stripMargin
   ) {
@@ -383,7 +534,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val deskService = whenF(mock[AccountService[IO]].archive(any)) thenReturn()
+    val deskService = whenF(mock[AccountService[IO]].archive(any)) thenReturn ()
 
     val response = sendRequest(deskService) {
       basicRequest.delete(uri"http://test.com/account/$anyAccountId")

@@ -105,7 +105,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
   private lazy val assignOfficeToUserEndpoint =
     baseEndpoint.put
       .summary("Assign office to a user")
-      .in("user" / path[UUID]("userId") / "assignedOfficeId" / path[UUID]("assignedOfficeId"))
+      .in("user" / path[UUID]("userId") / "assigned-office-id" / path[UUID]("assignedOfficeId"))
       .out(
         jsonBody[ApiUserAccount]
           .description("Updated user")
@@ -140,7 +140,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
   private lazy val unassignUserOfficeEndpoint =
     baseEndpoint.delete
       .summary("Unassign user office")
-      .in("user" / path[UUID]("userId") / "assignedOfficeId")
+      .in("user" / path[UUID]("userId") / "assigned-office-id")
       .out(
         jsonBody[ApiUserAccount]
           .description("Updated user")
@@ -225,7 +225,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
   private lazy val updateOfficeManagerManagedOfficesEndpoint =
     baseEndpoint.put
       .summary("Assign managed offices to an office manager")
-      .in("office-manager" / path[UUID]("officeManagerId") / "managedOfficeIds")
+      .in("office-manager" / path[UUID]("officeManagerId") / "managed-office-ids")
       .in(
         jsonBody[List[UUID]]
           .description("Managed office IDs")
@@ -236,6 +236,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
           .description("Updated office manager")
           .example(apiOfficeManagerAccountExample)
       )
+      // TODO: Validate office manager managed office IDs
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
