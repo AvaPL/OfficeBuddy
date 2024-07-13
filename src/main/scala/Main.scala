@@ -121,24 +121,28 @@ object Main extends IOApp.Simple {
       .default[F]
       .withHost(config.host)
       .withPort(config.port)
-      .withHttpApp(router(config.internalApiBasePath, endpoints))
+      .withHttpApp(router(config.swaggerUIPath, config.internalApiBasePath, endpoints))
       .build
       .use[Unit](_ => Spawn[F].never)
 
   private def router[F[_]: Async](
+    swaggerUIPath: NonEmptyList[String],
     internalApiBasePath: NonEmptyList[String],
     endpoints: List[ServerEndpoint[Any, F]]
   ) =
     Router(
-      "/" -> docsRoutes(internalApiBasePath, endpoints),
+      "/" -> docsRoutes(swaggerUIPath, internalApiBasePath, endpoints),
       internalApiBasePath.mkString_("/", "/", "") -> internalApiRoutes(endpoints)
     ).orNotFound
 
   private def docsRoutes[F[_]: Async](
+    swaggerUIPath: NonEmptyList[String],
     internalApiBasePath: NonEmptyList[String],
     endpoints: List[ServerEndpoint[Any, F]]
   ) = {
-    val options = SwaggerUIOptions.default.contextPath(internalApiBasePath.toList)
+    val options = SwaggerUIOptions.default
+      .pathPrefix(swaggerUIPath.toList)
+      .contextPath(internalApiBasePath.toList)
     val swaggerInterpreter = SwaggerInterpreter(swaggerUIOptions = options)
       .fromServerEndpoints(endpoints, BuildInfo.name, BuildInfo.version)
     Http4sServerInterpreter().toRoutes(swaggerInterpreter)

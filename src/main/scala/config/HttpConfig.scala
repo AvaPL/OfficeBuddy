@@ -12,6 +12,7 @@ import pureconfig.module.ip4s._
 case class HttpConfig(
   host: Host,
   port: Port,
+  swaggerUIPath: NonEmptyList[String],
   internalApiBasePath: NonEmptyList[String]
 )
 
