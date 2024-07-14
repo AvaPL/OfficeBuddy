@@ -1,25 +1,25 @@
 package io.github.avapl
 package adapters.http.desk
 
-import adapters.http.{ApiError, BaseEndpoint}
-import domain.model.error.desk.{DeskNotFound, DuplicateDeskNameForOffice}
-import domain.model.error.office.OfficeNotFound
-import domain.service.desk.DeskService
-
+import adapters.http.ApiError
+import adapters.http.PublicApiEndpoint
 import cats.ApplicativeThrow
 import cats.syntax.all._
+import domain.model.error.desk.DeskNotFound
+import domain.model.error.desk.DuplicateDeskNameForOffice
+import domain.model.error.office.OfficeNotFound
+import domain.service.desk.DeskService
+import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-import java.util.UUID
-
 class DeskEndpoints[F[_]: ApplicativeThrow](
   deskService: DeskService[F]
-) extends BaseEndpoint {
+) extends PublicApiEndpoint {
 
-  override protected val baseEndpointName: String = "desk"
+  override protected val apiEndpointName: String = "desk"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
     createDeskEndpoint ::
@@ -29,7 +29,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       Nil
 
   private lazy val createDeskEndpoint =
-    baseEndpoint.post
+    publicEndpoint.post
       .summary("Create a desk")
       .in(
         jsonBody[ApiCreateDesk]
@@ -67,7 +67,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readDeskEndpoint =
-    baseEndpoint.get
+    publicEndpoint.get
       .summary("Find a desk by ID")
       .in(path[UUID]("deskId"))
       .out(
@@ -93,7 +93,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val updateDeskEndpoint =
-    baseEndpoint.patch
+    publicEndpoint.patch
       .summary("Update a desk")
       .in(
         path[UUID]("deskId") and jsonBody[ApiUpdateDesk]
@@ -139,7 +139,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val archiveDeskEndpoint =
-    baseEndpoint.delete
+    publicEndpoint.delete
       .summary("Archive a desk")
       .description(
         "Archives a desk. The desk is NOT deleted. The operation is idempotent ie. if the desk doesn't exist, the operation doesn't fail."

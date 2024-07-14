@@ -15,6 +15,10 @@ object ApiError {
   @derive(circeEncoder, circeDecoder, tapirSchema)
   case class BadRequest(message: String) extends ApiError
 
+  case object Unauthorized extends ApiError {
+    val message: String = "Unauthorized"
+  }
+
   @derive(circeEncoder, circeDecoder, tapirSchema)
   case class NotFound(message: String) extends ApiError
 

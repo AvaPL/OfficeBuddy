@@ -172,14 +172,14 @@ object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
 
   private def deleteAllUsers(keycloak: Keycloak) =
     for {
-      existingUserIds <- IO(safeGetAllUserIds(keycloak))
-      _ <- existingUserIds.traverse(safeDeleteUser(keycloak))
+      existingUserIds <- getAllUserIds(keycloak)
+      _ <- existingUserIds.traverse(deleteUser(keycloak))
     } yield ()
 
-  private def safeGetAllUserIds(keycloak: Keycloak) =
-    keycloak.realm(realmName).users().list().asScala.toList.map(_.getId)
+  private def getAllUserIds(keycloak: Keycloak) =
+    IO(keycloak.realm(realmName).users().list().asScala.toList.map(_.getId))
 
-  private def safeDeleteUser(keycloak: Keycloak)(id: String) =
+  private def deleteUser(keycloak: Keycloak)(id: String) =
     IO(keycloak.realm(realmName).users().delete(id))
 
   private lazy val anyUser = KeycloakUser(

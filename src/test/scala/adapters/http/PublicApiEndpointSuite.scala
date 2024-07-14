@@ -10,10 +10,10 @@ import sttp.tapir.integ.cats.effect.CatsMonadError
 import sttp.tapir.server.stub.TapirStubInterpreter
 import weaver.SimpleIOSuite
 
-object BaseEndpointSuite extends SimpleIOSuite {
+object PublicApiEndpointSuite extends SimpleIOSuite {
 
   test(
-    """GIVEN base endpoint
+    """GIVEN public endpoint
       | WHEN the output is a success
       | THEN a correct status code and body is returned
       |""".stripMargin
@@ -27,7 +27,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
   }
 
   test(
-    """GIVEN base endpoint
+    """GIVEN public endpoint
       | WHEN the output is a BadRequest
       | THEN 400 status code and body with an error message is returned
       |""".stripMargin
@@ -43,7 +43,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
   }
 
   test(
-    """GIVEN base endpoint
+    """GIVEN public endpoint
       | WHEN the output is an InternalServerError
       | THEN 500 status code and body with an error message is returned
       |""".stripMargin
@@ -59,7 +59,7 @@ object BaseEndpointSuite extends SimpleIOSuite {
   }
 
   test(
-    """GIVEN base endpoint
+    """GIVEN public endpoint
       | WHEN the server logic fails with an exception
       | THEN 500 status code and body with a generic error message is returned
       |""".stripMargin
@@ -76,9 +76,9 @@ object BaseEndpointSuite extends SimpleIOSuite {
 
   private def sendRequest(result: IO[Either[ApiError, Unit]]) = {
     val name = "test"
-    val endpoint = new BaseEndpoint {
-      val baseEndpointName: String = name
-    }.baseEndpoint.get.serverLogic(_ => result)
+    val endpoint = new PublicApiEndpoint {
+      val apiEndpointName: String = name
+    }.publicEndpoint.get.serverLogic(_ => result)
     val request = basicRequest.get(uri"http://test.com/$name")
     val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
       .whenServerEndpointRunLogic(endpoint)

@@ -2,9 +2,10 @@ package io.github.avapl
 package adapters.http.account
 
 import adapters.http.ApiError
-import adapters.http.BaseEndpoint
-import cats.ApplicativeThrow
+import adapters.http.PublicApiEndpoint
+import cats.MonadThrow
 import cats.data.NonEmptyList
+import cats.effect.kernel.Clock
 import cats.syntax.all._
 import domain.model.account.Role
 import domain.model.error.account.AccountNotFound
@@ -17,11 +18,11 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-class AccountEndpoints[F[_]: ApplicativeThrow](
+class AccountEndpoints[F[_]: MonadThrow: Clock](
   accountService: AccountService[F]
-) extends BaseEndpoint {
+) extends PublicApiEndpoint {
 
-  override protected def baseEndpointName: String = "account"
+  override protected def apiEndpointName: String = "account"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
     createUserEndpoint ::
@@ -38,7 +39,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       Nil
 
   private lazy val createUserEndpoint =
-    baseEndpoint.post
+    publicEndpoint.post
       .summary("Create a user")
       .in("user")
       .in(
@@ -77,7 +78,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readUserEndpoint =
-    baseEndpoint.get
+    publicEndpoint.get
       .summary("Find a user by ID")
       .in("user" / path[UUID]("userId"))
       .out(
@@ -103,7 +104,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val assignOfficeToUserEndpoint =
-    baseEndpoint.put
+    publicEndpoint.put
       .summary("Assign office to a user")
       .in("user" / path[UUID]("userId") / "assigned-office-id" / path[UUID]("assignedOfficeId"))
       .out(
@@ -138,7 +139,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val unassignUserOfficeEndpoint =
-    baseEndpoint.delete
+    publicEndpoint.delete
       .summary("Unassign user office")
       .in("user" / path[UUID]("userId") / "assigned-office-id")
       .out(
@@ -165,7 +166,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val createOfficeManagerEndpoint =
-    baseEndpoint.post
+    publicEndpoint.post
       .summary("Create an office manager")
       .in("office-manager")
       .in(
@@ -197,7 +198,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readOfficeManagerEndpoint =
-    baseEndpoint.get
+    publicEndpoint.get
       .summary("Find an office manager by ID")
       .in("office-manager" / path[UUID]("officeManagerId"))
       .out(
@@ -223,7 +224,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val updateOfficeManagerManagedOfficesEndpoint =
-    baseEndpoint.put
+    publicEndpoint.put
       .summary("Assign managed offices to an office manager")
       .in("office-manager" / path[UUID]("officeManagerId") / "managed-office-ids")
       .in(
@@ -255,7 +256,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val createSuperAdminEndpoint =
-    baseEndpoint.post
+    publicEndpoint.post
       .summary("Create a super admin")
       .in("super-admin")
       .in(
@@ -286,7 +287,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readSuperAdminEndpoint =
-    baseEndpoint.get
+    publicEndpoint.get
       .summary("Find a super admin by ID")
       .in("super-admin" / path[UUID]("superAdminId"))
       .out(
@@ -312,7 +313,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val updateRolesEndpoint =
-    baseEndpoint.put
+    publicEndpoint.put
       .summary("Update account roles")
       .description(
         "Updates account roles. The account can be promoted or demoted depending on the roles provided."
@@ -356,7 +357,7 @@ class AccountEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val archiveAccountEndpoint =
-    baseEndpoint.delete
+    publicEndpoint.delete
       .summary("Archive an account")
       .description(
         "Archives an account. The account is NOT deleted. The operation is idempotent ie. if the account doesn't exist, the operation doesn't fail."

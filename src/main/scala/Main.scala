@@ -1,6 +1,8 @@
 package io.github.avapl
 
+import adapters.facade.repository.account.KeycloakPostgresAccountRepository
 import adapters.http.ApiError
+import adapters.http.account.AccountEndpoints
 import adapters.http.desk.DeskEndpoints
 import adapters.http.office.OfficeEndpoints
 import adapters.http.reservation.ReservationEndpoints
@@ -17,12 +19,10 @@ import config.AppConfig
 import config.HttpConfig
 import config.KeycloakConfig
 import config.PostgresConfig
+import domain.service.account.AccountService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
-import io.github.avapl.adapters.facade.repository.account.KeycloakPostgresAccountRepository
-import io.github.avapl.adapters.http.account.AccountEndpoints
-import io.github.avapl.domain.service.account.AccountService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router

@@ -2,7 +2,7 @@ package io.github.avapl
 package adapters.http.office
 
 import adapters.http.ApiError
-import adapters.http.BaseEndpoint
+import adapters.http.PublicApiEndpoint
 import cats.ApplicativeThrow
 import cats.syntax.all._
 import domain.model.error.office.DuplicateOfficeName
@@ -16,9 +16,9 @@ import sttp.tapir.server.ServerEndpoint
 
 class OfficeEndpoints[F[_]: ApplicativeThrow](
   officeService: OfficeService[F]
-) extends BaseEndpoint {
+) extends PublicApiEndpoint {
 
-  override protected val baseEndpointName: String = "office"
+  override protected val apiEndpointName: String = "office"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
     createOfficeEndpoint ::
@@ -28,7 +28,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       Nil
 
   private lazy val createOfficeEndpoint =
-    baseEndpoint.post
+    publicEndpoint.post
       .summary("Create an office")
       .in(
         jsonBody[ApiCreateOffice]
@@ -57,7 +57,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readOfficeEndpoint =
-    baseEndpoint.get
+    publicEndpoint.get
       .summary("Find an office by ID")
       .in(path[UUID]("officeId"))
       .out(
@@ -83,7 +83,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val updateOfficeEndpoint =
-    baseEndpoint.patch
+    publicEndpoint.patch
       .summary("Update an office")
       .in(
         path[UUID]("officeId") and jsonBody[ApiUpdateOffice]
@@ -119,7 +119,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val archiveOfficeEndpoint =
-    baseEndpoint.delete
+    publicEndpoint.delete
       .summary("Archive an office")
       .description(
         "Archives an office. The office is NOT deleted. The operation is idempotent ie. if the office doesn't exist, the operation doesn't fail."

@@ -6,7 +6,11 @@ import enumeratum.values.StringEnum
 import enumeratum.values.StringEnumEntry
 import io.scalaland.chimney.dsl._
 
-sealed abstract class KeycloakRole(override val value: String) extends StringEnumEntry
+sealed abstract class KeycloakRole(override val value: String) extends StringEnumEntry {
+
+  lazy val toDomain: Role =
+    this.transformInto[Role]
+}
 
 object KeycloakRole extends StringEnum[KeycloakRole] {
 

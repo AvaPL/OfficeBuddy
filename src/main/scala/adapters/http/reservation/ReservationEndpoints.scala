@@ -2,7 +2,7 @@ package io.github.avapl
 package adapters.http.reservation
 
 import adapters.http.ApiError
-import adapters.http.BaseEndpoint
+import adapters.http.PublicApiEndpoint
 import cats.ApplicativeThrow
 import cats.syntax.all._
 import domain.model.error.desk.DeskNotFound
@@ -19,9 +19,9 @@ import sttp.tapir.server.ServerEndpoint
 
 class ReservationEndpoints[F[_]: ApplicativeThrow](
   reservationService: ReservationService[F]
-) extends BaseEndpoint {
+) extends PublicApiEndpoint {
 
-  override protected val baseEndpointName: String = "reservation"
+  override protected val apiEndpointName: String = "reservation"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
     reserveDeskEndpoint ::
@@ -32,7 +32,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       Nil
 
   private lazy val reserveDeskEndpoint =
-    baseEndpoint.post
+    publicEndpoint.post
       .summary("Reserve a desk")
       .in("desk")
       .in(
@@ -73,7 +73,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readDeskReservationEndpoint =
-    baseEndpoint.get
+    publicEndpoint.get
       .summary("Find a desk reservation by ID")
       .in("desk" / path[UUID]("reservationId"))
       .out(
@@ -102,7 +102,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
   }
 
   private lazy val cancelReservationEndpoint =
-    baseEndpoint.put
+    publicEndpoint.put
       .summary("Cancel a reservation")
       .description(
         "Cancels a reservation. This operation has to be called by the reservation owner on a PENDING or CONFIRMED reservation."
@@ -139,7 +139,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
   }
 
   private lazy val confirmReservationEndpoint =
-    baseEndpoint.put
+    publicEndpoint.put
       .summary("Confirm a reservation")
       .description(
         "Confirms a reservation. This operation has to be called by the office manager of the related office on a PENDING reservation."
@@ -171,7 +171,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       .recover(recoverOnInvalidStateTransition)
 
   private lazy val rejectReservationEndpoint =
-    baseEndpoint.put
+    publicEndpoint.put
       .summary("Reject a reservation")
       .description(
         "Rejects a reservation. This operation has to be called by the office manager of the related office on a PENDING or CONFIRMED reservation."

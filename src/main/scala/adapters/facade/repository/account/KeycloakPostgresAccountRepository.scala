@@ -10,7 +10,6 @@ import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect.Resource
 import cats.effect.Sync
-import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import domain.model.account._
 import domain.model.error.account.AccountNotFound
