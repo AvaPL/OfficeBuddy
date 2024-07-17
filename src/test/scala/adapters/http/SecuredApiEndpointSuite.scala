@@ -2,11 +2,12 @@ package io.github.avapl
 package adapters.http
 
 import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractor
+import adapters.auth.service.RolesExtractorService
 import cats.effect.{Clock => CatsClock}
 import cats.effect.IO
 import cats.syntax.all._
 import domain.model.account.Role
+import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.SuperAdmin
 import domain.model.account.Role.User
 import java.security.KeyPairGenerator
@@ -31,12 +32,32 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
 
   test(
     """GIVEN secured endpoint
-      | WHEN the output is a success
-      | THEN a correct status code and body is returned
+      | WHEN the JWT token is valid and contains the required role
+      | THEN 200 status code and body is returned
       |""".stripMargin
   ) {
+    val requiredRole = User
+    val extractedRoles = List(User)
+    val (bearer, publicKey) = generateJwt()
     for {
-      response <- sendAuthorizedRequest(().asRight.pure[IO])
+      response <- sendRequest(bearer, publicKey, requiredRole, extractedRoles)
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      response.body == "".asRight
+    )
+  }
+
+  test(
+    """GIVEN secured endpoint
+      | WHEN the JWT token contains role with broader access than required
+      | THEN 200 status code and body is returned
+      |""".stripMargin
+  ) {
+    val requiredRole = User
+    val extractedRoles = List(OfficeManager)
+    val (bearer, publicKey) = generateJwt()
+    for {
+      response <- sendRequest(bearer, publicKey, requiredRole, extractedRoles)
     } yield expect.all(
       response.code == StatusCode.Ok,
       response.body == "".asRight
@@ -123,7 +144,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
 
   test(
     """GIVEN secured endpoint
-      | WHEN the JWT token doesn't contain the required role
+      | WHEN the JWT token doesn't contain role the required role nor a role with broader access
       | THEN 401 status code is returned
       |""".stripMargin
   ) {
@@ -164,7 +185,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
     val name = "test"
     val endpoint = new SecuredApiEndpoint[IO] {
       val apiEndpointName: String = name
-      val rolesExtractor: RolesExtractor = _ => extractedRoles
+      val rolesExtractor: RolesExtractorService = _ => extractedRoles
       val publicKeyRepository: PublicKeyRepository[IO] = new PublicKeyRepository[IO] {
         def get: IO[String] = publicKey.pure[IO]
       }

@@ -4,7 +4,7 @@ package adapters.auth.service
 import domain.model.account.Role
 import io.circe.Json
 
-trait RolesExtractor {
+trait RolesExtractorService {
 
   def extract(json: Json): List[Role]
 }

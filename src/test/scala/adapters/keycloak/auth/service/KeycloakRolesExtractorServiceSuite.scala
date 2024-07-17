@@ -6,7 +6,7 @@ import domain.model.account.Role.User
 import io.circe.parser.parse
 import weaver.SimpleIOSuite
 
-object KeycloakRolesExtractorSuite extends SimpleIOSuite {
+object KeycloakRolesExtractorServiceSuite extends SimpleIOSuite {
 
   pureTest(
     """GIVEN a valid Keycloak JWT part with roles
@@ -29,7 +29,7 @@ object KeycloakRolesExtractorSuite extends SimpleIOSuite {
         |""".stripMargin
     }.toOption.get
 
-    val extractedRoles = KeycloakRolesExtractor.extract(keycloakRolesJwtPart)
+    val extractedRoles = KeycloakRolesExtractorService.extract(keycloakRolesJwtPart)
 
     expect(extractedRoles == List(User, OfficeManager))
   }
@@ -51,7 +51,7 @@ object KeycloakRolesExtractorSuite extends SimpleIOSuite {
         |""".stripMargin
     }.toOption.get
 
-    val extractedRoles = KeycloakRolesExtractor.extract(jwt)
+    val extractedRoles = KeycloakRolesExtractorService.extract(jwt)
 
     expect(extractedRoles.isEmpty)
   }
@@ -71,7 +71,7 @@ object KeycloakRolesExtractorSuite extends SimpleIOSuite {
         |""".stripMargin
     }.toOption.get
 
-    val extractedRoles = KeycloakRolesExtractor.extract(jwt)
+    val extractedRoles = KeycloakRolesExtractorService.extract(jwt)
 
     expect(extractedRoles.isEmpty)
   }
@@ -89,7 +89,7 @@ object KeycloakRolesExtractorSuite extends SimpleIOSuite {
         |""".stripMargin
     }.toOption.get
 
-    val extractedRoles = KeycloakRolesExtractor.extract(jwt)
+    val extractedRoles = KeycloakRolesExtractorService.extract(jwt)
 
     expect(extractedRoles.isEmpty)
   }

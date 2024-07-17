@@ -1,7 +1,7 @@
 package io.github.avapl
 package adapters.auth.model
 
-import adapters.auth.service.RolesExtractor
+import adapters.auth.service.RolesExtractorService
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -18,9 +18,9 @@ case class AccessToken(
 object AccessToken {
 
   def decode[F[_]: Clock: MonadThrow](
-    bearer: String,
-    rolesExtractor: RolesExtractor,
-    publicKey: String
+                                       bearer: String,
+                                       rolesExtractor: RolesExtractorService,
+                                       publicKey: String
   ): F[AccessToken] =
     for {
       now <- Clock[F].realTimeInstant
@@ -28,10 +28,10 @@ object AccessToken {
     } yield accessToken
 
   private def decode[F[_]: MonadThrow](
-    bearer: String,
-    rolesExtractor: RolesExtractor,
-    publicKey: String,
-    now: Instant
+                                        bearer: String,
+                                        rolesExtractor: RolesExtractorService,
+                                        publicKey: String,
+                                        now: Instant
   ) =
     MonadThrow[F].fromTry {
       val fixedJavaClock = java.time.Clock.fixed(now, ZoneOffset.UTC)
@@ -40,7 +40,7 @@ object AccessToken {
 
   private class Parser(
     override val clock: java.time.Clock,
-    rolesExtractor: RolesExtractor
+    rolesExtractor: RolesExtractorService
   ) extends JwtCirceParser[JwtHeader, AccessToken] {
 
     override protected def parseClaim(claim: String): AccessToken = {

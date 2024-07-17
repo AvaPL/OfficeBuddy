@@ -1,7 +1,7 @@
 package io.github.avapl
 package adapters.auth.model
 
-import adapters.auth.service.RolesExtractor
+import adapters.auth.service.RolesExtractorService
 import cats.effect.{Clock => CatsClock}
 import cats.effect.IO
 import domain.model.account.Role
@@ -34,7 +34,7 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
     val encodedToken = JwtCirce(fixedJavaClock).encode(jwtClaim, privateKey, JwtAlgorithm.RS256)
 
     val roles = List(Role.User)
-    val rolesExtractor: RolesExtractor = _ => roles
+    val rolesExtractor: RolesExtractorService = _ => roles
 
     for {
       accessToken <- AccessToken.decode(encodedToken, rolesExtractor, publicKey)
@@ -130,7 +130,7 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
   private lazy val fixedJavaClock =
     JavaClock.fixed(Instant.parse("2024-07-14T12:00:00Z"), java.time.ZoneOffset.UTC)
 
-  private lazy val anyRolesExtractor: RolesExtractor = _ => Nil
+  private lazy val anyRolesExtractor: RolesExtractorService = _ => Nil
 
   private lazy val anyDSAKeyPair = {
     val keyPairGenerator = KeyPairGenerator.getInstance("EdDSA")

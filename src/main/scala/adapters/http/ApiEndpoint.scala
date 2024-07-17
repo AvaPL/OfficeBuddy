@@ -3,7 +3,7 @@ package adapters.http
 
 import adapters.auth.model.AccessToken
 import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractor
+import adapters.auth.service.RolesExtractorService
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -45,7 +45,7 @@ trait PublicApiEndpoint extends ApiEndpoint {
 
 trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
 
-  protected def rolesExtractor: RolesExtractor
+  protected def rolesExtractor: RolesExtractorService
   protected def publicKeyRepository: PublicKeyRepository[F]
 
   protected[http] def securedEndpoint(
@@ -81,7 +81,7 @@ trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
     AccessToken
       .decode(bearer, rolesExtractor, publicKey)
       .map { accessToken =>
-        if (accessToken.roles.contains(requiredRole)) accessToken.asRight
+        if (accessToken.roles.exists(_.hasAccess(requiredRole))) accessToken.asRight
         else ApiError.Unauthorized.asLeft
       }
       .recover {
