@@ -399,7 +399,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       isAccountToArchiveOfficeManager <- exists(_.readOfficeManager(accountId))
       isAuthorized =
         if (isAccountToArchiveSuperAdmin || isAccountToArchiveOfficeManager) requesterRoles.contains(SuperAdmin)
-        else true
+        else requesterRoles.contains(OfficeManager)
       result <-
         if (isAuthorized) accountService.archive(accountId).as(().asRight[ApiError])
         else ApiError.Unauthorized.asLeft.pure[F]
