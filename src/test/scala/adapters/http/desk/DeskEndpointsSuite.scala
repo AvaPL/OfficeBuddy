@@ -1,7 +1,12 @@
 package io.github.avapl
 package adapters.http.desk
 
+import adapters.auth.model.PublicKey
+import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
+import domain.model.account.Role
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.desk.Desk
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.desk.DuplicateDeskNameForOffice
@@ -15,17 +20,19 @@ import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
-import sttp.tapir.integ.cats.effect.CatsMonadError
-import sttp.tapir.server.stub.TapirStubInterpreter
 import weaver.SimpleIOSuite
 
-object DeskEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
+object DeskEndpointsSuite
+  extends SimpleIOSuite
+  with MockitoSugar
+  with ArgumentMatchersSugar
+  with MockitoCats
+  with SecuredApiEndpointFixture {
 
   test(
     """GIVEN create desk endpoint
-      | WHEN a desk is POSTed and created
+      | WHEN a desk is POSTed and created by an office manager
       | THEN 201 Created and the created desk is returned
       |""".stripMargin
   ) {
@@ -54,6 +61,29 @@ object DeskEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
       response.code == StatusCode.Created,
       bodyJson(response) == ApiDesk.fromDomain(desk).asJson
     )
+  }
+
+  test(
+    """GIVEN create desk endpoint
+      | WHEN there is an attempt to create a desk by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val deskToCreate = anyApiCreateDesk
+    val deskService = mock[DeskService[IO]]
+
+    val response = sendRequest(deskService, role = User) {
+      basicRequest
+        .post(uri"http://test.com/desk")
+        .body(deskToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(deskService, never).createDesk(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -98,7 +128,7 @@ object DeskEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
 
   test(
     """GIVEN read desk endpoint
-      | WHEN an existing desk is read
+      | WHEN an existing desk is read by a user
       | THEN 200 OK and the read desk is returned
       |""".stripMargin
   ) {
@@ -168,6 +198,30 @@ object DeskEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiDesk.fromDomain(desk).asJson
     )
+  }
+
+  test(
+    """GIVEN update desk endpoint
+      | WHEN there is an attempt to update a desk by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val deskToUpdate = anyApiUpdateDesk
+    val deskId = anyDeskId
+    val deskService = mock[DeskService[IO]]
+
+    val response = sendRequest(deskService, role = User) {
+      basicRequest
+        .patch(uri"http://test.com/desk/$deskId")
+        .body(deskToUpdate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(deskService, never).updateDesk(any, any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -246,13 +300,32 @@ object DeskEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
     } yield expect(response.code == StatusCode.NoContent)
   }
 
-  private def sendRequest(deskService: DeskService[IO])(request: Request[Either[String, String], Any]) = {
-    val deskEndpoints = new DeskEndpoints[IO](deskService)
-    val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
-      .whenServerEndpointsRunLogic(deskEndpoints.endpoints)
-      .backend()
-    request.send(backendStub)
+  test(
+    """GIVEN archive desk endpoint
+      | WHEN there is an attempt to archive a desk by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val deskService = mock[DeskService[IO]]
+
+    val response = sendRequest(deskService, role = User) {
+      basicRequest.delete(uri"http://test.com/desk/$anyDeskId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(deskService, never).archiveDesk(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
+
+  private def sendRequest(deskService: DeskService[IO], role: Role = SuperAdmin)(
+    request: Request[Either[String, String], Any]
+  ): IO[Response[Either[PublicKey, PublicKey]]] =
+    sendRequest(request, role) { rolesExtractorService =>
+      new DeskEndpoints[IO](deskService, publicKeyRepository, rolesExtractorService).endpoints
+    }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get

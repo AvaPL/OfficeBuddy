@@ -111,7 +111,7 @@ object Main extends IOApp.Simple {
       val rolesExtractorService = KeycloakRolesExtractorService
 
       val officeEndpoints = new OfficeEndpoints[F](officeService, publicKeyRepository, rolesExtractorService).endpoints
-      val deskEndpoints = new DeskEndpoints[F](deskService).endpoints
+      val deskEndpoints = new DeskEndpoints[F](deskService, publicKeyRepository, rolesExtractorService).endpoints
       val reservationEndpoints = new ReservationEndpoints[F](reservationService).endpoints
       val accountEndpoints =
         new AccountEndpoints[F](accountService, publicKeyRepository, rolesExtractorService).endpoints

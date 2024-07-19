@@ -1,10 +1,15 @@
 package io.github.avapl
 package adapters.http.desk
 
+import adapters.auth.repository.PublicKeyRepository
+import adapters.auth.service.RolesExtractorService
 import adapters.http.ApiError
-import adapters.http.PublicApiEndpoint
-import cats.ApplicativeThrow
+import adapters.http.SecuredApiEndpoint
+import cats.MonadThrow
+import cats.effect.Clock
 import cats.syntax.all._
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.User
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.desk.DuplicateDeskNameForOffice
 import domain.model.error.office.OfficeNotFound
@@ -15,9 +20,11 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-class DeskEndpoints[F[_]: ApplicativeThrow](
-  deskService: DeskService[F]
-) extends PublicApiEndpoint {
+class DeskEndpoints[F[_]: Clock: MonadThrow](
+  deskService: DeskService[F],
+  override val publicKeyRepository: PublicKeyRepository[F],
+  override val rolesExtractor: RolesExtractorService
+) extends SecuredApiEndpoint[F] {
 
   override protected val apiEndpointName: String = "desk"
 
@@ -29,8 +36,9 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       Nil
 
   private lazy val createDeskEndpoint =
-    publicEndpoint.post
+    securedEndpoint(requiredRole = OfficeManager).post
       .summary("Create a desk")
+      .description("Required role: office manager")
       .in(
         jsonBody[ApiCreateDesk]
           .example(apiCreateDeskExample)
@@ -52,7 +60,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
             .description("Desk with the given name already exists in the office")
         )
       )
-      .serverLogic(createDesk)
+      .serverLogic(_ => createDesk)
 
   private def createDesk(apiCreateDesk: ApiCreateDesk) =
     deskService
@@ -67,8 +75,9 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readDeskEndpoint =
-    publicEndpoint.get
+    securedEndpoint(requiredRole = User).get
       .summary("Find a desk by ID")
+      .description("Required role: user")
       .in(path[UUID]("deskId"))
       .out(
         jsonBody[ApiDesk]
@@ -81,7 +90,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
             .description("Desk with the given ID was not found")
         )
       )
-      .serverLogic(readDesk)
+      .serverLogic(_ => readDesk)
 
   private def readDesk(deskId: UUID) =
     deskService
@@ -93,8 +102,9 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val updateDeskEndpoint =
-    publicEndpoint.patch
+    securedEndpoint(requiredRole = OfficeManager).patch
       .summary("Update a desk")
+      .description("Required role: office manager")
       .in(
         path[UUID]("deskId") and jsonBody[ApiUpdateDesk]
           .example(apiUpdateDeskExample)
@@ -122,7 +132,7 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
             .description("Desk with the given name already exists in the office")
         )
       )
-      .serverLogic((updateDesk _).tupled)
+      .serverLogic(_ => (updateDesk _).tupled)
 
   private def updateDesk(deskId: UUID, apiUpdateDesk: ApiUpdateDesk) =
     deskService
@@ -139,17 +149,20 @@ class DeskEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val archiveDeskEndpoint =
-    publicEndpoint.delete
+    securedEndpoint(requiredRole = OfficeManager).delete
       .summary("Archive a desk")
       .description(
-        "Archives a desk. The desk is NOT deleted. The operation is idempotent ie. if the desk doesn't exist, the operation doesn't fail."
+        """Archives a desk. The desk is NOT deleted. The operation is idempotent ie. if the desk doesn't exist, the operation doesn't fail.
+          |
+          |Required role: office manager
+          |""".stripMargin
       )
       .in(path[UUID]("deskId"))
       .out(
         statusCode(StatusCode.NoContent)
           .description("Desk archived or not found")
       )
-      .serverLogic(archiveDesk)
+      .serverLogic(_ => archiveDesk)
 
   private def archiveDesk(deskId: UUID) =
     deskService
