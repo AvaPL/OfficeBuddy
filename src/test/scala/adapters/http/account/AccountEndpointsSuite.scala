@@ -1,8 +1,16 @@
 package io.github.avapl
 package adapters.http.account
 
+import adapters.auth.model.PublicKey
+import adapters.auth.repository.PublicKeyRepository
+import adapters.auth.service.RolesExtractorService
+import cats.data.EitherT
 import cats.effect.IO
 import domain.model.account.OfficeManagerAccount
+import domain.model.account.Role
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
 import domain.model.error.account.AccountNotFound
@@ -11,10 +19,18 @@ import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
 import io.circe.parser._
 import io.circe.syntax._
+import java.security.KeyPairGenerator
+import java.security.SecureRandom
+import java.time.Clock
+import java.time.Instant
+import java.util.Base64
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
+import pdi.jwt.JwtAlgorithm
+import pdi.jwt.JwtCirce
+import pdi.jwt.JwtClaim
 import sttp.client3._
 import sttp.client3.circe._
 import sttp.client3.testing.SttpBackendStub
@@ -27,7 +43,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create user endpoint
-      | WHEN a user is POSTed and created
+      | WHEN a user is POSTed and created by an office manager
       | THEN 201 Created and the created user is returned
       |""".stripMargin
   ) {
@@ -41,7 +57,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     )
     val accountService = whenF(mock[AccountService[IO]].createUser(any)) thenReturn user
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
         .post(uri"http://test.com/account/user")
         .body(userToCreate)
@@ -53,6 +69,29 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Created,
       bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
     )
+  }
+
+  test(
+    """GIVEN create user endpoint
+      | WHEN there is an attempt to create a user by another user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val userToCreate = anyApiCreateUserAccount
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest
+        .post(uri"http://test.com/account/user")
+        .body(userToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).createUser(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -95,7 +134,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN read user endpoint
-      | WHEN an existing user is read
+      | WHEN an existing user is read by another user
       | THEN 200 OK and the read user is returned
       |""".stripMargin
   ) {
@@ -103,7 +142,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val user = anyUserAccount.copy(id = userId)
     val accountService = whenF(mock[AccountService[IO]].readUser(any)) thenReturn user
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = User) {
       basicRequest.get(uri"http://test.com/account/user/$userId")
     }
 
@@ -135,7 +174,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN assign office to user endpoint
-      | WHEN the office is successfully assigned
+      | WHEN the office is assigned by an office manager to a user
       | THEN 200 OK and the updated user is returned
       |""".stripMargin
   ) {
@@ -145,7 +184,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val accountService =
       whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenReturn user
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$officeId")
     }
 
@@ -155,6 +194,28 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
     )
+  }
+
+  test(
+    """GIVEN assign office to user endpoint
+      | WHEN there is an attempt to assign the office by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val officeId = anyOfficeId
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$officeId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).updateUserAssignedOffice(any, any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -197,7 +258,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN unassign user office endpoint
-      | WHEN the office is successfully unassigned
+      | WHEN the office is successfully unassigned by an office manager
       | THEN 200 OK and the updated user is returned
       |""".stripMargin
   ) {
@@ -206,7 +267,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val accountService =
       whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenReturn user
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
     }
 
@@ -216,6 +277,27 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
     )
+  }
+
+  test(
+    """GIVEN unassign user office endpoint
+      | WHEN there is an attempt to unassign the office by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).updateUserAssignedOffice(any, any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -239,7 +321,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create office manager endpoint
-      | WHEN a office manager is POSTed and created
+      | WHEN a office manager is POSTed and created by a super admin
       | THEN 201 Created and the created office manager is returned
       |""".stripMargin
   ) {
@@ -253,7 +335,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     )
     val accountService = whenF(mock[AccountService[IO]].createOfficeManager(any)) thenReturn officeManager
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
         .post(uri"http://test.com/account/office-manager")
         .body(officeManagerToCreate)
@@ -265,6 +347,29 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Created,
       bodyJson(response) == ApiOfficeManagerAccount.fromDomain(officeManager).asJson
     )
+  }
+
+  test(
+    """GIVEN create office manager endpoint
+      | WHEN there is an attempt to create an office manager by another office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val officeManagerToCreate = anyApiCreateOfficeManagerAccount
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest
+        .post(uri"http://test.com/account/office-manager")
+        .body(officeManagerToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).createOfficeManager(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -289,7 +394,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN read office manager endpoint
-      | WHEN an existing office manager is read
+      | WHEN an existing office manager is read by an office manager
       | THEN 200 OK and the read office manager is returned
       |""".stripMargin
   ) {
@@ -297,7 +402,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId)
     val accountService = whenF(mock[AccountService[IO]].readOfficeManager(any)) thenReturn officeManager
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.get(uri"http://test.com/account/office-manager/$officeManagerId")
     }
 
@@ -307,6 +412,27 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiOfficeManagerAccount.fromDomain(officeManager).asJson
     )
+  }
+
+  test(
+    """GIVEN read office manager endpoint
+      | WHEN there is an attempt to read the office manager by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val officeManagerId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.get(uri"http://test.com/account/office-manager/$officeManagerId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).readOfficeManager(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -330,7 +456,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN update office manager managed offices endpoint
-      | WHEN the offices are successfully assigned
+      | WHEN the offices are successfully assigned by a super admin
       | THEN 200 OK and the updated office manager is returned
       |""".stripMargin
   ) {
@@ -340,7 +466,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val accountService =
       whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenReturn officeManager
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
         .put(uri"http://test.com/account/office-manager/$officeManagerId/managed-office-ids")
         .body(managedOfficeIds)
@@ -356,13 +482,37 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN update office manager managed offices endpoint
+      | WHEN there is an attempt to assign the offices by an office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val managedOfficeIds = List(anyOfficeId)
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest
+        .put(uri"http://test.com/account/office-manager/$anyAccountId/managed-office-ids")
+        .body(managedOfficeIds)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).updateOfficeManagerManagedOffices(any, any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
+  }
+
+  test(
+    """GIVEN update office manager managed offices endpoint
       | WHEN assigning the offices fails with AccountNotFound error
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
     val officeManagerId = anyAccountId
     val accountService =
-      whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenFailWith AccountNotFound(officeManagerId)
+      whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenFailWith
+        AccountNotFound(officeManagerId)
 
     val response = sendRequest(accountService) {
       basicRequest
@@ -377,7 +527,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN create super admin endpoint
-      | WHEN a super admin is POSTed and created
+      | WHEN a super admin is POSTed and created by another super admin
       | THEN 201 Created and the created super admin is returned
       |""".stripMargin
   ) {
@@ -390,7 +540,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     )
     val accountService = whenF(mock[AccountService[IO]].createSuperAdmin(any)) thenReturn superAdmin
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
         .post(uri"http://test.com/account/super-admin")
         .body(superAdminToCreate)
@@ -402,6 +552,29 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Created,
       bodyJson(response) == ApiSuperAdminAccount.fromDomain(superAdmin).asJson
     )
+  }
+
+  test(
+    """GIVEN create super admin endpoint
+      | WHEN there is an attempt to create a super admin by an office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val superAdminToCreate = anyApiCreateSuperAdminAccount
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest
+        .post(uri"http://test.com/account/super-admin")
+        .body(superAdminToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).createSuperAdmin(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -426,7 +599,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN read super admin endpoint
-      | WHEN an existing super admin is read
+      | WHEN an existing super admin is read by a super admin
       | THEN 200 OK and the read super admin is returned
       |""".stripMargin
   ) {
@@ -434,7 +607,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val superAdmin = anySuperAdminAccount.copy(id = superAdminId)
     val accountService = whenF(mock[AccountService[IO]].readSuperAdmin(any)) thenReturn superAdmin
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest.get(uri"http://test.com/account/super-admin/$superAdminId")
     }
 
@@ -444,6 +617,27 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiSuperAdminAccount.fromDomain(superAdmin).asJson
     )
+  }
+
+  test(
+    """GIVEN read super admin endpoint
+      | WHEN there is an attempt to read the super admin by an office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val superAdminId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.get(uri"http://test.com/account/super-admin/$superAdminId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).readSuperAdmin(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -467,7 +661,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN update roles endpoint
-      | WHEN the roles are successfully updated
+      | WHEN the roles are successfully updated by a super admin
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
@@ -475,7 +669,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val accountService =
       whenF(mock[AccountService[IO]].updateRoles(any, any)) thenReturn anyUserAccount
 
-    val response = sendRequest(accountService) {
+    val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
         .put(uri"http://test.com/account/$accountId/roles")
         .body(anyApiAccountRoles)
@@ -484,6 +678,28 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     for {
       response <- response
     } yield expect(response.code == StatusCode.NoContent)
+  }
+
+  test(
+    """GIVEN update roles endpoint
+      | WHEN there is an attempt to update the roles by an office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest
+        .put(uri"http://test.com/account/$anyAccountId/roles")
+        .body(anyApiAccountRoles)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).updateRoles(any, any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -530,14 +746,17 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN archive account endpoint
-      | WHEN an existing account is archived
+      | WHEN an existing account is archived by an office manager
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val deskService = whenF(mock[AccountService[IO]].archive(any)) thenReturn ()
+    val accountId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+    whenF(accountService.readSuperAdmin(any)) thenFailWith AccountNotFound(accountId)
+    whenF(accountService.archive(any)) thenReturn ()
 
-    val response = sendRequest(deskService) {
-      basicRequest.delete(uri"http://test.com/account/$anyAccountId")
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.delete(uri"http://test.com/account/$accountId")
     }
 
     for {
@@ -545,16 +764,75 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     } yield expect(response.code == StatusCode.NoContent)
   }
 
-  private def sendRequest(accountService: AccountService[IO])(request: Request[Either[String, String], Any]) = {
-    val accountEndpoints = new AccountEndpoints[IO](accountService)
+  test(
+    """GIVEN archive account endpoint
+      | WHEN there is an attempt to archive the account by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.delete(uri"http://test.com/account/$anyAccountId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).archive(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
+  }
+
+  test(
+    """GIVEN archive account endpoint
+      | WHEN there is an attempt to archive a super admin account by an office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val superAdminAccountId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+    whenF(accountService.readSuperAdmin(superAdminAccountId)) thenReturn anySuperAdminAccount
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.delete(uri"http://test.com/account/$superAdminAccountId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).archive(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
+  }
+
+  // TODO: Introduce a fixture to test the endpoints
+  private def sendRequest(accountService: AccountService[IO], role: Role = SuperAdmin)(
+    request: Request[Either[String, String], Any]
+  ) = {
+    val publicKeyRepository = new PublicKeyRepository[IO] {
+      override def get: IO[PublicKey] = IO.pure(publicKey)
+    }
+    val rolesExtractorService: RolesExtractorService = _ => List(role)
+    val accountEndpoints = new AccountEndpoints[IO](accountService, publicKeyRepository, rolesExtractorService)
     val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
       .whenServerEndpointsRunLogic(accountEndpoints.endpoints)
       .backend()
-    request.send(backendStub)
+    request.auth.bearer(bearer).send(backendStub)
   }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get
+
+  private lazy val (bearer, publicKey) = {
+    val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
+    keyPairGenerator.initialize(2048, new SecureRandom(0.toString.getBytes))
+    val keyPair = keyPairGenerator.generateKeyPair()
+    val fixedJavaClock = Clock.fixed(Instant.parse("2024-07-16T12:00:00Z"), java.time.ZoneOffset.UTC)
+    val encodedToken = JwtCirce(fixedJavaClock).encode(JwtClaim(), keyPair.getPrivate, JwtAlgorithm.RS256)
+    val publicKeyString = new String(Base64.getEncoder.encode(keyPair.getPublic.getEncoded))
+    (encodedToken, publicKeyString)
+  }
 
   private lazy val anyUserAccount = UserAccount(
     id = anyAccountId,
@@ -611,7 +889,5 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   private lazy val anyOfficeId: UUID = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed")
 
-  private lazy val anyApiAccountRoles = List[ApiRole](
-    ApiRole.OfficeManager
-  )
+  private lazy val anyApiAccountRoles = List[ApiRole](ApiRole.OfficeManager)
 }

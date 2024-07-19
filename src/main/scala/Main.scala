@@ -23,6 +23,8 @@ import domain.service.account.AccountService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
+import io.github.avapl.adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
+import io.github.avapl.adapters.keycloak.auth.service.KeycloakRolesExtractorService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -94,7 +96,9 @@ object Main extends IOApp.Simple {
     keycloak: Keycloak,
     appRealmName: String
   ) =
-    Applicative[F].pure {
+    for {
+      publicKeyRepository <- KeycloakPublicKeyRepository[F](keycloak, appRealmName)
+    } yield {
       val officeRepository = new PostgresOfficeRepository[F](session)
       val deskRepository = new PostgresDeskRepository[F](session)
       val reservationRepository = new PostgresReservationRepository[F](session)
@@ -104,11 +108,13 @@ object Main extends IOApp.Simple {
       val deskService = new DeskService[F](deskRepository)
       val reservationService = new ReservationService[F](reservationRepository)
       val accountService = new AccountService[F](accountRepository)
+      val rolesExtractorService = KeycloakRolesExtractorService
 
       val officeEndpoints = new OfficeEndpoints[F](officeService).endpoints
       val deskEndpoints = new DeskEndpoints[F](deskService).endpoints
       val reservationEndpoints = new ReservationEndpoints[F](reservationService).endpoints
-      val accountEndpoints = new AccountEndpoints[F](accountService).endpoints
+      val accountEndpoints =
+        new AccountEndpoints[F](accountService, publicKeyRepository, rolesExtractorService).endpoints
 
       officeEndpoints <+> deskEndpoints <+> reservationEndpoints <+> accountEndpoints
     }
