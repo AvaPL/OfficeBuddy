@@ -753,6 +753,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val accountId = anyAccountId
     val accountService = mock[AccountService[IO]]
     whenF(accountService.readSuperAdmin(any)) thenFailWith AccountNotFound(accountId)
+    whenF(accountService.readOfficeManager(any)) thenFailWith AccountNotFound(accountId)
     whenF(accountService.archive(any)) thenReturn ()
 
     val response = sendRequest(accountService, role = OfficeManager) {
@@ -786,6 +787,29 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
 
   test(
     """GIVEN archive account endpoint
+      | WHEN there is an attempt to archive an office manager account by another office manager
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val officeManagerAccountId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+    whenF(accountService.readSuperAdmin(officeManagerAccountId)) thenFailWith AccountNotFound(officeManagerAccountId)
+    whenF(accountService.readOfficeManager(officeManagerAccountId)) thenReturn anyOfficeManagerAccount
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.delete(uri"http://test.com/account/$officeManagerAccountId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).archive(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
+  }
+
+  test(
+    """GIVEN archive account endpoint
       | WHEN there is an attempt to archive a super admin account by an office manager
       | THEN 401 Unauthorized is returned
       |""".stripMargin
@@ -793,6 +817,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val superAdminAccountId = anyAccountId
     val accountService = mock[AccountService[IO]]
     whenF(accountService.readSuperAdmin(superAdminAccountId)) thenReturn anySuperAdminAccount
+    whenF(accountService.readOfficeManager(superAdminAccountId)) thenFailWith  AccountNotFound(superAdminAccountId)
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/account/$superAdminAccountId")

@@ -5,25 +5,26 @@ import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.RolesExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
-
 import cats.MonadThrow
 import cats.data.NonEmptyList
-import cats.effect.kernel.Clock
+import cats.effect.Clock
 import cats.syntax.all._
+import domain.model.account.Account
 import domain.model.account.Role
-import domain.model.account.Role.{OfficeManager, SuperAdmin, User}
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
-
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-class AccountEndpoints[F[_]: MonadThrow: Clock](
+class AccountEndpoints[F[_]: Clock: MonadThrow](
   accountService: AccountService[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val rolesExtractor: RolesExtractorService
@@ -115,11 +116,7 @@ class AccountEndpoints[F[_]: MonadThrow: Clock](
   private lazy val assignOfficeToUserEndpoint =
     securedEndpoint(requiredRole = OfficeManager).put
       .summary("Assign office to a user")
-      .description(
-        """Required role: office manager
-          |Access note: The requester can only modify themselves or accounts with lower privileges.
-          |""".stripMargin
-      )
+      .description("Required role: office manager")
       .in("user" / path[UUID]("userId") / "assigned-office-id" / path[UUID]("assignedOfficeId"))
       .out(
         jsonBody[ApiUserAccount]
@@ -155,11 +152,7 @@ class AccountEndpoints[F[_]: MonadThrow: Clock](
   private lazy val unassignUserOfficeEndpoint =
     securedEndpoint(requiredRole = OfficeManager).delete
       .summary("Unassign user office")
-      .description(
-        """Required role: office manager
-          |Access note: The requester can only modify themselves or accounts with lower privileges.
-          |""".stripMargin
-      )
+      .description("Required role: office manager")
       .in("user" / path[UUID]("userId") / "assigned-office-id")
       .out(
         jsonBody[ApiUserAccount]
@@ -339,9 +332,11 @@ class AccountEndpoints[F[_]: MonadThrow: Clock](
   private lazy val updateRolesEndpoint =
     securedEndpoint(requiredRole = SuperAdmin).put
       .summary("Update account roles")
-      .description("Required role: super admin")
       .description(
-        "Updates account roles. The account can be promoted or demoted depending on the roles provided."
+        """Updates account roles. The account can be promoted or demoted depending on the roles provided.
+          |
+          |Required role: super admin
+          |""".stripMargin
       )
       .in(path[UUID]("accountId") / "roles")
       .in(
@@ -396,19 +391,24 @@ class AccountEndpoints[F[_]: MonadThrow: Clock](
         statusCode(StatusCode.NoContent)
           .description("Account archived or not found")
       )
-      .serverLogic(_ => archiveAccount)
+      .serverLogic(accessToken => archiveAccount(accessToken.roles))
 
-  private def archiveAccount(accountId: UUID): F[Either[ApiError, Unit]] = {
-    val isAccountToArchiveSuperAdmin = accountService.readSuperAdmin(accountId).as(true).recover {
+  private def archiveAccount(requesterRoles: List[Role])(accountId: UUID): F[Either[ApiError, Unit]] =
+    for {
+      isAccountToArchiveSuperAdmin <- exists(_.readSuperAdmin(accountId))
+      isAccountToArchiveOfficeManager <- exists(_.readOfficeManager(accountId))
+      isAuthorized =
+        if (isAccountToArchiveSuperAdmin || isAccountToArchiveOfficeManager) requesterRoles.contains(SuperAdmin)
+        else true
+      result <-
+        if (isAuthorized) accountService.archive(accountId).as(().asRight[ApiError])
+        else ApiError.Unauthorized.asLeft.pure[F]
+    } yield result
+
+  private def exists(readAccount: AccountService[F] => F[_ <: Account]) =
+    readAccount(accountService).as(true).recover {
       case AccountNotFound(_) => false
     }
-    for {
-      isAccountToArchiveSuperAdmin <- isAccountToArchiveSuperAdmin
-      result <-
-        if (isAccountToArchiveSuperAdmin) ApiError.Unauthorized.asLeft.pure[F]
-        else accountService.archive(accountId).as(().asRight[ApiError])
-    } yield result
-  }
 
   private lazy val apiUserAccountExample = ApiUserAccount(
     id = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40"),
