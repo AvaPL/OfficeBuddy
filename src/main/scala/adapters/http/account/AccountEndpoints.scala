@@ -89,7 +89,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
   private lazy val readUserEndpoint =
     securedEndpoint(requiredRole = User).get
       .summary("Find a user by ID")
-      .description("Required role: office manager")
+      .description("Required role: user")
       .in("user" / path[UUID]("userId"))
       .out(
         jsonBody[ApiUserAccount]

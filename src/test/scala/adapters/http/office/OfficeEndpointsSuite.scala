@@ -1,7 +1,13 @@
 package io.github.avapl
 package adapters.http.office
 
+import adapters.auth.model.PublicKey
+import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
+import domain.model.account.Role
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
@@ -15,17 +21,19 @@ import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
-import sttp.tapir.integ.cats.effect.CatsMonadError
-import sttp.tapir.server.stub.TapirStubInterpreter
 import weaver.SimpleIOSuite
 
-object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
+object OfficeEndpointsSuite
+  extends SimpleIOSuite
+  with MockitoSugar
+  with ArgumentMatchersSugar
+  with MockitoCats
+  with SecuredApiEndpointFixture {
 
   test(
     """GIVEN create office endpoint
-      | WHEN an office is POSTed and created
+      | WHEN an office is POSTed and created by an office manager
       | THEN 201 Created and the created office is returned
       |""".stripMargin
   ) {
@@ -33,7 +41,7 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
     val office = Office(anyOfficeId, officeToCreate.name, officeToCreate.notes, officeToCreate.address.toDomain)
     val officeService = whenF(mock[OfficeService[IO]].createOffice(any)) thenReturn office
 
-    val response = sendRequest(officeService) {
+    val response = sendRequest(officeService, role = OfficeManager) {
       basicRequest
         .post(uri"http://test.com/office")
         .body(officeToCreate)
@@ -45,6 +53,29 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
       response.code == StatusCode.Created,
       bodyJson(response) == ApiOffice.fromDomain(office).asJson
     )
+  }
+
+  test(
+    """GIVEN create office endpoint
+      | WHEN there is an attempt to create an office by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val officeToCreate = anyApiCreateOffice
+    val officeService = mock[OfficeService[IO]]
+
+    val response = sendRequest(officeService, role = User) {
+      basicRequest
+        .post(uri"http://test.com/office")
+        .body(officeToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(officeService, never).createOffice(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -68,7 +99,7 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
 
   test(
     """GIVEN read office endpoint
-      | WHEN an existing office is read
+      | WHEN an existing office is read by a user
       | THEN 200 OK and the read office is returned
       |""".stripMargin
   ) {
@@ -76,7 +107,7 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
     val office = anyOffice.copy(id = officeId)
     val officeService = whenF(mock[OfficeService[IO]].readOffice(any)) thenReturn office
 
-    val response = sendRequest(officeService) {
+    val response = sendRequest(officeService, role = User) {
       basicRequest.get(uri"http://test.com/office/$officeId")
     }
 
@@ -108,7 +139,7 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
 
   test(
     """GIVEN update office endpoint
-      | WHEN an office is PATCHed and updated
+      | WHEN an office is PATCHed and updated by an office manager
       | THEN 200 OK and the updated office is returned
       |""".stripMargin
   ) {
@@ -117,7 +148,7 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
     val office = Office(officeId, officeToUpdate.name, officeToUpdate.notes, officeToUpdate.address.toDomain)
     val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenReturn office
 
-    val response = sendRequest(officeService) {
+    val response = sendRequest(officeService, role = OfficeManager) {
       basicRequest
         .patch(uri"http://test.com/office/$officeId")
         .body(officeToUpdate)
@@ -129,6 +160,30 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiOffice.fromDomain(office).asJson
     )
+  }
+
+  test(
+    """GIVEN update office endpoint
+      | WHEN there is an attempt to update an office by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val officeToUpdate = anyApiUpdateOffice
+    val officeId = anyOfficeId
+    val officeService = mock[OfficeService[IO]]
+
+    val response = sendRequest(officeService, role = User) {
+      basicRequest
+        .patch(uri"http://test.com/office/$officeId")
+        .body(officeToUpdate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(officeService, never).updateOffice(any, any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
 
   test(
@@ -173,13 +228,13 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
 
   test(
     """GIVEN archive office endpoint
-      | WHEN an existing office is archived
+      | WHEN an existing office is archived by an office manager
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
     val officeService = whenF(mock[OfficeService[IO]].archiveOffice(any)) thenReturn ()
 
-    val response = sendRequest(officeService) {
+    val response = sendRequest(officeService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/office/$anyOfficeId")
     }
 
@@ -188,13 +243,32 @@ object OfficeEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argumen
     } yield expect(response.code == StatusCode.NoContent)
   }
 
-  private def sendRequest(officeService: OfficeService[IO])(request: Request[Either[String, String], Any]) = {
-    val officeEndpoints = new OfficeEndpoints[IO](officeService)
-    val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
-      .whenServerEndpointsRunLogic(officeEndpoints.endpoints)
-      .backend()
-    request.send(backendStub)
+  test(
+    """GIVEN archive office endpoint
+      | WHEN there is an attempt to archive an office by a user
+      | THEN 401 Unauthorized is returned
+      |""".stripMargin
+  ) {
+    val officeService = mock[OfficeService[IO]]
+
+    val response = sendRequest(officeService, role = User) {
+      basicRequest.delete(uri"http://test.com/office/$anyOfficeId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(officeService, never).archiveOffice(any)
+      expect(response.code == StatusCode.Unauthorized)
+    }
   }
+
+  private def sendRequest(officeService: OfficeService[IO], role: Role = SuperAdmin)(
+    request: Request[Either[String, String], Any]
+  ): IO[Response[Either[PublicKey, PublicKey]]] =
+    sendRequest(request, role) { rolesExtractorService =>
+      new OfficeEndpoints[IO](officeService, publicKeyRepository, rolesExtractorService).endpoints
+    }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get

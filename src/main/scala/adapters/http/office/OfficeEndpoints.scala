@@ -1,10 +1,15 @@
 package io.github.avapl
 package adapters.http.office
 
+import adapters.auth.repository.PublicKeyRepository
+import adapters.auth.service.RolesExtractorService
 import adapters.http.ApiError
-import adapters.http.PublicApiEndpoint
-import cats.ApplicativeThrow
+import adapters.http.SecuredApiEndpoint
+import cats.MonadThrow
+import cats.effect.Clock
 import cats.syntax.all._
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.User
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.service.office.OfficeService
@@ -14,9 +19,11 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-class OfficeEndpoints[F[_]: ApplicativeThrow](
-  officeService: OfficeService[F]
-) extends PublicApiEndpoint {
+class OfficeEndpoints[F[_]: Clock: MonadThrow](
+  officeService: OfficeService[F],
+  override val publicKeyRepository: PublicKeyRepository[F],
+  override val rolesExtractor: RolesExtractorService
+) extends SecuredApiEndpoint[F] {
 
   override protected val apiEndpointName: String = "office"
 
@@ -28,8 +35,9 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       Nil
 
   private lazy val createOfficeEndpoint =
-    publicEndpoint.post
+    securedEndpoint(requiredRole = OfficeManager).post
       .summary("Create an office")
+      .description("Required role: office manager")
       .in(
         jsonBody[ApiCreateOffice]
           .example(apiCreateOfficeExample)
@@ -45,7 +53,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
             .description("Office with the given name already exists")
         )
       )
-      .serverLogic(createOffice)
+      .serverLogic(_ => createOffice)
 
   private def createOffice(apiCreateOffice: ApiCreateOffice) =
     officeService
@@ -57,8 +65,9 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readOfficeEndpoint =
-    publicEndpoint.get
+    securedEndpoint(requiredRole = User).get
       .summary("Find an office by ID")
+      .description("Required role: user")
       .in(path[UUID]("officeId"))
       .out(
         jsonBody[ApiOffice]
@@ -71,7 +80,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
             .description("Office with the given ID was not found")
         )
       )
-      .serverLogic(readOffice)
+      .serverLogic(_ => readOffice)
 
   private def readOffice(officeId: UUID) =
     officeService
@@ -83,8 +92,9 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val updateOfficeEndpoint =
-    publicEndpoint.patch
+    securedEndpoint(requiredRole = OfficeManager).patch
       .summary("Update an office")
+      .description("Required role: office manager")
       .in(
         path[UUID]("officeId") and jsonBody[ApiUpdateOffice]
           .example(apiUpdateOfficeExample)
@@ -106,7 +116,7 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
             .description("Office with the given name already exists")
         )
       )
-      .serverLogic((updateOffice _).tupled)
+      .serverLogic(_ => (updateOffice _).tupled)
 
   private def updateOffice(officeId: UUID, apiUpdateOffice: ApiUpdateOffice) =
     officeService
@@ -119,17 +129,20 @@ class OfficeEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val archiveOfficeEndpoint =
-    publicEndpoint.delete
+    securedEndpoint(requiredRole = OfficeManager).delete
       .summary("Archive an office")
       .description(
-        "Archives an office. The office is NOT deleted. The operation is idempotent ie. if the office doesn't exist, the operation doesn't fail."
+        """Archives an office. The office is NOT deleted. The operation is idempotent ie. if the office doesn't exist, the operation doesn't fail.
+          |
+          |Required role: office manager
+          |""".stripMargin
       )
       .in(path[UUID]("officeId"))
       .out(
         statusCode(StatusCode.NoContent)
           .description("Office archived or not found")
       )
-      .serverLogic(archiveOffice)
+      .serverLogic(_ => archiveOffice)
 
   private def archiveOffice(officeId: UUID) =
     officeService

@@ -2,9 +2,7 @@ package io.github.avapl
 package adapters.http.account
 
 import adapters.auth.model.PublicKey
-import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractorService
-import cats.data.EitherT
+import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.Role
@@ -19,27 +17,21 @@ import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
 import io.circe.parser._
 import io.circe.syntax._
-import java.security.KeyPairGenerator
-import java.security.SecureRandom
-import java.time.Clock
-import java.time.Instant
-import java.util.Base64
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
-import pdi.jwt.JwtAlgorithm
-import pdi.jwt.JwtCirce
-import pdi.jwt.JwtClaim
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
-import sttp.tapir.integ.cats.effect.CatsMonadError
-import sttp.tapir.server.stub.TapirStubInterpreter
 import weaver.SimpleIOSuite
 
-object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
+object AccountEndpointsSuite
+  extends SimpleIOSuite
+  with MockitoSugar
+  with ArgumentMatchersSugar
+  with MockitoCats
+  with SecuredApiEndpointFixture {
 
   test(
     """GIVEN create user endpoint
@@ -817,7 +809,7 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     val superAdminAccountId = anyAccountId
     val accountService = mock[AccountService[IO]]
     whenF(accountService.readSuperAdmin(superAdminAccountId)) thenReturn anySuperAdminAccount
-    whenF(accountService.readOfficeManager(superAdminAccountId)) thenFailWith  AccountNotFound(superAdminAccountId)
+    whenF(accountService.readOfficeManager(superAdminAccountId)) thenFailWith AccountNotFound(superAdminAccountId)
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/account/$superAdminAccountId")
@@ -831,33 +823,15 @@ object AccountEndpointsSuite extends SimpleIOSuite with MockitoSugar with Argume
     }
   }
 
-  // TODO: Introduce a fixture to test the endpoints
   private def sendRequest(accountService: AccountService[IO], role: Role = SuperAdmin)(
     request: Request[Either[String, String], Any]
-  ) = {
-    val publicKeyRepository = new PublicKeyRepository[IO] {
-      override def get: IO[PublicKey] = IO.pure(publicKey)
+  ): IO[Response[Either[PublicKey, PublicKey]]] =
+    sendRequest(request, role) { rolesExtractorService =>
+      new AccountEndpoints[IO](accountService, publicKeyRepository, rolesExtractorService).endpoints
     }
-    val rolesExtractorService: RolesExtractorService = _ => List(role)
-    val accountEndpoints = new AccountEndpoints[IO](accountService, publicKeyRepository, rolesExtractorService)
-    val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
-      .whenServerEndpointsRunLogic(accountEndpoints.endpoints)
-      .backend()
-    request.auth.bearer(bearer).send(backendStub)
-  }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get
-
-  private lazy val (bearer, publicKey) = {
-    val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
-    keyPairGenerator.initialize(2048, new SecureRandom(0.toString.getBytes))
-    val keyPair = keyPairGenerator.generateKeyPair()
-    val fixedJavaClock = Clock.fixed(Instant.parse("2024-07-16T12:00:00Z"), java.time.ZoneOffset.UTC)
-    val encodedToken = JwtCirce(fixedJavaClock).encode(JwtClaim(), keyPair.getPrivate, JwtAlgorithm.RS256)
-    val publicKeyString = new String(Base64.getEncoder.encode(keyPair.getPublic.getEncoded))
-    (encodedToken, publicKeyString)
-  }
 
   private lazy val anyUserAccount = UserAccount(
     id = anyAccountId,
