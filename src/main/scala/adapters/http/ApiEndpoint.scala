@@ -64,6 +64,12 @@ trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
             .description("Unauthorized")
         )
       )
+      .errorOutVariantPrepend(
+        oneOfVariant(
+          statusCode(StatusCode.Forbidden) and emptyOutputAs(ApiError.Forbidden)
+            .description("Forbidden")
+        )
+      )
 
   private def authorize(bearer: String, requiredRole: Role)(implicit
     clock: Clock[F],
@@ -81,8 +87,8 @@ trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
     AccessToken
       .decode(bearer, rolesExtractor, publicKey)
       .map { accessToken =>
-        if (accessToken.roles.exists(_.hasAccess(requiredRole))) accessToken.asRight
-        else ApiError.Unauthorized.asLeft
+        if (accessToken.roles.exists(_.hasAccess(requiredRole))) accessToken.asRight[ApiError]
+        else ApiError.Forbidden.asLeft
       }
       .recover {
         case _: JwtException   => ApiError.Unauthorized.asLeft

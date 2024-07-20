@@ -33,7 +33,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the JWT token is valid and contains the required role
-      | THEN 200 status code and body is returned
+      | THEN 200 OK status code and body is returned
       |""".stripMargin
   ) {
     val requiredRole = User
@@ -50,7 +50,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the JWT token contains role with broader access than required
-      | THEN 200 status code and body is returned
+      | THEN 200 OK status code and body is returned
       |""".stripMargin
   ) {
     val requiredRole = User
@@ -67,7 +67,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the output is a BadRequest
-      | THEN 400 status code and body with an error message is returned
+      | THEN 400 BadRequest status code and body with an error message is returned
       |""".stripMargin
   ) {
     val error = ApiError.BadRequest("test message")
@@ -83,7 +83,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the output is an InternalServerError
-      | THEN 500 status code and body with an error message is returned
+      | THEN 500 InternalServerError status code and body with an error message is returned
       |""".stripMargin
   ) {
     val error = ApiError.InternalServerError("test message")
@@ -99,7 +99,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the server logic fails with an exception
-      | THEN 500 status code and body with a generic error message is returned
+      | THEN 500 InternalServerError status code and body with a generic error message is returned
       |""".stripMargin
   ) {
     val exception = new RuntimeException("test message")
@@ -115,7 +115,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the JWT token is invalid
-      | THEN 401 status code is returned
+      | THEN 401 Unauthorized status code is returned
       |""".stripMargin
   ) {
     val bearer = "invalid.jwt.token"
@@ -128,7 +128,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the JWT token is expired
-      | THEN 401 status code is returned
+      | THEN 401 Unauthorized status code is returned
       |""".stripMargin
   ) {
     val expirationSeconds = 100
@@ -145,7 +145,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
   test(
     """GIVEN secured endpoint
       | WHEN the JWT token doesn't contain role the required role nor a role with broader access
-      | THEN 401 status code is returned
+      | THEN 403 Forbidden status code is returned
       |""".stripMargin
   ) {
     val requiredRole = SuperAdmin
@@ -153,7 +153,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
     val (bearer, publicKey) = generateJwt()
     for {
       response <- sendRequest(bearer, publicKey, requiredRole, extractedRoles)
-    } yield expect(response.code == StatusCode.Unauthorized)
+    } yield expect(response.code == StatusCode.Forbidden)
   }
 
   private def sendAuthorizedRequest(

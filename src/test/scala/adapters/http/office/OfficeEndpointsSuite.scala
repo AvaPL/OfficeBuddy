@@ -58,7 +58,7 @@ object OfficeEndpointsSuite
   test(
     """GIVEN create office endpoint
       | WHEN there is an attempt to create an office by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeToCreate = anyApiCreateOffice
@@ -74,7 +74,7 @@ object OfficeEndpointsSuite
       response <- response
     } yield {
       verify(officeService, never).createOffice(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -165,7 +165,7 @@ object OfficeEndpointsSuite
   test(
     """GIVEN update office endpoint
       | WHEN there is an attempt to update an office by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeToUpdate = anyApiUpdateOffice
@@ -182,7 +182,7 @@ object OfficeEndpointsSuite
       response <- response
     } yield {
       verify(officeService, never).updateOffice(any, any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -246,7 +246,7 @@ object OfficeEndpointsSuite
   test(
     """GIVEN archive office endpoint
       | WHEN there is an attempt to archive an office by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeService = mock[OfficeService[IO]]
@@ -259,7 +259,7 @@ object OfficeEndpointsSuite
       response <- response
     } yield {
       verify(officeService, never).archiveOffice(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 

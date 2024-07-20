@@ -66,7 +66,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN create user endpoint
       | WHEN there is an attempt to create a user by another user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val userToCreate = anyApiCreateUserAccount
@@ -82,7 +82,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).createUser(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -191,7 +191,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN assign office to user endpoint
       | WHEN there is an attempt to assign the office by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val userId = anyAccountId
@@ -206,7 +206,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).updateUserAssignedOffice(any, any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -274,7 +274,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN unassign user office endpoint
       | WHEN there is an attempt to unassign the office by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val userId = anyAccountId
@@ -288,7 +288,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).updateUserAssignedOffice(any, any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -344,7 +344,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN create office manager endpoint
       | WHEN there is an attempt to create an office manager by another office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeManagerToCreate = anyApiCreateOfficeManagerAccount
@@ -360,7 +360,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).createOfficeManager(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -409,7 +409,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN read office manager endpoint
       | WHEN there is an attempt to read the office manager by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeManagerId = anyAccountId
@@ -423,7 +423,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).readOfficeManager(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -475,7 +475,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN update office manager managed offices endpoint
       | WHEN there is an attempt to assign the offices by an office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val managedOfficeIds = List(anyOfficeId)
@@ -491,7 +491,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).updateOfficeManagerManagedOffices(any, any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -549,7 +549,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN create super admin endpoint
       | WHEN there is an attempt to create a super admin by an office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val superAdminToCreate = anyApiCreateSuperAdminAccount
@@ -565,7 +565,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).createSuperAdmin(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -614,7 +614,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN read super admin endpoint
       | WHEN there is an attempt to read the super admin by an office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val superAdminId = anyAccountId
@@ -628,7 +628,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).readSuperAdmin(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -675,7 +675,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN update roles endpoint
       | WHEN there is an attempt to update the roles by an office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val accountService = mock[AccountService[IO]]
@@ -690,7 +690,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).updateRoles(any, any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -760,7 +760,7 @@ object AccountEndpointsSuite
   test(
     """GIVEN archive account endpoint
       | WHEN there is an attempt to archive the account by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val accountService = mock[AccountService[IO]]
@@ -773,14 +773,14 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).archive(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
   test(
     """GIVEN archive account endpoint
       | WHEN there is an attempt to archive an office manager account by another office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeManagerAccountId = anyAccountId
@@ -796,14 +796,14 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).archive(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
   test(
     """GIVEN archive account endpoint
       | WHEN there is an attempt to archive a super admin account by an office manager
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val superAdminAccountId = anyAccountId
@@ -819,7 +819,7 @@ object AccountEndpointsSuite
       response <- response
     } yield {
       verify(accountService, never).archive(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 

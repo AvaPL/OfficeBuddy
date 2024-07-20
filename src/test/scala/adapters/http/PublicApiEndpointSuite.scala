@@ -15,7 +15,7 @@ object PublicApiEndpointSuite extends SimpleIOSuite {
   test(
     """GIVEN public endpoint
       | WHEN the output is a success
-      | THEN a correct status code and body is returned
+      | THEN 200 OK status code and body is returned
       |""".stripMargin
   ) {
     for {
@@ -29,7 +29,7 @@ object PublicApiEndpointSuite extends SimpleIOSuite {
   test(
     """GIVEN public endpoint
       | WHEN the output is a BadRequest
-      | THEN 400 status code and body with an error message is returned
+      | THEN 400 BadRequest status code and body with an error message is returned
       |""".stripMargin
   ) {
     val error = ApiError.BadRequest("test message")
@@ -45,7 +45,7 @@ object PublicApiEndpointSuite extends SimpleIOSuite {
   test(
     """GIVEN public endpoint
       | WHEN the output is an InternalServerError
-      | THEN 500 status code and body with an error message is returned
+      | THEN 500 InternalServerError status code and body with an error message is returned
       |""".stripMargin
   ) {
     val error = ApiError.InternalServerError("test message")
@@ -61,7 +61,7 @@ object PublicApiEndpointSuite extends SimpleIOSuite {
   test(
     """GIVEN public endpoint
       | WHEN the server logic fails with an exception
-      | THEN 500 status code and body with a generic error message is returned
+      | THEN 500 InternalServerError status code and body with a generic error message is returned
       |""".stripMargin
   ) {
     val exception = new RuntimeException("test message")

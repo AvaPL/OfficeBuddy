@@ -66,7 +66,7 @@ object DeskEndpointsSuite
   test(
     """GIVEN create desk endpoint
       | WHEN there is an attempt to create a desk by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val deskToCreate = anyApiCreateDesk
@@ -82,7 +82,7 @@ object DeskEndpointsSuite
       response <- response
     } yield {
       verify(deskService, never).createDesk(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -203,7 +203,7 @@ object DeskEndpointsSuite
   test(
     """GIVEN update desk endpoint
       | WHEN there is an attempt to update a desk by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val deskToUpdate = anyApiUpdateDesk
@@ -220,7 +220,7 @@ object DeskEndpointsSuite
       response <- response
     } yield {
       verify(deskService, never).updateDesk(any, any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 
@@ -303,7 +303,7 @@ object DeskEndpointsSuite
   test(
     """GIVEN archive desk endpoint
       | WHEN there is an attempt to archive a desk by a user
-      | THEN 401 Unauthorized is returned
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val deskService = mock[DeskService[IO]]
@@ -316,7 +316,7 @@ object DeskEndpointsSuite
       response <- response
     } yield {
       verify(deskService, never).archiveDesk(any)
-      expect(response.code == StatusCode.Unauthorized)
+      expect(response.code == StatusCode.Forbidden)
     }
   }
 

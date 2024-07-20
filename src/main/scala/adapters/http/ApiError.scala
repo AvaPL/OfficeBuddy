@@ -19,6 +19,10 @@ object ApiError {
     val message: String = "Unauthorized"
   }
 
+  case object Forbidden extends ApiError {
+    val message: String = "Forbidden"
+  }
+
   @derive(circeEncoder, circeDecoder, tapirSchema)
   case class NotFound(message: String) extends ApiError
 

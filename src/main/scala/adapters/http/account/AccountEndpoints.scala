@@ -402,7 +402,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         else requesterRoles.contains(OfficeManager)
       result <-
         if (isAuthorized) accountService.archive(accountId).as(().asRight[ApiError])
-        else ApiError.Unauthorized.asLeft.pure[F]
+        else ApiError.Forbidden.asLeft.pure[F]
     } yield result
 
   private def exists(readAccount: AccountService[F] => F[_ <: Account]) =
