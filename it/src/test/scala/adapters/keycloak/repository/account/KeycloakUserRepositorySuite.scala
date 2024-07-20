@@ -2,6 +2,7 @@ package io.github.avapl
 package adapters.keycloak.repository.account
 
 import adapters.keycloak.fixture.KeycloakFixture
+import adapters.keycloak.repository.account.KeycloakAttribute.AccountId
 import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
 import adapters.keycloak.repository.account.KeycloakRole.OfficeManager
 import adapters.keycloak.repository.account.KeycloakRole.SuperAdmin
@@ -195,6 +196,7 @@ object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
   private lazy val anyRoles = List(User)
 
   private lazy val anyAttributes = List(
+    AccountId(UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")),
     ManagedOfficeIds(List(UUID.fromString("8d719346-4b99-485b-b4d7-2117f422dae3")))
   )
 }

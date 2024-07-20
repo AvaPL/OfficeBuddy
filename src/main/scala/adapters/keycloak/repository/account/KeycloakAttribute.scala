@@ -1,9 +1,11 @@
 package io.github.avapl
 package adapters.keycloak.repository.account
 
-import adapters.keycloak.repository.account.KeycloakAttributeKey.ManagedOfficeIdsKey
+import adapters.keycloak.repository.account.KeycloakAttributeKey.{AccountIdKey, ManagedOfficeIdsKey}
+
 import enumeratum.values.StringEnum
 import enumeratum.values.StringEnumEntry
+
 import java.util.UUID
 
 sealed abstract class KeycloakAttribute(val key: KeycloakAttributeKey) {
@@ -11,6 +13,10 @@ sealed abstract class KeycloakAttribute(val key: KeycloakAttributeKey) {
 }
 
 object KeycloakAttribute {
+
+  case class AccountId(accountId: UUID) extends KeycloakAttribute(AccountIdKey) {
+    override val values: List[String] = List(accountId.toString)
+  }
 
   case class ManagedOfficeIds(officeIds: List[UUID]) extends KeycloakAttribute(ManagedOfficeIdsKey) {
     override val values: List[String] = officeIds.map(_.toString)
@@ -26,6 +32,7 @@ sealed abstract class KeycloakAttributeKey(override val value: String) extends S
 
 object KeycloakAttributeKey extends StringEnum[KeycloakAttributeKey] {
 
+  case object AccountIdKey extends KeycloakAttributeKey("account_id")
   case object ManagedOfficeIdsKey extends KeycloakAttributeKey("managed_office_ids")
 
   override val values: IndexedSeq[KeycloakAttributeKey] = findValues

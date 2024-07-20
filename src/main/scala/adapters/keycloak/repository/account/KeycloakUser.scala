@@ -1,8 +1,14 @@
 package io.github.avapl
 package adapters.keycloak.repository.account
 
+import adapters.keycloak.repository.account.KeycloakAttribute.AccountId
 import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
+import adapters.keycloak.repository.account.KeycloakAttributeKey.AccountIdKey
 import adapters.keycloak.repository.account.KeycloakAttributeKey.ManagedOfficeIdsKey
+import adapters.keycloak.repository.account.KeycloakRole.OfficeManager
+import adapters.keycloak.repository.account.KeycloakRole.SuperAdmin
+import adapters.keycloak.repository.account.KeycloakRole.User
+import cats.implicits._
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
@@ -25,6 +31,7 @@ case class KeycloakUser(
     userRepresentation.setEmail(email)
     userRepresentation.setFirstName(firstName)
     userRepresentation.setLastName(lastName)
+    userRepresentation.setRealmRoles(roles.map(_.value).asJava)
     userRepresentation.setAttributes(KeycloakAttribute.toAttributesMap(attributes))
     userRepresentation.setEnabled(isEnabled)
     userRepresentation
@@ -37,8 +44,11 @@ object KeycloakUser {
     KeycloakUser(
       email = userAccount.email,
       firstName = userAccount.firstName,
-      lastName = userAccount.lastName
-      // TODO: Assign user role
+      lastName = userAccount.lastName,
+      roles = List(User),
+      attributes = List(
+        AccountId(userAccount.id)
+      )
     )
 
   def fromOfficeManagerAccount(officeManagerAccount: OfficeManagerAccount): KeycloakUser =
@@ -46,16 +56,22 @@ object KeycloakUser {
       email = officeManagerAccount.email,
       firstName = officeManagerAccount.firstName,
       lastName = officeManagerAccount.lastName,
-      attributes = List(ManagedOfficeIds(officeManagerAccount.managedOfficeIds))
-      // TODO: Assign office manager role
+      roles = List(OfficeManager),
+      attributes = List(
+        AccountId(officeManagerAccount.id),
+        ManagedOfficeIds(officeManagerAccount.managedOfficeIds)
+      )
     )
 
   def fromSuperAdminAccount(superAdminAccount: SuperAdminAccount): KeycloakUser =
     KeycloakUser(
       email = superAdminAccount.email,
       firstName = superAdminAccount.firstName,
-      lastName = superAdminAccount.lastName
-      // TODO: Assign super admin role
+      lastName = superAdminAccount.lastName,
+      roles = List(SuperAdmin),
+      attributes = List(
+        AccountId(superAdminAccount.id)
+      )
     )
 
   def fromUserRepresentation(userRepresentation: UserRepresentation): KeycloakUser = {
@@ -76,16 +92,16 @@ object KeycloakUser {
       .map(_.asScala.toList)
       .getOrElse(Nil)
 
-  private def parseAttributes(userRepresentation: UserRepresentation) = {
+  private def parseAttributes(userRepresentation: UserRepresentation) =
     Option(userRepresentation.getAttributes)
       .map(javaMapListToScala)
       .getOrElse(Map.empty)
       .flatMap {
-        case (key, values) => KeycloakAttributeKey.withValueOpt(key).map(_ -> values)
-      }
-      .map {
-        case (ManagedOfficeIdsKey, officeIds) => ManagedOfficeIds(officeIds.map(UUID.fromString))
+        case (key, values) =>
+          KeycloakAttributeKey.withValueOpt(key).flatMap {
+            case AccountIdKey        => values.headOption.map(UUID.fromString).map(AccountId)
+            case ManagedOfficeIdsKey => ManagedOfficeIds(values.map(UUID.fromString)).some
+          }
       }
       .toList
-  }
 }
