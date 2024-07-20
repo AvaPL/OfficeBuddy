@@ -76,14 +76,47 @@ object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
   }
 
   beforeTest(
+    """GIVEN a user with attributes
+      | WHEN getUserAttributes is called
+      | THEN the user attributes are properly read from Keycloak
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val user = anyUser.copy(attributes =
+      List(
+        AccountId(UUID.fromString("1518acae-9048-4de1-b9bd-8ca28f848069")),
+        ManagedOfficeIds(
+          List(
+            UUID.fromString("b070123b-a063-44f4-95c5-a9947772c980"),
+            UUID.fromString("fa9def50-3021-4784-957e-555f10b8f5fd")
+          )
+        )
+      )
+    )
+
+    for {
+      _ <- keycloakAccountRepository.createUser(user)
+      readAttributes <- keycloakAccountRepository.getUserAttributes(user.email)
+    } yield expect(readAttributes == user.attributes)
+  }
+
+  beforeTest(
     """GIVEN an existing user and new attributes
       | WHEN updateUserAttributes is called
       | THEN the user attributes are properly updated in Keycloak
       |""".stripMargin
   ) { keycloakAccountRepository =>
-    val user = anyUser.copy(attributes = Nil)
+    val user = anyUser.copy(attributes =
+      List(
+        ManagedOfficeIds(
+          List(
+            UUID.fromString("b070123b-a063-44f4-95c5-a9947772c980"),
+            UUID.fromString("fa9def50-3021-4784-957e-555f10b8f5fd")
+          )
+        )
+      )
+    )
     val newAttributes = List(
-      ManagedOfficeIds(List(UUID.fromString("fa9def50-3021-4784-957e-555f10b8f5fd")))
+      AccountId(UUID.fromString("1518acae-9048-4de1-b9bd-8ca28f848069"))
     )
 
     for {
@@ -200,7 +233,7 @@ object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
     ManagedOfficeIds(
       List(
         UUID.fromString("8d719346-4b99-485b-b4d7-2117f422dae3"),
-        UUID.fromString("3689382d-262b-4039-9205-7bffdc6237f8"),
+        UUID.fromString("3689382d-262b-4039-9205-7bffdc6237f8")
       )
     )
   )

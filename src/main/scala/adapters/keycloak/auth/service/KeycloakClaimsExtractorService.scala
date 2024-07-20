@@ -18,7 +18,6 @@ object KeycloakClaimsExtractorService extends ClaimsExtractorService {
       .flatMap(KeycloakRole.withValueOpt)
       .map(_.toDomain)
 
-  // TODO: Add a mapper in Keycloak to include the attribute in the token
   override def extractAccountId(json: Json): Option[UUID] =
     json.hcursor
       .downField("domain_attributes")

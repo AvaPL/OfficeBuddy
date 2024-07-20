@@ -1,6 +1,7 @@
 package io.github.avapl
 package adapters.facade.repository.account
 
+import adapters.keycloak.repository.account.KeycloakAttribute
 import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
 import adapters.keycloak.repository.account.KeycloakRole
 import adapters.keycloak.repository.account.KeycloakUser
@@ -11,16 +12,17 @@ import adapters.postgres.repository.account.PostgresSuperAdminAccount
 import adapters.postgres.repository.account.PostgresUserAccount
 import cats.data.NonEmptyList
 import cats.effect.IO
+import com.softwaremill.quicklens._
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.Role
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
+import domain.model.error.account.AccountNotFound
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import weaver.SimpleIOSuite
-import domain.model.error.account.AccountNotFound
 
 object KeycloakPostgresAccountRepositorySuite
   extends SimpleIOSuite
@@ -186,7 +188,10 @@ object KeycloakPostgresAccountRepositorySuite
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
     whenF(postgresAccountRepository.readOfficeManager(any)) thenReturn postgresOfficeManagerAccount
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
-    whenF(keycloakUserRepository.updateUserAttributes(any, any)) thenReturn keycloakUser
+    whenF(keycloakUserRepository.getUserAttributes(any)) thenReturn keycloakUser.attributes
+    val updatedKeycloakUser =
+      keycloakUser.modify(_.attributes.each.when[ManagedOfficeIds]).setTo(ManagedOfficeIds(managedOfficeIds))
+    whenF(keycloakUserRepository.updateUserAttributes(any, any)) thenReturn updatedKeycloakUser
     val keycloakPostgresAccountRepository =
       new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
 
@@ -197,9 +202,9 @@ object KeycloakPostgresAccountRepositorySuite
       )
     } yield {
       verify(postgresAccountRepository, only).readOfficeManager(eqTo(officeManagerId))
-      verify(keycloakUserRepository, only).updateUserAttributes(
-        postgresOfficeManagerAccount.email,
-        List(ManagedOfficeIds(managedOfficeIds))
+      verify(keycloakUserRepository, times(1)).updateUserAttributes(
+        eqTo(postgresOfficeManagerAccount.email),
+        argThat[List[KeycloakAttribute]](_.toSet == updatedKeycloakUser.attributes.toSet, "same elements")
       )
       expect(updatedOfficeManager == expectedOfficeManager)
     }

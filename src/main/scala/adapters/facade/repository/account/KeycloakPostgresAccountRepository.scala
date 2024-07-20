@@ -83,11 +83,9 @@ class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
   ): F[OfficeManagerAccount] =
     for {
       postgresOfficeManager <- postgresAccountRepository.readOfficeManager(officeManagerId)
-      // TODO: If more attributes are introduced, this logic has to be adjusted
-      keycloakUser <- keycloakUserRepository.updateUserAttributes(
-        postgresOfficeManager.email,
-        List(ManagedOfficeIds(officeIds))
-      )
+      currentAttributes <- keycloakUserRepository.getUserAttributes(postgresOfficeManager.email)
+      updatedAttributes = ManagedOfficeIds(officeIds) :: currentAttributes.filterNot(_.isInstanceOf[ManagedOfficeIds])
+      keycloakUser <- keycloakUserRepository.updateUserAttributes(postgresOfficeManager.email, updatedAttributes)
     } yield toOfficeManagerAccount(postgresOfficeManager, keycloakUser)
 
   override def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount] =

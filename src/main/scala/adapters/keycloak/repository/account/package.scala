@@ -13,5 +13,6 @@ package object account {
     map.view.mapValues(_.asJava).toMap.asJava
 
   implicit def javaMapListToScala[K, V](map: java.util.Map[K, java.util.List[V]]): Map[K, List[V]] =
-    map.asScala.view.mapValues(_.asScala.toList).toMap
+    if (map == null) Map.empty
+    else map.asScala.view.mapValues(_.asScala.toList).toMap
 }

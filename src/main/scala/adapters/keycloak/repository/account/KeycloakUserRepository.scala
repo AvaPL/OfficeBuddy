@@ -83,6 +83,11 @@ class KeycloakUserRepository[F[_]: Sync](
         .map(_.getName)
     }
 
+  def getUserAttributes(email: String): F[List[KeycloakAttribute]] =
+    safeFindUserByEmail(email).map { userRepresentation =>
+      KeycloakAttribute.fromAttributesMap(javaMapListToScala(userRepresentation.getAttributes))
+    }
+
   def updateUserAttributes(email: String, newAttributes: List[KeycloakAttribute]): F[KeycloakUser] =
     for {
       userRepresentation <- safeFindUserByEmail(email)
