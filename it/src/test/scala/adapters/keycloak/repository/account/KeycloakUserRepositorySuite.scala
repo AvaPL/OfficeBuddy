@@ -197,6 +197,11 @@ object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
 
   private lazy val anyAttributes = List(
     AccountId(UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")),
-    ManagedOfficeIds(List(UUID.fromString("8d719346-4b99-485b-b4d7-2117f422dae3")))
+    ManagedOfficeIds(
+      List(
+        UUID.fromString("8d719346-4b99-485b-b4d7-2117f422dae3"),
+        UUID.fromString("3689382d-262b-4039-9205-7bffdc6237f8"),
+      )
+    )
   )
 }
