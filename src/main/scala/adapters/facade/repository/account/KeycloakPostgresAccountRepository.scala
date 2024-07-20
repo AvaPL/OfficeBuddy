@@ -111,6 +111,7 @@ class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
       isArchived = postgresSuperAdmin.isArchived
     )
 
+  // TODO: Logout the user after the roles are updated
   override def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[Account] =
     for {
       postgresAccount <- postgresAccountRepository.updateRoles(accountId, roles)
