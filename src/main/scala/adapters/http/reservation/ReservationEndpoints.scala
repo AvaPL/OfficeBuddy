@@ -1,10 +1,15 @@
 package io.github.avapl
 package adapters.http.reservation
 
+import adapters.auth.repository.PublicKeyRepository
+import adapters.auth.service.RolesExtractorService
 import adapters.http.ApiError
-import adapters.http.PublicApiEndpoint
-import cats.ApplicativeThrow
+import adapters.http.SecuredApiEndpoint
+import cats.MonadThrow
+import cats.effect.Clock
 import cats.syntax.all._
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.User
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.reservation._
 import domain.model.error.user.UserNotFound
@@ -17,9 +22,11 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-class ReservationEndpoints[F[_]: ApplicativeThrow](
-  reservationService: ReservationService[F]
-) extends PublicApiEndpoint {
+class ReservationEndpoints[F[_]: Clock: MonadThrow](
+  reservationService: ReservationService[F],
+  override val publicKeyRepository: PublicKeyRepository[F],
+  override val rolesExtractor: RolesExtractorService
+) extends SecuredApiEndpoint[F] {
 
   override protected val apiEndpointName: String = "reservation"
 
@@ -31,8 +38,9 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       rejectReservationEndpoint ::
       Nil
 
+  // TODO: Compare the user ID from the token with the user ID from the body
   private lazy val reserveDeskEndpoint =
-    publicEndpoint.post
+    securedEndpoint(requiredRole = User).post
       .summary("Reserve a desk")
       .in("desk")
       .in(
@@ -56,7 +64,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
             .description("Desk reservation overlaps with another reservation")
         )
       )
-      .serverLogic(reserveDesk)
+      .serverLogic(_ => reserveDesk)
 
   private def reserveDesk(apiCreateDeskReservation: ApiCreateDeskReservation) =
     reservationService
@@ -73,7 +81,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       }
 
   private lazy val readDeskReservationEndpoint =
-    publicEndpoint.get
+    securedEndpoint(requiredRole = User).get
       .summary("Find a desk reservation by ID")
       .in("desk" / path[UUID]("reservationId"))
       .out(
@@ -87,7 +95,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
             .description("Desk reservation with the given ID was not found")
         )
       )
-      .serverLogic(readDeskReservation)
+      .serverLogic(_ => readDeskReservation)
 
   private def readDeskReservation(reservationId: UUID) =
     reservationService
@@ -101,8 +109,10 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       ApiError.NotFound(s"Reservation [id: $reservationId] was not found").asLeft
   }
 
+  // TODO: Allow the user to cancel only their own reservations
+  // TODO: Allow the office manager to cancel users' reservations
   private lazy val cancelReservationEndpoint =
-    publicEndpoint.put
+    securedEndpoint(requiredRole = User).put
       .summary("Cancel a reservation")
       .description(
         "Cancels a reservation. This operation has to be called by the reservation owner on a PENDING or CONFIRMED reservation."
@@ -124,7 +134,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
             .description("Reservation with the given ID was not found")
         )
       )
-      .serverLogic(cancelReservation)
+      .serverLogic(_ => cancelReservation)
 
   private def cancelReservation(reservationId: UUID) =
     reservationService
@@ -139,10 +149,10 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
   }
 
   private lazy val confirmReservationEndpoint =
-    publicEndpoint.put
+    securedEndpoint(requiredRole = OfficeManager).put
       .summary("Confirm a reservation")
       .description(
-        "Confirms a reservation. This operation has to be called by the office manager of the related office on a PENDING reservation."
+        "Confirms a reservation. This operation has to be called by the office manager on a PENDING reservation."
       )
       .in(path[UUID]("reservationId") / "confirm")
       .out(
@@ -161,7 +171,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
             .description("Reservation with the given ID was not found")
         )
       )
-      .serverLogic(confirmReservation)
+      .serverLogic(_ => confirmReservation)
 
   private def confirmReservation(reservationId: UUID) =
     reservationService
@@ -171,10 +181,10 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
       .recover(recoverOnInvalidStateTransition)
 
   private lazy val rejectReservationEndpoint =
-    publicEndpoint.put
+    securedEndpoint(requiredRole = OfficeManager).put
       .summary("Reject a reservation")
       .description(
-        "Rejects a reservation. This operation has to be called by the office manager of the related office on a PENDING or CONFIRMED reservation."
+        "Rejects a reservation. This operation has to be called by the office manager on a PENDING or CONFIRMED reservation."
       )
       .in(path[UUID]("reservationId") / "reject")
       .out(
@@ -193,7 +203,7 @@ class ReservationEndpoints[F[_]: ApplicativeThrow](
             .description("Reservation with the given ID was not found")
         )
       )
-      .serverLogic(rejectReservation)
+      .serverLogic(_ => rejectReservation)
 
   private def rejectReservation(reservationId: UUID) =
     reservationService

@@ -18,9 +18,9 @@ case class AccessToken(
 object AccessToken {
 
   def decode[F[_]: Clock: MonadThrow](
-                                       bearer: String,
-                                       rolesExtractor: RolesExtractorService,
-                                       publicKey: String
+    bearer: String,
+    rolesExtractor: RolesExtractorService,
+    publicKey: String
   ): F[AccessToken] =
     for {
       now <- Clock[F].realTimeInstant
@@ -28,10 +28,10 @@ object AccessToken {
     } yield accessToken
 
   private def decode[F[_]: MonadThrow](
-                                        bearer: String,
-                                        rolesExtractor: RolesExtractorService,
-                                        publicKey: String,
-                                        now: Instant
+    bearer: String,
+    rolesExtractor: RolesExtractorService,
+    publicKey: String,
+    now: Instant
   ) =
     MonadThrow[F].fromTry {
       val fixedJavaClock = java.time.Clock.fixed(now, ZoneOffset.UTC)

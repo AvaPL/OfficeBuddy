@@ -10,8 +10,14 @@ import domain.model.error.user.UserNotFound
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
 import domain.service.reservation.ReservationService
+
 import io.circe.parser._
 import io.circe.syntax._
+import io.github.avapl.adapters.auth.model.PublicKey
+import io.github.avapl.adapters.http.fixture.SecuredApiEndpointFixture
+import io.github.avapl.domain.model.account.Role
+import io.github.avapl.domain.model.account.Role.{OfficeManager, SuperAdmin, User}
+
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -27,11 +33,16 @@ import sttp.tapir.integ.cats.effect.CatsMonadError
 import sttp.tapir.server.stub.TapirStubInterpreter
 import weaver.SimpleIOSuite
 
-object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
+object ReservationEndpointsSuite
+  extends SimpleIOSuite
+  with MockitoSugar
+  with ArgumentMatchersSugar
+  with MockitoCats
+  with SecuredApiEndpointFixture {
 
   test(
     """GIVEN reserve desk endpoint
-      | WHEN a reservation is POSTed and created
+      | WHEN a reservation is POSTed and created by a user
       | THEN 201 Created and the created reservation is returned
       |""".stripMargin
   ) {
@@ -48,7 +59,7 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
     )
     val reservationService = whenF(mock[ReservationService[IO]].reserveDesk(any)) thenReturn reservation
 
-    val response = sendRequest(reservationService) {
+    val response = sendRequest(reservationService, role = User) {
       basicRequest
         .post(uri"http://test.com/reservation/desk")
         .body(reservationToCreate)
@@ -60,6 +71,26 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
       response.code == StatusCode.Created,
       bodyJson(response) == ApiDeskReservation.fromDomain(reservation).asJson
     )
+  }
+
+  test(
+    """GIVEN reserve desk endpoint
+      | WHEN a reservation is POSTed and created by an office manager for another user
+      | THEN 201 Created and the created reservation is returned
+      |""".stripMargin
+  ) {
+    // TODO: Implement
+    IO(fail("Implement").apply())
+  }
+
+  test(
+    """GIVEN reserve desk endpoint
+      | WHEN there is an attempt to create a reservation for a user by another user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    // TODO: Implement
+    IO(fail("Implement").apply())
   }
 
   test(
@@ -124,7 +155,7 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
 
   test(
     """GIVEN read desk reservation endpoint
-      | WHEN an existing reservation is read
+      | WHEN an existing reservation is read by a user
       | THEN 200 OK and the read reservation is returned
       |""".stripMargin
   ) {
@@ -132,7 +163,7 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
     val reservation = anyDeskReservation.copy(id = reservationId)
     val reservationService = whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenReturn reservation
 
-    val response = sendRequest(reservationService) {
+    val response = sendRequest(reservationService, role = User) {
       basicRequest.get(uri"http://test.com/reservation/desk/$reservationId")
     }
 
@@ -165,21 +196,32 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
 
   test(
     """GIVEN cancel reservation endpoint
-      | WHEN the reservation is cancelled
+      | WHEN the reservation is cancelled by the owning user
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
-    val reservationService =
-      whenF(mock[ReservationService[IO]].cancelReservation(any)) thenReturn ()
+    // TODO: Implement
+    IO(fail("Implement").apply())
+  }
 
-    val response = sendRequest(reservationService) {
-      basicRequest.put(uri"http://test.com/reservation/$reservationId/cancel")
-    }
+  test(
+    """GIVEN cancel reservation endpoint
+      | WHEN the reservation is cancelled by an office manager
+      | THEN 204 NoContent is returned
+      |""".stripMargin
+  ) {
+    // TODO: Implement
+    IO(fail("Implement").apply())
+  }
 
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.NoContent)
+  test(
+    """GIVEN cancel reservation endpoint
+      | WHEN the reservation is cancelled by another user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    // TODO: Implement
+    IO(fail("Implement").apply())
   }
 
   test(
@@ -223,7 +265,7 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
 
   test(
     """GIVEN confirm reservation endpoint
-      | WHEN the reservation is confirmed
+      | WHEN the reservation is confirmed by an office manager
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
@@ -231,13 +273,34 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
     val reservationService =
       whenF(mock[ReservationService[IO]].confirmReservation(any)) thenReturn ()
 
-    val response = sendRequest(reservationService) {
+    val response = sendRequest(reservationService, role = OfficeManager) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/confirm")
     }
 
     for {
       response <- response
     } yield expect(response.code == StatusCode.NoContent)
+  }
+
+  test(
+    """GIVEN confirm reservation endpoint
+      | WHEN there is an attempt to confirm a reservation by a user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    val reservationId = anyReservationId
+    val reservationService = mock[ReservationService[IO]]
+
+    val response = sendRequest(reservationService, role = User) {
+      basicRequest.put(uri"http://test.com/reservation/$reservationId/confirm")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(reservationService, never).confirmReservation(any)
+      expect(response.code == StatusCode.Forbidden)
+    }
   }
 
   test(
@@ -281,7 +344,7 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
 
   test(
     """GIVEN reject reservation endpoint
-      | WHEN the reservation is rejected
+      | WHEN the reservation is rejected by an office manager
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
@@ -289,13 +352,34 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
     val reservationService =
       whenF(mock[ReservationService[IO]].rejectReservation(any)) thenReturn ()
 
-    val response = sendRequest(reservationService) {
+    val response = sendRequest(reservationService, role = OfficeManager) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/reject")
     }
 
     for {
       response <- response
     } yield expect(response.code == StatusCode.NoContent)
+  }
+
+  test(
+    """GIVEN reject reservation endpoint
+      | WHEN there is an attempt to reject a reservation by a user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    val reservationId = anyReservationId
+    val reservationService = mock[ReservationService[IO]]
+
+    val response = sendRequest(reservationService, role = User) {
+      basicRequest.put(uri"http://test.com/reservation/$reservationId/reject")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(reservationService, never).rejectReservation(any)
+      expect(response.code == StatusCode.Forbidden)
+    }
   }
 
   test(
@@ -337,13 +421,12 @@ object ReservationEndpointsSuite extends SimpleIOSuite with MockitoSugar with Ar
     } yield expect(response.code == StatusCode.NotFound)
   }
 
-  private def sendRequest(reservationService: ReservationService[IO])(request: Request[Either[String, String], Any]) = {
-    val reservationEndpoints = new ReservationEndpoints[IO](reservationService)
-    val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
-      .whenServerEndpointsRunLogic(reservationEndpoints.endpoints)
-      .backend()
-    request.send(backendStub)
-  }
+  private def sendRequest(reservationService: ReservationService[IO], role: Role = SuperAdmin)(
+    request: Request[Either[String, String], Any]
+  ): IO[Response[Either[PublicKey, PublicKey]]] =
+    sendRequest(request, role) { rolesExtractorService =>
+      new ReservationEndpoints[IO](reservationService, publicKeyRepository, rolesExtractorService).endpoints
+    }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get
