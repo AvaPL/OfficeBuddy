@@ -10,14 +10,14 @@ import domain.model.error.user.UserNotFound
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
 import domain.service.reservation.ReservationService
-
 import io.circe.parser._
 import io.circe.syntax._
 import io.github.avapl.adapters.auth.model.PublicKey
 import io.github.avapl.adapters.http.fixture.SecuredApiEndpointFixture
 import io.github.avapl.domain.model.account.Role
-import io.github.avapl.domain.model.account.Role.{OfficeManager, SuperAdmin, User}
-
+import io.github.avapl.domain.model.account.Role.OfficeManager
+import io.github.avapl.domain.model.account.Role.SuperAdmin
+import io.github.avapl.domain.model.account.Role.User
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -423,8 +423,8 @@ object ReservationEndpointsSuite
 
   private def sendRequest(reservationService: ReservationService[IO], role: Role = SuperAdmin)(
     request: Request[Either[String, String], Any]
-  ): IO[Response[Either[PublicKey, PublicKey]]] =
-    sendRequest(request, role) { rolesExtractorService =>
+  ) =
+    sendSecuredApiEndpointRequest(request, role) { rolesExtractorService =>
       new ReservationEndpoints[IO](reservationService, publicKeyRepository, rolesExtractorService).endpoints
     }
 

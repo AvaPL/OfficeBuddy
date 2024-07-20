@@ -322,8 +322,8 @@ object DeskEndpointsSuite
 
   private def sendRequest(deskService: DeskService[IO], role: Role = SuperAdmin)(
     request: Request[Either[String, String], Any]
-  ): IO[Response[Either[PublicKey, PublicKey]]] =
-    sendRequest(request, role) { rolesExtractorService =>
+  ) =
+    sendSecuredApiEndpointRequest(request, role) { rolesExtractorService =>
       new DeskEndpoints[IO](deskService, publicKeyRepository, rolesExtractorService).endpoints
     }
 

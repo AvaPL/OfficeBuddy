@@ -2,7 +2,7 @@ package io.github.avapl
 package adapters.http.desk
 
 import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractorService
+import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
 import cats.MonadThrow
@@ -23,7 +23,7 @@ import sttp.tapir.server.ServerEndpoint
 class DeskEndpoints[F[_]: Clock: MonadThrow](
   deskService: DeskService[F],
   override val publicKeyRepository: PublicKeyRepository[F],
-  override val rolesExtractor: RolesExtractorService
+  override val rolesExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F] {
 
   override protected val apiEndpointName: String = "desk"

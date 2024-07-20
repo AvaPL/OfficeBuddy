@@ -2,7 +2,7 @@ package io.github.avapl
 package adapters.http
 
 import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractorService
+import adapters.auth.service.ClaimsExtractorService
 import cats.effect.{Clock => CatsClock}
 import cats.effect.IO
 import cats.syntax.all._
@@ -10,11 +10,13 @@ import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.SuperAdmin
 import domain.model.account.Role.User
+import io.circe.Json
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.time.{Clock => JavaClock}
 import java.time.Instant
 import java.util.Base64
+import java.util.UUID
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import pdi.jwt.JwtAlgorithm
@@ -162,7 +164,13 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
     val requiredRole = User
     val (bearer, publicKey) = generateJwt()
     val extractedRoles = List(User)
-    sendRequest(bearer, publicKey, requiredRole, extractedRoles, result)
+    sendRequest(
+      bearer = bearer,
+      publicKey = publicKey,
+      requiredRole = requiredRole,
+      extractedRoles = extractedRoles,
+      result = result
+    )
   }
 
   private def generateJwt(jwtClaim: JwtClaim = JwtClaim()) = {
@@ -180,12 +188,16 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
     publicKey: String,
     requiredRole: Role = User,
     extractedRoles: List[Role] = List(User),
+    extractedAccountId: UUID = UUID.fromString("11d1bc49-0a02-4bb0-aa95-8f9082e839d7"),
     result: IO[Either[ApiError, Unit]] = ().asRight.pure[IO]
   )(implicit clock: CatsClock[IO]) = {
     val name = "test"
     val endpoint = new SecuredApiEndpoint[IO] {
       val apiEndpointName: String = name
-      val rolesExtractor: RolesExtractorService = _ => extractedRoles
+      val rolesExtractor: ClaimsExtractorService = new ClaimsExtractorService {
+        override def extractRoles(json: Json): List[Role] = extractedRoles
+        override def extractAccountId(json: Json): Option[UUID] = Some(extractedAccountId)
+      }
       val publicKeyRepository: PublicKeyRepository[IO] = new PublicKeyRepository[IO] {
         def get: IO[String] = publicKey.pure[IO]
       }

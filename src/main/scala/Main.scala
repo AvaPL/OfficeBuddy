@@ -24,7 +24,7 @@ import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
 import io.github.avapl.adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
-import io.github.avapl.adapters.keycloak.auth.service.KeycloakRolesExtractorService
+import io.github.avapl.adapters.keycloak.auth.service.KeycloakClaimsExtractorService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -108,7 +108,7 @@ object Main extends IOApp.Simple {
       val deskService = new DeskService[F](deskRepository)
       val reservationService = new ReservationService[F](reservationRepository)
       val accountService = new AccountService[F](accountRepository)
-      val rolesExtractorService = KeycloakRolesExtractorService
+      val rolesExtractorService = KeycloakClaimsExtractorService
 
       val officeEndpoints =
         new OfficeEndpoints[F](officeService, publicKeyRepository, rolesExtractorService).endpoints

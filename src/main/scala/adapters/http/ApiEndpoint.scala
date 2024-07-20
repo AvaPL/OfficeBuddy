@@ -2,8 +2,9 @@ package io.github.avapl
 package adapters.http
 
 import adapters.auth.model.AccessToken
+import adapters.auth.model.MissingAccountId
 import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractorService
+import adapters.auth.service.ClaimsExtractorService
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -45,7 +46,7 @@ trait PublicApiEndpoint extends ApiEndpoint {
 
 trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
 
-  protected def rolesExtractor: RolesExtractorService
+  protected def rolesExtractor: ClaimsExtractorService
   protected def publicKeyRepository: PublicKeyRepository[F]
 
   protected[http] def securedEndpoint(
@@ -93,5 +94,6 @@ trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
       .recover {
         case _: JwtException   => ApiError.Unauthorized.asLeft
         case _: ParsingFailure => ApiError.Unauthorized.asLeft
+        case MissingAccountId  => ApiError.Unauthorized.asLeft
       }
 }

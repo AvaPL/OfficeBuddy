@@ -3,14 +3,16 @@ package adapters.http.fixture
 
 import adapters.auth.model.PublicKey
 import adapters.auth.repository.PublicKeyRepository
-import adapters.auth.service.RolesExtractorService
+import adapters.auth.service.ClaimsExtractorService
 import cats.effect.IO
 import domain.model.account.Role
+import io.circe.Json
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.time.Clock
 import java.time.Instant
 import java.util.Base64
+import java.util.UUID
 import pdi.jwt.JwtAlgorithm
 import pdi.jwt.JwtCirce
 import pdi.jwt.JwtClaim
@@ -27,15 +29,19 @@ trait SecuredApiEndpointFixture {
     override def get: IO[PublicKey] = IO.pure(publicKey)
   }
 
-  def sendRequest(
+  def sendSecuredApiEndpointRequest(
     request: Request[Either[String, String], Any],
-    role: Role
+    role: Role,
+    accountId: UUID = UUID.fromString("53eea01d-4129-4098-9fe5-f07d768c937e")
   )(
-    endpoints: RolesExtractorService => List[ServerEndpoint[Any, IO]]
+    endpoints: ClaimsExtractorService => List[ServerEndpoint[Any, IO]]
   ): IO[Response[Either[PublicKey, PublicKey]]] = {
-    val rolesExtractorService: RolesExtractorService = _ => List(role)
+    val claimsExtractorService = new ClaimsExtractorService {
+      override def extractRoles(json: Json): List[Role] = List(role)
+      override def extractAccountId(json: Json): Option[UUID] = Some(accountId)
+    }
     val backendStub = TapirStubInterpreter(SttpBackendStub(new CatsMonadError[IO]))
-      .whenServerEndpointsRunLogic(endpoints(rolesExtractorService))
+      .whenServerEndpointsRunLogic(endpoints(claimsExtractorService))
       .backend()
     request.auth.bearer(bearer).send(backendStub)
   }

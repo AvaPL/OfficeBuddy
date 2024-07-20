@@ -1,16 +1,18 @@
 package io.github.avapl
 package adapters.auth.model
 
-import adapters.auth.service.RolesExtractorService
+import adapters.auth.service.ClaimsExtractorService
 import cats.effect.{Clock => CatsClock}
 import cats.effect.IO
 import domain.model.account.Role
+import io.circe.Json
 import io.circe.ParsingFailure
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.time.{Clock => JavaClock}
 import java.time.Instant
 import java.util.Base64
+import java.util.UUID
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import pdi.jwt.JwtAlgorithm
@@ -34,13 +36,18 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
     val encodedToken = JwtCirce(fixedJavaClock).encode(jwtClaim, privateKey, JwtAlgorithm.RS256)
 
     val roles = List(Role.User)
-    val rolesExtractor: RolesExtractorService = _ => roles
+    val accountId = UUID.fromString("e1f5b3f0-7e1d-4d4c-8d5e-9b6f5b4f6b1e")
+    val claimsExtractor: ClaimsExtractorService = new ClaimsExtractorService {
+      override def extractRoles(json: Json): List[Role] = roles
+      override def extractAccountId(json: Json): Option[UUID] = Some(accountId)
+    }
 
     for {
-      accessToken <- AccessToken.decode(encodedToken, rolesExtractor, publicKey)
+      accessToken <- AccessToken.decode(encodedToken, claimsExtractor, publicKey)
     } yield {
       expect(accessToken.reservedClaims == jwtClaim)
       expect(accessToken.roles == roles)
+      expect(accessToken.accountId == accountId)
     }
   }
 
@@ -54,7 +61,7 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
     val (_, publicKey) = generateRSAKeyPair()
 
     for {
-      result <- AccessToken.decode(invalidToken, anyRolesExtractor, publicKey).attempt
+      result <- AccessToken.decode(invalidToken, anyClaimsExtractor, publicKey).attempt
     } yield matches(result) {
       case Left(_: ParsingFailure) => success
     }
@@ -73,7 +80,7 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
     val (_, anotherPublicKey) = generateRSAKeyPair(seed = 2)
 
     for {
-      result <- AccessToken.decode(encodedToken, anyRolesExtractor, anotherPublicKey).attempt
+      result <- AccessToken.decode(encodedToken, anyClaimsExtractor, anotherPublicKey).attempt
     } yield matches(result) {
       case Left(_: JwtValidationException) => success
     }
@@ -90,7 +97,7 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
     val encodedToken = JwtCirce(fixedJavaClock).encode(jwtClaim, privateKey, JwtAlgorithm.EdDSA)
 
     for {
-      result <- AccessToken.decode(encodedToken, anyRolesExtractor, publicKey).attempt
+      result <- AccessToken.decode(encodedToken, anyClaimsExtractor, publicKey).attempt
     } yield matches(result) {
       case Left(_: JwtValidationException) => success
     }
@@ -112,10 +119,32 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
 
     for {
       result <- AccessToken
-        .decode(encodedToken, anyRolesExtractor, publicKey)
+        .decode(encodedToken, anyClaimsExtractor, publicKey)
         .attempt
     } yield matches(result) {
       case Left(_: JwtExpirationException) => success
+    }
+  }
+
+  test(
+    """GIVEN a valid JWT token that doesn't contain an account ID
+      | WHEN the token is decoded
+      | THEN it should fail with a MissingAccountId error
+      |""".stripMargin
+  ) {
+    val jwtClaim = JwtClaim()
+    val (privateKey, publicKey) = generateRSAKeyPair()
+    val encodedToken = JwtCirce(fixedJavaClock).encode(jwtClaim, privateKey, JwtAlgorithm.RS256)
+
+    val claimsExtractor: ClaimsExtractorService = new ClaimsExtractorService {
+      override def extractRoles(json: Json): List[Role] = Nil
+      override def extractAccountId(json: Json): Option[UUID] = None
+    }
+
+    for {
+      result <- AccessToken.decode(encodedToken, claimsExtractor, publicKey).attempt
+    } yield matches(result) {
+      case Left(MissingAccountId) => success
     }
   }
 
@@ -130,7 +159,13 @@ object AccessTokenSuite extends SimpleIOSuite with MockitoSugar with MockitoCats
   private lazy val fixedJavaClock =
     JavaClock.fixed(Instant.parse("2024-07-14T12:00:00Z"), java.time.ZoneOffset.UTC)
 
-  private lazy val anyRolesExtractor: RolesExtractorService = _ => Nil
+  private lazy val anyClaimsExtractor: ClaimsExtractorService = new ClaimsExtractorService {
+
+    override def extractRoles(json: Json): List[Role] = Nil
+    override def extractAccountId(json: Json): Option[UUID] = Some {
+      UUID.fromString("a8921813-2677-475a-a25a-b1e74fa43481")
+    }
+  }
 
   private lazy val anyDSAKeyPair = {
     val keyPairGenerator = KeyPairGenerator.getInstance("EdDSA")

@@ -825,9 +825,9 @@ object AccountEndpointsSuite
 
   private def sendRequest(accountService: AccountService[IO], role: Role = SuperAdmin)(
     request: Request[Either[String, String], Any]
-  ): IO[Response[Either[PublicKey, PublicKey]]] =
-    sendRequest(request, role) { rolesExtractorService =>
-      new AccountEndpoints[IO](accountService, publicKeyRepository, rolesExtractorService).endpoints
+  ) =
+    sendSecuredApiEndpointRequest(request, role) { claimsExtractorService =>
+      new AccountEndpoints[IO](accountService, publicKeyRepository, claimsExtractorService).endpoints
     }
 
   private def bodyJson(response: Response[Either[String, String]]) =
