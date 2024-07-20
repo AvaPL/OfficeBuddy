@@ -6,8 +6,10 @@ import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
 import cats.MonadThrow
+import cats.data.EitherT
 import cats.effect.Clock
 import cats.syntax.all._
+import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.User
 import domain.model.error.desk.DeskNotFound
@@ -38,7 +40,6 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
       rejectReservationEndpoint ::
       Nil
 
-  // TODO: Compare the user ID from the token with the user ID from the body
   private lazy val reserveDeskEndpoint =
     securedEndpoint(requiredRole = User).post
       .summary("Reserve a desk")
@@ -64,9 +65,24 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
             .description("Desk reservation overlaps with another reservation")
         )
       )
-      .serverLogic(_ => reserveDesk)
+      .serverLogic { accessToken =>
+        reserveDesk(
+          requesterRoles = accessToken.roles,
+          requesterAccountId = accessToken.accountId
+        )
+      }
 
-  private def reserveDesk(apiCreateDeskReservation: ApiCreateDeskReservation) =
+  private def reserveDesk(requesterRoles: List[Role], requesterAccountId: UUID)(
+    apiCreateDeskReservation: ApiCreateDeskReservation
+  ): F[Either[ApiError, ApiDeskReservation]] = {
+    val hasPermission =
+      requesterAccountId == apiCreateDeskReservation.userId ||
+        requesterRoles.exists(_.hasAccess(OfficeManager))
+    if (hasPermission) reserveDesk(apiCreateDeskReservation)
+    else ApiError.Forbidden.asLeft.pure[F].widen
+  }
+
+  private def reserveDesk(apiCreateDeskReservation: ApiCreateDeskReservation): F[Either[ApiError, ApiDeskReservation]] =
     reservationService
       .reserveDesk(apiCreateDeskReservation.toDomain)
       .map(ApiDeskReservation.fromDomain)
@@ -109,8 +125,6 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
       ApiError.NotFound(s"Reservation [id: $reservationId] was not found").asLeft
   }
 
-  // TODO: Allow the user to cancel only their own reservations
-  // TODO: Allow the office manager to cancel users' reservations
   private lazy val cancelReservationEndpoint =
     securedEndpoint(requiredRole = User).put
       .summary("Cancel a reservation")
@@ -134,14 +148,44 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
             .description("Reservation with the given ID was not found")
         )
       )
-      .serverLogic(_ => cancelReservation)
+      .serverLogic { accessToken =>
+        cancelReservation(
+          requesterRoles = accessToken.roles,
+          requesterAccountId = accessToken.accountId
+        )
+      }
 
-  private def cancelReservation(reservationId: UUID) =
+  private def cancelReservation(
+    requesterRoles: List[Role],
+    requesterAccountId: UUID
+  )(
+    reservationId: UUID
+  ): F[Either[ApiError, Unit]] = {
+    for {
+      requesterOwnsReservation <- ownsReservation(reservationId, requesterAccountId)
+      hasPermission = requesterOwnsReservation || requesterRoles.exists(_.hasAccess(OfficeManager))
+      result <-
+        if (hasPermission) cancelReservation(reservationId)
+        else EitherT.leftT[F, Unit].apply[ApiError](ApiError.Forbidden)
+    } yield result
+  }.value
+
+  private def ownsReservation(reservationId: UUID, accountId: UUID) = EitherT {
+    reservationService
+      .readDeskReservation(reservationId)
+      .map(_.userId)
+      .map(_ == accountId)
+      .map(_.asRight[ApiError])
+      .recover(recoverOnNotFound)
+  }
+
+  private def cancelReservation(reservationId: UUID): EitherT[F, ApiError, Unit] = EitherT {
     reservationService
       .cancelReservation(reservationId)
       .map(_.asRight[ApiError])
       .recover(recoverOnNotFound)
       .recover(recoverOnInvalidStateTransition)
+  }
 
   private lazy val recoverOnInvalidStateTransition: PartialFunction[Throwable, Either[ApiError, Nothing]] = {
     case InvalidStateTransition(reservationId, currentState, newState) =>

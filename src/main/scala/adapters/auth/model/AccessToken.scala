@@ -21,12 +21,12 @@ object AccessToken {
 
   def decode[F[_]: Clock: MonadThrow](
     bearer: String,
-    rolesExtractor: ClaimsExtractorService,
+    claimsExtractor: ClaimsExtractorService,
     publicKey: String
   ): F[AccessToken] =
     for {
       now <- Clock[F].realTimeInstant
-      accessToken <- decode(bearer, rolesExtractor, publicKey, now)
+      accessToken <- decode(bearer, claimsExtractor, publicKey, now)
     } yield accessToken
 
   private def decode[F[_]: MonadThrow](

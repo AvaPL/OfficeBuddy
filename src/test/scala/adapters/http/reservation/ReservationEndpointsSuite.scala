@@ -59,7 +59,11 @@ object ReservationEndpointsSuite
     )
     val reservationService = whenF(mock[ReservationService[IO]].reserveDesk(any)) thenReturn reservation
 
-    val response = sendRequest(reservationService, role = User) {
+    val response = sendRequest(
+      reservationService,
+      role = User,
+      accountId = reservationToCreate.userId
+    ) {
       basicRequest
         .post(uri"http://test.com/reservation/desk")
         .body(reservationToCreate)
@@ -79,8 +83,35 @@ object ReservationEndpointsSuite
       | THEN 201 Created and the created reservation is returned
       |""".stripMargin
   ) {
-    // TODO: Implement
-    IO(fail("Implement").apply())
+    val reservationToCreate = anyApiCreateDeskReservation
+    val reservation = DeskReservation(
+      id = anyReservationId,
+      userId = reservationToCreate.userId,
+      createdAt = anyCreatedAt,
+      reservedFrom = reservationToCreate.reservedFrom.atStartOfDay(),
+      reservedTo = reservationToCreate.reservedTo.atTime(LocalTime.MAX),
+      state = ReservationState.Pending,
+      notes = reservationToCreate.notes,
+      deskId = reservationToCreate.deskId
+    )
+    val reservationService = whenF(mock[ReservationService[IO]].reserveDesk(any)) thenReturn reservation
+
+    val response = sendRequest(
+      reservationService,
+      role = OfficeManager,
+      accountId = anyOfficeManagerId
+    ) {
+      basicRequest
+        .post(uri"http://test.com/reservation/desk")
+        .body(reservationToCreate)
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Created,
+      bodyJson(response) == ApiDeskReservation.fromDomain(reservation).asJson
+    )
   }
 
   test(
@@ -89,8 +120,27 @@ object ReservationEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    // TODO: Implement
-    IO(fail("Implement").apply())
+    val requesterId = UUID.fromString("10edac56-4725-4c06-92bb-0e8fee647426")
+    val reservationUserId = UUID.fromString("a8907e2a-621b-494b-ba56-bd0bdc02aa15")
+    val reservationToCreate = anyApiCreateDeskReservation.copy(userId = reservationUserId)
+    val reservationService = mock[ReservationService[IO]]
+
+    val response = sendRequest(
+      reservationService,
+      role = User,
+      accountId = requesterId
+    ) {
+      basicRequest
+        .post(uri"http://test.com/reservation/desk")
+        .body(reservationToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(reservationService, never).reserveDesk(any)
+      expect(response.code == StatusCode.Forbidden)
+    }
   }
 
   test(
@@ -200,8 +250,23 @@ object ReservationEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    // TODO: Implement
-    IO(fail("Implement").apply())
+    val userId = anyUserId
+    val reservation = anyDeskReservation.copy(userId = userId)
+    val reservationService = mock[ReservationService[IO]]
+    whenF(reservationService.readDeskReservation(any)) thenReturn reservation
+    whenF(reservationService.cancelReservation(any)) thenReturn ()
+
+    val response = sendRequest(
+      reservationService,
+      role = User,
+      accountId = userId
+    ) {
+      basicRequest.put(uri"http://test.com/reservation/${reservation.id}/cancel")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NoContent)
   }
 
   test(
@@ -210,8 +275,21 @@ object ReservationEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    // TODO: Implement
-    IO(fail("Implement").apply())
+    val reservationService = mock[ReservationService[IO]]
+    whenF(reservationService.readDeskReservation(any)) thenReturn anyDeskReservation
+    whenF(reservationService.cancelReservation(any)) thenReturn ()
+
+    val response = sendRequest(
+      reservationService,
+      role = OfficeManager,
+      accountId = anyOfficeManagerId
+    ) {
+      basicRequest.put(uri"http://test.com/reservation/$anyReservationId/cancel")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NoContent)
   }
 
   test(
@@ -220,8 +298,26 @@ object ReservationEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    // TODO: Implement
-    IO(fail("Implement").apply())
+    val reservationOwnerId = UUID.fromString("fd704d6b-d56d-426b-9972-c5ed1027f578")
+    val reservation = anyDeskReservation.copy(userId = reservationOwnerId)
+    val reservationService = mock[ReservationService[IO]]
+    whenF(reservationService.readDeskReservation(any)) thenReturn reservation
+
+    val requesterUserId = UUID.fromString("5df2a865-8dde-44b1-aeff-f80d86d8fd6d")
+    val response = sendRequest(
+      reservationService,
+      role = User,
+      accountId = requesterUserId
+    ) {
+      basicRequest.put(uri"http://test.com/reservation/${reservation.id}/cancel")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(reservationService, never).cancelReservation(any)
+      expect(response.code == StatusCode.Forbidden)
+    }
   }
 
   test(
@@ -231,9 +327,10 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationId = anyReservationId
-    val reservationService =
-      whenF(mock[ReservationService[IO]].cancelReservation(any)) thenFailWith
-        InvalidStateTransition(reservationId, ReservationState.Rejected, ReservationState.Cancelled)
+    val reservationService = mock[ReservationService[IO]]
+    whenF(reservationService.readDeskReservation(any)) thenReturn anyDeskReservation
+    whenF(reservationService.cancelReservation(any)) thenFailWith
+      InvalidStateTransition(reservationId, ReservationState.Rejected, ReservationState.Cancelled)
 
     val response = sendRequest(reservationService) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/cancel")
@@ -252,7 +349,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId
     val reservationService =
-      whenF(mock[ReservationService[IO]].cancelReservation(any)) thenFailWith ReservationNotFound(reservationId)
+      whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
     val response = sendRequest(reservationService) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/cancel")
@@ -421,10 +518,14 @@ object ReservationEndpointsSuite
     } yield expect(response.code == StatusCode.NotFound)
   }
 
-  private def sendRequest(reservationService: ReservationService[IO], role: Role = SuperAdmin)(
+  private def sendRequest(
+    reservationService: ReservationService[IO],
+    role: Role = SuperAdmin,
+    accountId: UUID = anySuperAdminId
+  )(
     request: Request[Either[String, String], Any]
   ) =
-    sendSecuredApiEndpointRequest(request, role) { rolesExtractorService =>
+    sendSecuredApiEndpointRequest(request, role, accountId) { rolesExtractorService =>
       new ReservationEndpoints[IO](reservationService, publicKeyRepository, rolesExtractorService).endpoints
     }
 
@@ -451,6 +552,10 @@ object ReservationEndpointsSuite
   )
 
   private lazy val anyUserId = UUID.fromString("0f0cdeb7-c6f0-4f1e-93a5-b3fd34506dc5")
+
+  private lazy val anyOfficeManagerId = UUID.fromString("5cf7279b-1c70-416e-84c0-cb7674cd3c05")
+
+  private lazy val anySuperAdminId = UUID.fromString("53eea01d-4129-4098-9fe5-f07d768c937e")
 
   private lazy val anyDeskId = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")
 

@@ -391,17 +391,18 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         statusCode(StatusCode.NoContent)
           .description("Account archived or not found")
       )
-      .serverLogic(accessToken => archiveAccount(accessToken.roles))
+      .serverLogic(accessToken => archiveAccount(requesterRoles = accessToken.roles))
 
   private def archiveAccount(requesterRoles: List[Role])(accountId: UUID): F[Either[ApiError, Unit]] =
     for {
       isAccountToArchiveSuperAdmin <- exists(_.readSuperAdmin(accountId))
       isAccountToArchiveOfficeManager <- exists(_.readOfficeManager(accountId))
-      isAuthorized =
-        if (isAccountToArchiveSuperAdmin || isAccountToArchiveOfficeManager) requesterRoles.contains(SuperAdmin)
-        else requesterRoles.contains(OfficeManager)
+      hasPermission =
+        if (isAccountToArchiveSuperAdmin || isAccountToArchiveOfficeManager)
+          requesterRoles.exists(_.hasAccess(SuperAdmin))
+        else requesterRoles.exists(_.hasAccess(OfficeManager))
       result <-
-        if (isAuthorized) accountService.archive(accountId).as(().asRight[ApiError])
+        if (hasPermission) accountService.archive(accountId).as(().asRight[ApiError])
         else ApiError.Forbidden.asLeft.pure[F]
     } yield result
 

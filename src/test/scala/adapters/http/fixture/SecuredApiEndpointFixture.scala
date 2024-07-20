@@ -32,7 +32,7 @@ trait SecuredApiEndpointFixture {
   def sendSecuredApiEndpointRequest(
     request: Request[Either[String, String], Any],
     role: Role,
-    accountId: UUID = UUID.fromString("53eea01d-4129-4098-9fe5-f07d768c937e")
+    accountId: UUID = anyAccountId
   )(
     endpoints: ClaimsExtractorService => List[ServerEndpoint[Any, IO]]
   ): IO[Response[Either[PublicKey, PublicKey]]] = {
@@ -45,6 +45,8 @@ trait SecuredApiEndpointFixture {
       .backend()
     request.auth.bearer(bearer).send(backendStub)
   }
+
+  private lazy val anyAccountId: UUID = UUID.fromString("53eea01d-4129-4098-9fe5-f07d768c937e")
 
   private lazy val (bearer, publicKey) = {
     val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
