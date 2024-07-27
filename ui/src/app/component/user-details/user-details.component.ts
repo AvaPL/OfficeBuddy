@@ -18,7 +18,7 @@ export class UserDetailsComponent {
   constructor(private readonly keycloak: KeycloakService) {}
 
   async ngOnInit() {
-    this.isLoggedIn = await this.keycloak.isLoggedIn();
+    this.isLoggedIn = this.keycloak.isLoggedIn();
 
     if (this.isLoggedIn) {
       this.userProfile = await this.keycloak.loadUserProfile();

@@ -6,17 +6,32 @@ import {UserDetailsComponent} from "./component/user-details/user-details.compon
 import {AppRoutingModule} from "./app-routing.module";
 import {BrowserModule} from "@angular/platform-browser";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {SidebarComponent} from "./component/sidebar/sidebar.component";
+import {DesksComponent} from "./component/desks/desks.component";
+import {MatToolbarModule} from "@angular/material/toolbar";
+import {MatButtonModule} from "@angular/material/button";
+import {MatIconModule} from "@angular/material/icon";
+import {MatSidenavModule} from "@angular/material/sidenav";
+import {MatListModule} from "@angular/material/list";
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 @NgModule({
   declarations: [
     AppComponent,
-    UserDetailsComponent
+    DesksComponent,
+    SidebarComponent,
+    UserDetailsComponent,
   ],
   imports: [
+    AppRoutingModule,
     BrowserModule,
     BrowserAnimationsModule,
     KeycloakAngularModule,
-    AppRoutingModule,
+    MatButtonModule,
+    MatIconModule,
+    MatListModule,
+    MatSidenavModule,
+    MatToolbarModule,
   ],
   providers: [
     {
@@ -24,7 +39,8 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
       useFactory: initializeKeycloak,
       multi: true,
       deps: [KeycloakService],
-    }
+    },
+    provideAnimationsAsync()
   ],
   bootstrap: [
     AppComponent
