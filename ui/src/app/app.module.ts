@@ -6,7 +6,7 @@ import {UserDetailsComponent} from "./component/user-details/user-details.compon
 import {AppRoutingModule} from "./app-routing.module";
 import {BrowserModule} from "@angular/platform-browser";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
-import {SidebarComponent} from "./component/sidebar/sidebar.component";
+import {NavbarComponent} from "./component/sidebar/navbar.component";
 import {DesksComponent} from "./component/desks/desks.component";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatButtonModule} from "@angular/material/button";
@@ -19,7 +19,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
   declarations: [
     AppComponent,
     DesksComponent,
-    SidebarComponent,
+    NavbarComponent,
     UserDetailsComponent,
   ],
   imports: [

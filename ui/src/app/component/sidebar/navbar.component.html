@@ -1,0 +1,43 @@
+@if (!mobileQuery.matches) {
+  <mat-sidenav-container>
+    <mat-sidenav opened mode="side" class="foo">
+      <div class="sidenav-elements">
+        <mat-toolbar color="primary">
+          <span [style.margin]="'0 15px 0 10px'">🧑🏻‍💼</span>
+          <span>Office Buddy</span>
+        </mat-toolbar>
+        <mat-nav-list>
+          <a mat-list-item *ngFor="let item of menuItems" [routerLink]="item.route" routerLinkActive="is-active">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.name }}</span>
+          </a>
+        </mat-nav-list>
+        <mat-nav-list [style.margin-top]="'auto'">
+          <a mat-list-item routerLink="logout">
+            <mat-icon matListItemIcon>logout</mat-icon>
+            <span matListItemTitle>Logout</span>
+          </a>
+        </mat-nav-list>
+      </div>
+    </mat-sidenav>
+    <mat-sidenav-content class="content">
+      <router-outlet></router-outlet>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+} @else {
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+  <mat-toolbar color="primary" class="toolbar-mobile">
+    <button *ngFor="let item of menuItems" [routerLink]="item.route"
+            routerLinkActive="is-active-mobile">
+      <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+      <span>{{ item.name }}</span>
+    </button>
+    <mat-divider vertical class="logout-separator-mobile"></mat-divider>
+    <button routerLink="logout">
+      <mat-icon matListItemIcon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </mat-toolbar>
+}
