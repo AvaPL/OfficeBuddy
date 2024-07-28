@@ -18,6 +18,7 @@ import {RoomComponent} from "./component/room/room.component";
 import {AccountComponent} from "./component/account/account.component";
 import {OfficeComponent} from "./component/office/office.component";
 import {MatCardModule} from "@angular/material/card";
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 @NgModule({
   declarations: [
@@ -39,6 +40,7 @@ import {MatCardModule} from "@angular/material/card";
     MatIconModule,
     MatListModule,
     MatSidenavModule,
+    MatTooltipModule,
     MatToolbarModule,
   ],
   providers: [

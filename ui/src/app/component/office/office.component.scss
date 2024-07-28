@@ -10,6 +10,10 @@ mat-card-header {
   padding: 16px;
 }
 
+mat-card-title {
+  text-wrap: nowrap;
+}
+
 .menu-button {
   border-radius: 100%;
   margin-left: auto;
@@ -18,4 +22,33 @@ mat-card-header {
   mat-icon {
     transform: scale(1.4);
   }
+}
+
+.office-stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 32px;
+}
+
+div.office-stats-horizontal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.office-stats-item {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 0 2px 0;
+
+  span {
+    margin-left: 4px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+.office-stats-item-horizontal {
+  margin-right: 16px;
 }
