@@ -1,0 +1,21 @@
+mat-divider {
+  margin-bottom: 20px;
+}
+
+mat-card {
+  border-radius: 10px;
+}
+
+mat-card-header {
+  padding: 16px;
+}
+
+.menu-button {
+  border-radius: 100%;
+  margin-left: auto;
+  min-width: 0;
+  width: var(--mdc-text-button-container-height);
+  mat-icon {
+    transform: scale(1.4);
+  }
+}

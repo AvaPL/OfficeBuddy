@@ -17,6 +17,7 @@ import {ParkingComponent} from "./component/parking/parking.component";
 import {RoomComponent} from "./component/room/room.component";
 import {AccountComponent} from "./component/account/account.component";
 import {OfficeComponent} from "./component/office/office.component";
+import {MatCardModule} from "@angular/material/card";
 
 @NgModule({
   declarations: [
@@ -34,6 +35,7 @@ import {OfficeComponent} from "./component/office/office.component";
     BrowserAnimationsModule,
     KeycloakAngularModule,
     MatButtonModule,
+    MatCardModule,
     MatIconModule,
     MatListModule,
     MatSidenavModule,
