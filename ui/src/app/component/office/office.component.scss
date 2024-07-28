@@ -4,16 +4,22 @@ mat-divider {
 
 mat-card {
   border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 mat-card-header {
   padding: 16px;
 }
 
+mat-card-subtitle {
+  width: 180px;
+}
+
 mat-card-title {
   text-wrap: nowrap;
 }
 
+// TODO: Button hides when the viewport is too small
 .menu-button {
   border-radius: 100%;
   margin-left: auto;
@@ -28,7 +34,7 @@ mat-card-title {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-left: 32px;
+  margin-left: 16px;
 }
 
 div.office-stats-horizontal {

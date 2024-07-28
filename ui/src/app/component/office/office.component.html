@@ -1,36 +1,37 @@
 <h1>Offices</h1>
 <mat-divider></mat-divider>
-<mat-card appearance="raised">
+<mat-card *ngFor="let office of offices" appearance="raised">
   <mat-card-header>
-    <mat-card-title>Wrocław Office</mat-card-title>
-    <mat-card-subtitle>Powstancow Slaskich 9</mat-card-subtitle>
-    <mat-card-subtitle>1st floor</mat-card-subtitle>
-    <mat-card-subtitle>53-332 Wroclaw, Poland</mat-card-subtitle>
+    <mat-card-title>{{ office.name }}</mat-card-title>
+    <mat-card-subtitle>{{ office.address.addressLine1 }}</mat-card-subtitle>
+    <mat-card-subtitle *ngIf="office.address.addressLine2">{{ office.address.addressLine2 }}</mat-card-subtitle>
+    <mat-card-subtitle>{{ office.address.postalCode }} {{ office.address.city }}, {{ office.address.country }}
+    </mat-card-subtitle>
     <div class="office-stats">
       <div class="office-stats-item" matTooltip="Office managers">
         <mat-icon matListItemIcon>person</mat-icon>
-        <span matListItemLine>John Doe, Sue Doe</span>
+        <span matListItemLine>{{ office.officeManagers.join(", ") }}</span>
       </div>
       <div class="office-stats-item" matTooltip="Assigned accounts">
         <mat-icon matListItemIcon>supervisor_account</mat-icon>
-        <span matListItemLine>123</span>
+        <span matListItemLine>{{ office.assignedAccounts }}</span>
       </div>
       <div class="office-stats-horizontal">
         <div class="office-stats-item office-stats-item-horizontal" matTooltip="Desks">
           <mat-icon matListItemIcon>table_restaurant</mat-icon>
-          <span matListItemLine>9</span>
+          <span matListItemLine>{{ office.desks }}</span>
         </div>
         <div class="office-stats-item office-stats-item-horizontal" matTooltip="Parking spots">
           <mat-icon matListItemIcon>local_parking</mat-icon>
-          <span matListItemLine>2</span>
+          <span matListItemLine>{{ office.parkingSpots }}</span>
         </div>
         <div class="office-stats-item office-stats-item-horizontal" matTooltip="Rooms">
           <mat-icon matListItemIcon>meeting_room</mat-icon>
-          <span matListItemLine>6</span>
+          <span matListItemLine>{{ office.rooms }}</span>
         </div>
         <div class="office-stats-item office-stats-item-horizontal" matTooltip="Active reservations">
           <mat-icon matListItemIcon>calendar_month</mat-icon>
-          <span matListItemLine>42</span>
+          <span matListItemLine>{{ office.activeReservations }}</span>
         </div>
       </div>
     </div>
