@@ -1,21 +1,23 @@
-import { Component } from '@angular/core';
-import {KeycloakService} from "keycloak-angular";
+import {Component} from '@angular/core';
 import {KeycloakProfile} from "keycloak-js";
+import {KeycloakService} from "keycloak-angular";
 
 @Component({
-  selector: 'app-user-details',
-  templateUrl: './user-details.component.html',
-  styleUrl: './user-details.component.scss'
+  selector: 'app-account',
+  templateUrl: './account.component.html',
+  styleUrl: './account.component.scss'
 })
-// TODO: To be removed, only to validate integration with Keycloak
-export class UserDetailsComponent {
+export class AccountComponent {
+
+  // TODO: To be removed, only to validate integration with Keycloak
 
   isLoggedIn = false;
   userProfile: KeycloakProfile | null = null;
   formattedRoles: string = "<empty>";
   formattedAttributes: string = "<empty>";
 
-  constructor(private readonly keycloak: KeycloakService) {}
+  constructor(private readonly keycloak: KeycloakService) {
+  }
 
   async ngOnInit() {
     this.isLoggedIn = this.keycloak.isLoggedIn();
@@ -25,9 +27,5 @@ export class UserDetailsComponent {
       this.formattedRoles = this.keycloak.getUserRoles(true).join(", ");
       this.formattedAttributes = JSON.stringify(this.userProfile.attributes, null, 1);
     }
-  }
-
-  logout() {
-    this.keycloak.logout();
   }
 }

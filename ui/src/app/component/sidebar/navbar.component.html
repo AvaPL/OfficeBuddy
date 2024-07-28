@@ -13,7 +13,7 @@
           </a>
         </mat-nav-list>
         <mat-nav-list [style.margin-top]="'auto'">
-          <a mat-list-item routerLink="logout">
+          <a mat-list-item (click)="logout()">
             <mat-icon matListItemIcon>logout</mat-icon>
             <span matListItemTitle>Logout</span>
           </a>
@@ -35,7 +35,7 @@
       <span>{{ item.name }}</span>
     </button>
     <mat-divider vertical class="logout-separator-mobile"></mat-divider>
-    <button routerLink="logout">
+    <button (click)="logout()">
       <mat-icon matListItemIcon>logout</mat-icon>
       <span>Logout</span>
     </button>

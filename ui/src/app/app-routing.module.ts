@@ -1,13 +1,19 @@
 import {RouterModule, Routes} from "@angular/router";
 import {NgModule} from "@angular/core";
 import {AuthGuard} from "./guard/auth.guard";
-import {UserDetailsComponent} from "./component/user-details/user-details.component";
-import {DesksComponent} from "./component/desks/desks.component";
+import {DeskComponent} from "./component/desks/desk.component";
+import {ParkingComponent} from "./component/parking/parking.component";
+import {RoomComponent} from "./component/room/room.component";
+import {AccountComponent} from "./component/account/account.component";
+import {OfficeComponent} from "./component/office/office.component";
 
 const routes: Routes = [
-  { path: 'user-details', component: UserDetailsComponent , canActivate: [AuthGuard]},
-  { path: 'desks', component: DesksComponent }, // TODO: Add AuthGuard
-  { path: '**', redirectTo: 'user-details' }
+  {path: 'desk', component: DeskComponent}, // TODO: Add AuthGuard
+  {path: 'parking', component: ParkingComponent}, // TODO: Add AuthGuard
+  {path: 'room', component: RoomComponent}, // TODO: Add AuthGuard
+  {path: 'account', component: AccountComponent, canActivate: [AuthGuard]}, // TODO: Disable for users
+  {path: 'office', component: OfficeComponent}, // TODO: Add AuthGuard, disable for users
+  {path: '**', redirectTo: 'account'}
 ];
 
 @NgModule({
@@ -18,4 +24,5 @@ const routes: Routes = [
   ],
   exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {
+}

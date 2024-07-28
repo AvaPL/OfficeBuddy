@@ -34,20 +34,24 @@ a.is-active {
   z-index: 1000;
   display: flex;
   justify-content: space-around;
+  height: auto;
+  align-items: start;
+  padding: 0;
 
   button {
+    flex: 1;
     display: flex;
     border: none;
     flex-direction: column;
     align-items: center;
-    height: 100%;
     color: rgba(255, 255, 255, 0.75);
     background-color: transparent;
-    margin-top: 12px;
+    margin-top: 10px;
+    margin-bottom: 8px;
+  }
 
-    span {
-      display: block;
-    }
+  span {
+    white-space: normal;
   }
 
   button:hover, .is-active-mobile {
@@ -57,11 +61,17 @@ a.is-active {
 
 .mat-divider.logout-separator-mobile {
   border-right-color: rgba(255, 255, 255, 0.2);
-  height: 70%;
+  height: calc(var(--mat-toolbar-standard-height) * 0.7);
+  align-self: center;
 }
 
 div.sidenav-elements {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+mat-toolbar {
+  cursor: default;
+  user-select: none;
 }
