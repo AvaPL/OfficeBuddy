@@ -2,41 +2,43 @@
 <mat-divider></mat-divider>
 <mat-card *ngFor="let office of offices" appearance="raised">
   <mat-card-header>
-    <mat-card-title>{{ office.name }}</mat-card-title>
-    <mat-card-subtitle>{{ office.address.addressLine1 }}</mat-card-subtitle>
-    <mat-card-subtitle *ngIf="office.address.addressLine2">{{ office.address.addressLine2 }}</mat-card-subtitle>
-    <mat-card-subtitle>{{ office.address.postalCode }} {{ office.address.city }}, {{ office.address.country }}
-    </mat-card-subtitle>
-    <div class="office-stats">
-      <div class="office-stats-item" matTooltip="Office managers">
-        <mat-icon matListItemIcon>person</mat-icon>
-        <span matListItemLine>{{ office.officeManagers.join(", ") }}</span>
+    <mat-card-title-group>
+      <mat-card-title>{{ office.name }}</mat-card-title>
+      <mat-card-subtitle>{{ office.address.addressLine1 }}</mat-card-subtitle>
+      <mat-card-subtitle *ngIf="office.address.addressLine2">{{ office.address.addressLine2 }}</mat-card-subtitle>
+      <mat-card-subtitle>{{ office.address.postalCode }} {{ office.address.city }}, {{ office.address.country }}
+      </mat-card-subtitle>
+      <div class="office-stats">
+        <div class="office-stats-item" matTooltip="Office managers">
+          <mat-icon matListItemIcon>person</mat-icon>
+          <span matListItemLine class="office-managers">{{ office.officeManagers.join(", ") }}</span>
+        </div>
+        <div class="office-stats-item" matTooltip="Assigned accounts">
+          <mat-icon matListItemIcon>supervisor_account</mat-icon>
+          <span matListItemLine>{{ office.assignedAccounts }}</span>
+        </div>
+        <div class="office-stats-horizontal">
+          <div class="office-stats-item office-stats-item-horizontal" matTooltip="Desks">
+            <mat-icon matListItemIcon>table_restaurant</mat-icon>
+            <span matListItemLine>{{ office.desks }}</span>
+          </div>
+          <div class="office-stats-item office-stats-item-horizontal" matTooltip="Parking spots">
+            <mat-icon matListItemIcon>local_parking</mat-icon>
+            <span matListItemLine>{{ office.parkingSpots }}</span>
+          </div>
+          <div class="office-stats-item office-stats-item-horizontal" matTooltip="Rooms">
+            <mat-icon matListItemIcon>meeting_room</mat-icon>
+            <span matListItemLine>{{ office.rooms }}</span>
+          </div>
+          <div class="office-stats-item office-stats-item-horizontal" matTooltip="Active reservations">
+            <mat-icon matListItemIcon>calendar_month</mat-icon>
+            <span matListItemLine>{{ office.activeReservations }}</span>
+          </div>
+        </div>
       </div>
-      <div class="office-stats-item" matTooltip="Assigned accounts">
-        <mat-icon matListItemIcon>supervisor_account</mat-icon>
-        <span matListItemLine>{{ office.assignedAccounts }}</span>
-      </div>
-      <div class="office-stats-horizontal">
-        <div class="office-stats-item office-stats-item-horizontal" matTooltip="Desks">
-          <mat-icon matListItemIcon>table_restaurant</mat-icon>
-          <span matListItemLine>{{ office.desks }}</span>
-        </div>
-        <div class="office-stats-item office-stats-item-horizontal" matTooltip="Parking spots">
-          <mat-icon matListItemIcon>local_parking</mat-icon>
-          <span matListItemLine>{{ office.parkingSpots }}</span>
-        </div>
-        <div class="office-stats-item office-stats-item-horizontal" matTooltip="Rooms">
-          <mat-icon matListItemIcon>meeting_room</mat-icon>
-          <span matListItemLine>{{ office.rooms }}</span>
-        </div>
-        <div class="office-stats-item office-stats-item-horizontal" matTooltip="Active reservations">
-          <mat-icon matListItemIcon>calendar_month</mat-icon>
-          <span matListItemLine>{{ office.activeReservations }}</span>
-        </div>
-      </div>
-    </div>
-    <button mat-button class="menu-button">
-      <mat-icon>more_vert</mat-icon>
-    </button>
+      <button mat-button class="menu-button">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    </mat-card-title-group>
   </mat-card-header>
 </mat-card>
