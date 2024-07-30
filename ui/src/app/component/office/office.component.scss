@@ -1,5 +1,21 @@
-mat-divider {
-  margin-bottom: 20px;
+.page-title {
+  background-color: var(--mat-app-background-color);
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 999;
+
+  h1 {
+    padding: 24px 24px 0 24px;
+  }
+}
+
+.office-cards {
+  padding: 96px 24px 16px 24px;
+
+  @media (max-width: 600px) {
+    padding-bottom: 76px;
+  }
 }
 
 mat-card {
