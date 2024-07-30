@@ -15,17 +15,6 @@ mat-card-subtitle {
   width: 180px;
 }
 
-.menu-button {
-  display: inline-block;
-  border-radius: 100%;
-  min-width: var(--mdc-text-button-container-height);
-  width: var(--mdc-text-button-container-height);
-
-  mat-icon {
-    transform: scale(1.4);
-  }
-}
-
 .office-stats {
   display: flex;
   flex-direction: column;
@@ -60,4 +49,14 @@ div.office-stats-horizontal {
 
 .office-stats-item-horizontal {
   margin-right: 16px;
+}
+
+.add-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+
+  @media (max-width: 600px) {
+    margin-bottom: 55px;
+  }
 }

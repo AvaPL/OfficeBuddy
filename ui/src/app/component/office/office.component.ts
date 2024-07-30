@@ -69,10 +69,14 @@ export class OfficeComponent {
   ]
 
   editManagers(officeId: string) {
-    console.log(`Assigning office manager to office ${officeId}`);
+    console.log(`Editing office managers of office ${officeId}`);
   }
 
   deleteOffice(officeId: string) {
     console.log(`Deleting office ${officeId}`);
+  }
+
+  addOffice() {
+    console.log(`Adding new office`);
   }
 }

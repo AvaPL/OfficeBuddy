@@ -36,7 +36,7 @@
           </div>
         </div>
       </div>
-      <button mat-button [matMenuTriggerFor]="menu" class="menu-button">
+      <button mat-icon-button [matMenuTriggerFor]="menu" class="menu-button">
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
@@ -52,3 +52,6 @@
     </mat-card-title-group>
   </mat-card-header>
 </mat-card>
+<button mat-fab class="add-button" color="primary" (click)="addOffice()">
+  <mat-icon>add</mat-icon>
+</button>
