@@ -8,6 +8,15 @@
   h1 {
     padding: 24px 24px 0 24px;
   }
+
+  mat-divider {
+    margin-left: 16px;
+    margin-right: 236px;
+
+    @media (max-width: 600px) {
+      margin-right: 16px;
+    }
+  }
 }
 
 .office-cards {
