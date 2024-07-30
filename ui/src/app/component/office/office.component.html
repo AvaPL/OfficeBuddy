@@ -55,6 +55,8 @@
       </mat-card-title-group>
     </mat-card-header>
   </mat-card>
+  <mat-paginator [length]="100" [pageSize]="10" hidePageSize>
+  </mat-paginator>
   <button mat-fab class="add-button" color="primary" (click)="addOffice()">
     <mat-icon>add</mat-icon>
   </button>

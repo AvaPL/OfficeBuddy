@@ -11,10 +11,10 @@
 }
 
 .office-cards {
-  padding: 96px 24px 16px 24px;
+  padding: 96px 24px 8px 24px;
 
   @media (max-width: 600px) {
-    padding-bottom: 76px;
+    padding-bottom: 68px;
   }
 }
 
@@ -65,6 +65,21 @@ div.office-stats-horizontal {
 
 .office-stats-item-horizontal {
   margin-right: 16px;
+}
+
+mat-paginator {
+  display: flex;
+  justify-content: center;
+  background-color: var(--mat-app-background-color);
+
+  ::ng-deep .mat-mdc-paginator-range-label {
+    display: none;
+  }
+
+  ::ng-deep button {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
 }
 
 .add-button {

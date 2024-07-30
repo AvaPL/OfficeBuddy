@@ -20,6 +20,7 @@ import {OfficeComponent} from "./component/office/office.component";
 import {MatCardModule} from "@angular/material/card";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatMenuModule} from "@angular/material/menu";
+import {MatPaginatorModule} from "@angular/material/paginator";
 
 @NgModule({
   declarations: [
@@ -41,6 +42,7 @@ import {MatMenuModule} from "@angular/material/menu";
     MatIconModule,
     MatListModule,
     MatMenuModule,
+    MatPaginatorModule,
     MatSidenavModule,
     MatTooltipModule,
     MatToolbarModule,
