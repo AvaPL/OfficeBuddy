@@ -36,9 +36,19 @@
           </div>
         </div>
       </div>
-      <button mat-button class="menu-button">
+      <button mat-button [matMenuTriggerFor]="menu" class="menu-button">
         <mat-icon>more_vert</mat-icon>
       </button>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="editManagers(office.id)">
+          <mat-icon>person</mat-icon>
+          <span>Edit managers</span>
+        </button>
+        <button mat-menu-item (click)="deleteOffice(office.id)">
+          <mat-icon>highlight_remove</mat-icon>
+          <span>Delete office</span>
+        </button>
+      </mat-menu>
     </mat-card-title-group>
   </mat-card-header>
 </mat-card>

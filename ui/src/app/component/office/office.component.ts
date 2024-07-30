@@ -9,6 +9,7 @@ export class OfficeComponent {
 
   offices = [
     {
+      id: "1",
       name: "Wrocław Office",
       address: {
         addressLine1: "ul. Powstańców Śląskich 9",
@@ -28,6 +29,7 @@ export class OfficeComponent {
       activeReservations: 42
     },
     {
+      id: "2",
       name: "Kraków Office",
       address: {
         addressLine1: "ul. Krzywa 12",
@@ -46,6 +48,7 @@ export class OfficeComponent {
       activeReservations: 5
     },
     {
+      id: "3",
       name: "Warsaw Office",
       address: {
         addressLine1: "Plac Bankowy 2",
@@ -64,4 +67,12 @@ export class OfficeComponent {
       activeReservations: 1
     }
   ]
+
+  editManagers(officeId: string) {
+    console.log(`Assigning office manager to office ${officeId}`);
+  }
+
+  deleteOffice(officeId: string) {
+    console.log(`Deleting office ${officeId}`);
+  }
 }
