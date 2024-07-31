@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {PageEvent} from "@angular/material/paginator";
 
 @Component({
   selector: 'app-office',
@@ -198,8 +199,69 @@ export class OfficeComponent {
       parkingSpots: 0,
       rooms: 0,
       activeReservations: 0
+    },
+    {
+      id: "11",
+      name: "São Paulo Office",
+      address: {
+        addressLine1: "123 Avenida Paulista",
+        addressLine2: null,
+        postalCode: "01311-200",
+        city: "São Paulo",
+        country: "Brazil"
+      },
+      officeManagers: [
+        "Maria Silva"
+      ],
+      assignedAccounts: 0,
+      desks: 0,
+      parkingSpots: 0,
+      rooms: 0,
+      activeReservations: 0
+    },
+    {
+      id: "12",
+      name: "Cape Town Office",
+      address: {
+        addressLine1: "123 Long Street",
+        addressLine2: null,
+        postalCode: "8001",
+        city: "Cape Town",
+        country: "South Africa"
+      },
+      officeManagers: [
+        "Peter Green"
+      ],
+      assignedAccounts: 0,
+      desks: 0,
+      parkingSpots: 0,
+      rooms: 0,
+      activeReservations: 0
+    },
+    {
+      id: "13",
+      name: "Barcelona Office",
+      address: {
+        addressLine1: "123 Passeig de Gràcia",
+        addressLine2: null,
+        postalCode: "08008",
+        city: "Barcelona",
+        country: "Spain"
+      },
+      officeManagers: [
+        "Laura Red"
+      ],
+      assignedAccounts: 0,
+      desks: 0,
+      parkingSpots: 0,
+      rooms: 0,
+      activeReservations: 0
     }
   ]
+
+  pageSize = 10
+  pageIndex = 0
+  officesPage = this.paginateOffices()
 
   editManagers(officeId: string) {
     console.log(`Editing office managers of office ${officeId}`);
@@ -211,5 +273,14 @@ export class OfficeComponent {
 
   addOffice() {
     console.log(`Adding new office`);
+  }
+
+  handlePageEvent(event: PageEvent) {
+    this.pageIndex = event.pageIndex
+    this.officesPage = this.paginateOffices()
+  }
+
+  paginateOffices() {
+    return this.offices.slice(this.pageIndex * this.pageSize, (this.pageIndex + 1) * this.pageSize)
   }
 }

@@ -3,7 +3,7 @@
   <mat-divider></mat-divider>
 </div>
 <div class="office-cards">
-  <mat-card *ngFor="let office of offices" appearance="raised">
+  <mat-card *ngFor="let office of officesPage" appearance="raised">
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>{{ office.name }}</mat-card-title>
@@ -55,7 +55,12 @@
       </mat-card-title-group>
     </mat-card-header>
   </mat-card>
-  <mat-paginator [length]="100" [pageSize]="10" hidePageSize>
+  <mat-paginator
+    [length]="offices.length"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    (page)="handlePageEvent($event)"
+    hidePageSize>
   </mat-paginator>
   <button mat-fab class="add-button" color="primary" (click)="addOffice()">
     <mat-icon>add</mat-icon>
