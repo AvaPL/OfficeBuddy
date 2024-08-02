@@ -1,5 +1,7 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
+import {MatDialog} from "@angular/material/dialog";
+import {DeleteOfficeDialogComponent} from "./delete-office-dialog/delete-office-dialog.component";
 
 @Component({
   selector: 'app-office',
@@ -7,6 +9,8 @@ import {PageEvent} from "@angular/material/paginator";
   styleUrl: './office.component.scss'
 })
 export class OfficeComponent {
+
+  readonly deleteOfficeDialog = inject(MatDialog);
 
   offices = [
     {
@@ -267,8 +271,16 @@ export class OfficeComponent {
     console.log(`Editing office managers of office ${officeId}`);
   }
 
-  deleteOffice(officeId: string) {
-    console.log(`Deleting office ${officeId}`);
+  deleteOffice(officeId: string, officeName: string) {
+    const dialogRef = this.deleteOfficeDialog.open(DeleteOfficeDialogComponent, {data: {officeName}});
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Deleting office ${officeId}`);
+      } else {
+        console.log(`Cancelled deleting office ${officeId}`);
+      }
+    });
   }
 
   addOffice() {

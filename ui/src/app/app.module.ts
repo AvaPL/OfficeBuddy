@@ -21,11 +21,15 @@ import {MatCardModule} from "@angular/material/card";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatPaginatorModule} from "@angular/material/paginator";
+import {MatDialogModule} from "@angular/material/dialog";
+import {DeleteOfficeDialogComponent} from "./component/office/delete-office-dialog/delete-office-dialog.component";
+import {CommonModule} from "@angular/common";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AppComponent,
+    DeleteOfficeDialogComponent,
     DeskComponent,
     NavbarComponent,
     OfficeComponent,
@@ -36,9 +40,11 @@ import {MatPaginatorModule} from "@angular/material/paginator";
     AppRoutingModule,
     BrowserModule,
     BrowserAnimationsModule,
+    CommonModule,
     KeycloakAngularModule,
     MatButtonModule,
     MatCardModule,
+    MatDialogModule,
     MatIconModule,
     MatListModule,
     MatMenuModule,
