@@ -1,0 +1,115 @@
+.page-title {
+  background-color: var(--mat-app-background-color);
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 999;
+
+  h1 {
+    padding: 24px 24px 0 24px;
+  }
+
+  mat-divider {
+    margin-left: 16px;
+    margin-right: 236px;
+
+    @media (max-width: 600px) {
+      margin-right: 16px;
+    }
+  }
+}
+
+.reservation-cards {
+  padding: 96px 24px 8px 24px;
+
+  @media (max-width: 600px) {
+    padding-bottom: 68px;
+  }
+}
+
+.reservation-user {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 8px;
+  margin-right: 24px;
+
+  mat-icon {
+    margin-right: 4px;
+  }
+
+  span {
+    text-wrap: nowrap;
+  }
+}
+
+mat-card {
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+mat-card-header {
+  padding: 16px;
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    justify-content: center;
+  }
+}
+
+.reservation-state {
+  height: 22px;
+  margin-left: 8px;
+  margin-right: 16px;
+  padding: 2px 8px 0 8px;
+  border-radius: 4px;
+}
+
+.reservation-notes {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  div {
+    display: block;
+    flex-direction: row;
+
+    span {
+      margin-left: 4px;
+      display: inline-flex;
+      text-wrap: wrap;
+      text-align: justify;
+
+      @media (max-width: 374px) {
+        display: none;
+      }
+    }
+  }
+}
+
+mat-paginator {
+  display: flex;
+  justify-content: center;
+  background-color: var(--mat-app-background-color);
+
+  ::ng-deep .mat-mdc-paginator-range-label {
+    display: none;
+  }
+
+  ::ng-deep button {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
+}
+
+.add-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+
+  @media (max-width: 600px) {
+    margin-bottom: 55px;
+  }
+}

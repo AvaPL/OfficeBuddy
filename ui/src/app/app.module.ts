@@ -29,6 +29,7 @@ import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule} from "@angular/mater
 import {ReactiveFormsModule} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/edit-office-dialog.component";
+import {MatChipsModule} from "@angular/material/chips";
 
 @NgModule({
   declarations: [
@@ -51,6 +52,7 @@ import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/e
     KeycloakAngularModule,
     MatButtonModule,
     MatCardModule,
+    MatChipsModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,

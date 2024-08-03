@@ -7,6 +7,10 @@ mat-dialog-content {
   min-width: 75vw;
 }
 
+.mat-mdc-dialog-content {
+  padding-bottom: 0;
+}
+
 .name-input {
   mat-form-field {
     width: 100%;

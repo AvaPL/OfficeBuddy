@@ -1,1 +1,57 @@
-<p>desk works!</p>
+<div class="page-title">
+  <h1>Desks</h1>
+  <mat-divider></mat-divider>
+</div>
+<div class="reservation-cards">
+  <mat-card *ngFor="let reservation of reservationsPage" appearance="raised">
+    <mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>
+          <span>{{ reservation.deskName }}</span>
+          <span class="mat-body reservation-state"
+                [style.background-color]="stateChipStyle(reservation.state).backgroundColor"
+                [style.color]="stateChipStyle(reservation.state).textColor">{{ reservation.state }}</span>
+        </mat-card-title>
+        <mat-card-subtitle class="reservation-user">
+          <mat-icon matListItemIcon>person</mat-icon>
+          <span>{{ reservation.userName }}</span>
+        </mat-card-subtitle>
+        <div class="reservation-notes">
+          <div *ngIf="reservation.notes" [matTooltip]="notesTooltipQuery.matches ? reservation.notes : 'Notes'">
+            <mat-icon matListItemIcon>edit_note</mat-icon>
+            <span matListItemLine>{{ reservation.notes }}</span>
+          </div>
+        </div>
+        <button mat-icon-button [matMenuTriggerFor]="menu" class="menu-button">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <!-- TODO: Introduce proper buttons -->
+          <button mat-menu-item>
+            <mat-icon>edit</mat-icon>
+            <span>Edit office</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>person</mat-icon>
+            <span>Edit managers</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>highlight_remove</mat-icon>
+            <span>Delete office</span>
+          </button>
+        </mat-menu>
+      </mat-card-title-group>
+    </mat-card-header>
+  </mat-card>
+  <mat-paginator
+    [length]="reservations.length"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    (page)="handlePageEvent($event)"
+    hidePageSize>
+  </mat-paginator>
+  <button mat-fab class="add-button" color="primary" matTooltip="Reserve a desk"
+          matTooltipPosition="above">
+    <mat-icon>add</mat-icon>
+  </button>
+</div>
