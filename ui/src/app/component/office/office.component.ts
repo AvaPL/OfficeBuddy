@@ -2,6 +2,7 @@ import {Component, inject} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MatDialog} from "@angular/material/dialog";
 import {DeleteOfficeDialogComponent} from "./delete-office-dialog/delete-office-dialog.component";
+import {CreateOfficeDialogComponent} from "./create-office-dialog/create-office-dialog.component";
 
 @Component({
   selector: 'app-office',
@@ -10,6 +11,7 @@ import {DeleteOfficeDialogComponent} from "./delete-office-dialog/delete-office-
 })
 export class OfficeComponent {
 
+  readonly createOfficeDialog = inject(MatDialog);
   readonly deleteOfficeDialog = inject(MatDialog);
 
   offices = [
@@ -276,15 +278,23 @@ export class OfficeComponent {
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Deleting office ${officeId}`);
+        console.log(`Deleted office ${officeId}`);
       } else {
         console.log(`Cancelled deleting office ${officeId}`);
       }
     });
   }
 
-  addOffice() {
-    console.log(`Adding new office`);
+  createOffice() {
+    const dialogRef = this.createOfficeDialog.open(CreateOfficeDialogComponent);
+
+    dialogRef.afterClosed().subscribe(isCreated => {
+      if (isCreated) {
+        console.log(`Created new office`);
+      } else {
+        console.log(`Cancelled creating new office`);
+      }
+    });
   }
 
   handlePageEvent(event: PageEvent) {

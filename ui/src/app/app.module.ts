@@ -24,11 +24,16 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatDialogModule} from "@angular/material/dialog";
 import {DeleteOfficeDialogComponent} from "./component/office/delete-office-dialog/delete-office-dialog.component";
 import {CommonModule} from "@angular/common";
+import {CreateOfficeDialogComponent} from "./component/office/create-office-dialog/create-office-dialog.component";
+import {MatFormFieldModule} from "@angular/material/form-field";
+import {ReactiveFormsModule} from "@angular/forms";
+import {MatInputModule} from "@angular/material/input";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AppComponent,
+    CreateOfficeDialogComponent,
     DeleteOfficeDialogComponent,
     DeskComponent,
     NavbarComponent,
@@ -45,13 +50,16 @@ import {CommonModule} from "@angular/common";
     MatButtonModule,
     MatCardModule,
     MatDialogModule,
+    MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatListModule,
     MatMenuModule,
     MatPaginatorModule,
     MatSidenavModule,
     MatTooltipModule,
     MatToolbarModule,
+    ReactiveFormsModule
   ],
   providers: [
     {

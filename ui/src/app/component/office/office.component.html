@@ -62,7 +62,8 @@
     (page)="handlePageEvent($event)"
     hidePageSize>
   </mat-paginator>
-  <button mat-fab class="add-button" color="primary" (click)="addOffice()">
+  <button mat-fab class="add-button" color="primary" (click)="createOffice()" matTooltip="Add new office"
+          matTooltipPosition="above">
     <mat-icon>add</mat-icon>
   </button>
 </div>
