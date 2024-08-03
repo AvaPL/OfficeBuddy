@@ -3,6 +3,10 @@ import {PageEvent} from "@angular/material/paginator";
 import {MatDialog} from "@angular/material/dialog";
 import {DeleteOfficeDialogComponent} from "./delete-office-dialog/delete-office-dialog.component";
 import {CreateOfficeDialogComponent} from "./create-office-dialog/create-office-dialog.component";
+import {
+  EditOfficeDialogComponent,
+  EditOfficeInitialValuesDialogData
+} from "./edit-office-dialog/edit-office-dialog.component";
 
 @Component({
   selector: 'app-office',
@@ -12,6 +16,7 @@ import {CreateOfficeDialogComponent} from "./create-office-dialog/create-office-
 export class OfficeComponent {
 
   readonly createOfficeDialog = inject(MatDialog);
+  readonly editOfficeDialog = inject(MatDialog);
   readonly deleteOfficeDialog = inject(MatDialog);
 
   offices = [
@@ -273,6 +278,32 @@ export class OfficeComponent {
     console.log(`Editing office managers of office ${officeId}`);
   }
 
+  createOffice() {
+    const dialogRef = this.createOfficeDialog.open(CreateOfficeDialogComponent);
+
+    dialogRef.afterClosed().subscribe(createdOffice => {
+      if (createdOffice) {
+        console.log(`Created new office: `, createdOffice);
+      } else {
+        console.log(`Cancelled creating new office`);
+      }
+    });
+  }
+
+  editOffice(officeId: string, editOfficeInitialValues: EditOfficeInitialValuesDialogData) {
+    const dialogRef = this.editOfficeDialog.open(EditOfficeDialogComponent, {
+      data: editOfficeInitialValues
+    })
+
+    dialogRef.afterClosed().subscribe(editedOffice => {
+      if (editedOffice) {
+        console.log(`Edited office [${officeId}]: `, editedOffice);
+      } else {
+        console.log(`Cancelled editing office ${officeId}`);
+      }
+    });
+  }
+
   deleteOffice(officeId: string, officeName: string) {
     const dialogRef = this.deleteOfficeDialog.open(DeleteOfficeDialogComponent, {data: {officeName}});
 
@@ -281,18 +312,6 @@ export class OfficeComponent {
         console.log(`Deleted office ${officeId}`);
       } else {
         console.log(`Cancelled deleting office ${officeId}`);
-      }
-    });
-  }
-
-  createOffice() {
-    const dialogRef = this.createOfficeDialog.open(CreateOfficeDialogComponent);
-
-    dialogRef.afterClosed().subscribe(isCreated => {
-      if (isCreated) {
-        console.log(`Created new office`);
-      } else {
-        console.log(`Cancelled creating new office`);
       }
     });
   }

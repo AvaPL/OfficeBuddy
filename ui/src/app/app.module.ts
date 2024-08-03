@@ -25,9 +25,10 @@ import {MatDialogModule} from "@angular/material/dialog";
 import {DeleteOfficeDialogComponent} from "./component/office/delete-office-dialog/delete-office-dialog.component";
 import {CommonModule} from "@angular/common";
 import {CreateOfficeDialogComponent} from "./component/office/create-office-dialog/create-office-dialog.component";
-import {MatFormFieldModule} from "@angular/material/form-field";
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule} from "@angular/material/form-field";
 import {ReactiveFormsModule} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
+import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/edit-office-dialog.component";
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import {MatInputModule} from "@angular/material/input";
     CreateOfficeDialogComponent,
     DeleteOfficeDialogComponent,
     DeskComponent,
+    EditOfficeDialogComponent,
     NavbarComponent,
     OfficeComponent,
     ParkingComponent,
@@ -67,6 +69,12 @@ import {MatInputModule} from "@angular/material/input";
       useFactory: initializeKeycloak,
       multi: true,
       deps: [KeycloakService],
+    },
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: {
+        appearance: 'outline'
+      }
     },
     provideAnimationsAsync()
   ],

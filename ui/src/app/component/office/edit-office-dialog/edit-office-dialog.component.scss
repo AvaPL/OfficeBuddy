@@ -1,0 +1,32 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  min-width: 75vw;
+}
+
+.name-input {
+  mat-form-field {
+    width: 100%;
+  }
+  margin-bottom: 10px;
+}
+
+mat-divider {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.address-input {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(200px, 30%)), 1fr));
+  grid-auto-rows: 80px;
+  grid-gap: 10px;
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}

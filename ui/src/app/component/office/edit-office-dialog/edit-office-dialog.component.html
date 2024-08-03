@@ -1,5 +1,5 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <h2 mat-dialog-title class="title">New office</h2>
+  <h2 mat-dialog-title class="title">Edit {{form.get('name')?.value}}</h2>
   <mat-divider></mat-divider>
   <mat-dialog-content>
     <h3>Name</h3>
@@ -40,6 +40,6 @@
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-button color="primary" type="submit" [disabled]="!form.valid">Create</button>
+    <button mat-button color="primary" type="submit" [disabled]="!form.valid" cdkFocusInitial>Save</button>
   </mat-dialog-actions>
 </form>

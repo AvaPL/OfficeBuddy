@@ -23,11 +23,10 @@ export class CreateOfficeDialogComponent {
   });
 
   onSubmit() {
-    console.log(this.form.value);
-    this.dialogRef.close(true);
+    this.dialogRef.close(this.form.value);
   }
 
   onCancel() {
-    this.dialogRef.close(false);
+    this.dialogRef.close();
   }
 }

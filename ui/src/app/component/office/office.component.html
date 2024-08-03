@@ -43,6 +43,19 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="editOffice(office.id, {
+            name: office.name,
+            address: {
+              addressLine1: office.address.addressLine1,
+              addressLine2: office.address.addressLine2,
+              postalCode: office.address.postalCode,
+              city: office.address.city,
+              country: office.address.country
+            }
+          })">
+            <mat-icon>edit</mat-icon>
+            <span>Edit office</span>
+          </button>
           <button mat-menu-item (click)="editManagers(office.id)">
             <mat-icon>person</mat-icon>
             <span>Edit managers</span>
