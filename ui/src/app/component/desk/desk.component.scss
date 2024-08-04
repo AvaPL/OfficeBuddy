@@ -25,9 +25,18 @@
   @media (max-width: 600px) {
     padding-bottom: 68px;
   }
+
+  h3 {
+    margin-bottom: 0;
+    margin-left: 4px;
+  }
+
+  mat-divider {
+    margin-bottom: 8px;
+  }
 }
 
-.reservation-user {
+.reservation-subtitle-line {
   display: flex;
   flex-direction: row;
   align-items: center;
