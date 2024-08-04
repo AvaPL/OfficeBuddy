@@ -22,24 +22,20 @@
             <span matListItemLine>{{ reservation.notes }}</span>
           </div>
         </div>
-        <button mat-icon-button [matMenuTriggerFor]="menu" class="menu-button">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          <!-- TODO: Introduce proper buttons -->
-          <button mat-menu-item>
-            <mat-icon>edit</mat-icon>
-            <span>Edit office</span>
+        <div class="buttons-row">
+          <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button" matTooltip="Confirm">
+            <mat-icon>check_circle</mat-icon>
           </button>
-          <button mat-menu-item>
-            <mat-icon>person</mat-icon>
-            <span>Edit managers</span>
+          <button *ngIf="reservation.state === ReservationState.CONFIRMED" mat-icon-button class="reservation-button" matTooltip="Reject">
+            <mat-icon>unpublished</mat-icon>
           </button>
-          <button mat-menu-item>
-            <mat-icon>highlight_remove</mat-icon>
-            <span>Delete office</span>
+          <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button" matTooltip="Reject">
+            <mat-icon>do_not_disturb_on</mat-icon>
           </button>
-        </mat-menu>
+          <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button" matTooltip="Cancel">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </div>
       </mat-card-title-group>
     </mat-card-header>
   </mat-card>

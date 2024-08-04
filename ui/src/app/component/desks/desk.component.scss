@@ -82,10 +82,43 @@ mat-card-header {
       text-wrap: wrap;
       text-align: justify;
 
-      @media (max-width: 374px) {
+      @media (max-width: 400px) {
         display: none;
       }
     }
+  }
+}
+
+.buttons-row {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.reservation-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.55);
+
+  & > *[role=img] {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    padding-left: 1px;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  ::ng-deep .mat-mdc-button-touch-target {
+    width: 28px;
+    height: 28px;
   }
 }
 

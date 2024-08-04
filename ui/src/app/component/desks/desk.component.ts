@@ -118,4 +118,6 @@ export class DeskComponent {
         }
     }
   }
+
+  protected readonly ReservationState = ReservationState;
 }
