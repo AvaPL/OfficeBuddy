@@ -1,6 +1,9 @@
-import {ChangeDetectorRef, Component, resolveForwardRef} from '@angular/core';
+import {ChangeDetectorRef, Component, inject, resolveForwardRef} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
+import {MatDialog} from "@angular/material/dialog";
+import {CreateOfficeDialogComponent} from "../office/create-office-dialog/create-office-dialog.component";
+import {DeskReservationConfirmDialogComponent} from "./confirm-dialog/desk-reservation-confirm-dialog.component";
 
 enum ReservationState {
   CANCELLED = "Cancelled",
@@ -16,10 +19,14 @@ enum ReservationState {
 })
 export class DeskComponent {
 
+  readonly deskReservationConfirmDialog = inject(MatDialog);
+  protected readonly ReservationState = ReservationState;
+
   reservations = [
     {
       id: "1",
-      reservationDate: "2024-08-03",
+      startDate: "2024-08-03",
+      endDate: "2024-08-03",
       deskId: "1",
       deskName: "107/1",
       userId: "1",
@@ -29,7 +36,8 @@ export class DeskComponent {
     },
     {
       id: "2",
-      reservationDate: "2024-08-03",
+      startDate: "2024-08-03",
+      endDate: "2024-08-05",
       deskId: "2",
       deskName: "107/2",
       userId: "2",
@@ -39,7 +47,8 @@ export class DeskComponent {
     },
     {
       id: "3",
-      reservationDate: "2024-08-04",
+      startDate: "2024-08-04",
+      endDate: "2024-08-05",
       deskId: "3",
       deskName: "108/2",
       userId: "3",
@@ -49,7 +58,8 @@ export class DeskComponent {
     },
     {
       id: "4",
-      reservationDate: "2024-08-04",
+      startDate: "2024-08-04",
+      endDate: "2024-08-04",
       deskId: "4",
       deskName: "108/4",
       userId: "4",
@@ -59,7 +69,8 @@ export class DeskComponent {
     },
     {
       id: "5",
-      reservationDate: "2024-08-04",
+      startDate: "2024-08-04",
+      endDate: "2024-08-06",
       deskId: "5",
       deskName: "108/5",
       userId: "5",
@@ -119,5 +130,65 @@ export class DeskComponent {
     }
   }
 
-  protected readonly ReservationState = ReservationState;
+  confirmReservation(reservationId: string, deskName: string, userName: string, startDate: string, endDate: string) {
+    const dialogRef = this.deskReservationConfirmDialog.open(DeskReservationConfirmDialogComponent, {
+      data: {
+        isWarn: false,
+        buttonText: "Confirm",
+        deskName,
+        userName,
+        startDate,
+        endDate
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Confirmed reservation ${reservationId}`);
+      } else {
+        console.log(`Cancelled confirming reservation ${reservationId}`);
+      }
+    });
+  }
+
+  rejectReservation(reservationId: string, deskName: string, userName: string, startDate: string, endDate: string) {
+    const dialogRef = this.deskReservationConfirmDialog.open(DeskReservationConfirmDialogComponent, {
+      data: {
+        isWarn: true,
+        buttonText: "Reject",
+        deskName,
+        userName,
+        startDate,
+        endDate
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Rejected reservation ${reservationId}`);
+      } else {
+        console.log(`Cancelled rejecting reservation ${reservationId}`);
+      }
+    });
+  }
+
+  cancelReservation(reservationId: string, deskName: string, startDate: string, endDate: string) {
+    const dialogRef = this.deskReservationConfirmDialog.open(DeskReservationConfirmDialogComponent, {
+      data: {
+        isWarn: true,
+        buttonText: "Cancel",
+        deskName,
+        startDate,
+        endDate
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Cancelled reservation ${reservationId}`);
+      } else {
+        console.log(`Cancelled cancelling reservation ${reservationId}`);
+      }
+    });
+  }
 }

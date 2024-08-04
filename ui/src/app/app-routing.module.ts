@@ -1,7 +1,7 @@
 import {RouterModule, Routes} from "@angular/router";
 import {NgModule} from "@angular/core";
 import {AuthGuard} from "./guard/auth.guard";
-import {DeskComponent} from "./component/desks/desk.component";
+import {DeskComponent} from "./component/desk/desk.component";
 import {ParkingComponent} from "./component/parking/parking.component";
 import {RoomComponent} from "./component/room/room.component";
 import {AccountComponent} from "./component/account/account.component";

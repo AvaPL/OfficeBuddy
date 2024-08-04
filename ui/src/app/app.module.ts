@@ -6,7 +6,7 @@ import {AppRoutingModule} from "./app-routing.module";
 import {BrowserModule} from "@angular/platform-browser";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {NavbarComponent} from "./component/sidebar/navbar.component";
-import {DeskComponent} from "./component/desks/desk.component";
+import {DeskComponent} from "./component/desk/desk.component";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
@@ -30,6 +30,7 @@ import {ReactiveFormsModule} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/edit-office-dialog.component";
 import {MatChipsModule} from "@angular/material/chips";
+import {DeskReservationConfirmDialogComponent} from "./component/desk/confirm-dialog/desk-reservation-confirm-dialog.component";
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import {MatChipsModule} from "@angular/material/chips";
     CreateOfficeDialogComponent,
     DeleteOfficeDialogComponent,
     DeskComponent,
+    DeskReservationConfirmDialogComponent,
     EditOfficeDialogComponent,
     NavbarComponent,
     OfficeComponent,
