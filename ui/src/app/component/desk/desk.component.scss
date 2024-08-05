@@ -5,11 +5,15 @@
   top: 0;
   z-index: 999;
 
-  h1 {
-    padding: 24px 24px 0 24px;
+  .title-button {
+    padding: 22px 16px 0 16px;
+
+    button {
+      margin-bottom: 14px;
+    }
   }
 
-  button {
+  .filter-button {
     position: fixed;
     right: 16px;
     top: 16px;
