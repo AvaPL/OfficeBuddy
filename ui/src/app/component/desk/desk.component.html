@@ -1,5 +1,9 @@
 <div class="page-title">
-  <h1>Desks</h1>
+  <h1> Desks</h1>
+  <!-- TODO: Add filters (office, state, reserved by you) -->
+  <button mat-icon-button matTooltip="Filters">
+    <mat-icon>tune</mat-icon>
+  </button>
   <mat-divider></mat-divider>
 </div>
 <div class="reservation-cards">
@@ -58,7 +62,7 @@
     </mat-card>
   </ng-container>
   <mat-paginator
-    [length]="reservations.length"
+    [length]="paginatorLength"
     [pageSize]="pageSize"
     [pageIndex]="pageIndex"
     (page)="handlePageEvent($event)"
