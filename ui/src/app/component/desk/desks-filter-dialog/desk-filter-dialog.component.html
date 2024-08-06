@@ -1,6 +1,6 @@
-<h2 mat-dialog-title>Filters</h2>
+<h2 mat-dialog-title class="title">Filters</h2>
 <mat-dialog-content>
-  <mat-form-field>
+  <mat-form-field class="office-select">
     <mat-label>Office</mat-label>
     <mat-select [(value)]="selectedOfficeId">
       @for (office of data.offices; track office) {
@@ -9,7 +9,7 @@
     </mat-select>
   </mat-form-field>
   <mat-form-field>
-    <mat-label>Reservation states</mat-label>
+    <mat-label>Reservation statuses</mat-label>
     <mat-select [(value)]="selectedReservationStates" multiple>
       @for (state of Object.values(ReservationState); track state) {
         <mat-option [value]="state">{{ state }}</mat-option>

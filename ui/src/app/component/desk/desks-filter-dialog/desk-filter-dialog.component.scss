@@ -1,0 +1,15 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+
+  .office-select {
+    margin-top: 8px;
+  }
+
+  width: min(450px, 80vw);
+}
