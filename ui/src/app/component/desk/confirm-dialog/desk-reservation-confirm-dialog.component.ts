@@ -11,7 +11,7 @@ export interface ReservationConfirmDialogData {
 }
 
 @Component({
-  selector: 'app-confirm-dialog',
+  selector: 'app-desk-reservation-confirm-dialog',
   templateUrl: './desk-reservation-confirm-dialog.component.html',
   styleUrl: './desk-reservation-confirm-dialog.component.scss'
 })

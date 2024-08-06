@@ -26,11 +26,14 @@ import {DeleteOfficeDialogComponent} from "./component/office/delete-office-dial
 import {CommonModule} from "@angular/common";
 import {CreateOfficeDialogComponent} from "./component/office/create-office-dialog/create-office-dialog.component";
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule} from "@angular/material/form-field";
-import {ReactiveFormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/edit-office-dialog.component";
 import {MatChipsModule} from "@angular/material/chips";
 import {DeskReservationConfirmDialogComponent} from "./component/desk/confirm-dialog/desk-reservation-confirm-dialog.component";
+import {DeskFilterDialogComponent} from "./component/desk/desks-filter-dialog/desk-filter-dialog.component";
+import {MatSelectModule} from "@angular/material/select";
+import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 
 @NgModule({
   declarations: [
@@ -39,6 +42,7 @@ import {DeskReservationConfirmDialogComponent} from "./component/desk/confirm-di
     CreateOfficeDialogComponent,
     DeleteOfficeDialogComponent,
     DeskComponent,
+    DeskFilterDialogComponent,
     DeskReservationConfirmDialogComponent,
     EditOfficeDialogComponent,
     NavbarComponent,
@@ -51,6 +55,7 @@ import {DeskReservationConfirmDialogComponent} from "./component/desk/confirm-di
     BrowserModule,
     BrowserAnimationsModule,
     CommonModule,
+    FormsModule,
     KeycloakAngularModule,
     MatButtonModule,
     MatCardModule,
@@ -62,7 +67,9 @@ import {DeskReservationConfirmDialogComponent} from "./component/desk/confirm-di
     MatListModule,
     MatMenuModule,
     MatPaginatorModule,
+    MatSelectModule,
     MatSidenavModule,
+    MatSlideToggleModule,
     MatTooltipModule,
     MatToolbarModule,
     ReactiveFormsModule

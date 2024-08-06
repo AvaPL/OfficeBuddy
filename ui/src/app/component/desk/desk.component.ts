@@ -3,8 +3,9 @@ import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
 import {MatDialog} from "@angular/material/dialog";
 import {DeskReservationConfirmDialogComponent} from "./confirm-dialog/desk-reservation-confirm-dialog.component";
+import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
 
-enum ReservationState {
+export enum ReservationState {
   CANCELLED = "Cancelled",
   CONFIRMED = "Confirmed",
   PENDING = "Pending",
@@ -18,6 +19,7 @@ enum ReservationState {
 })
 export class DeskComponent {
 
+  readonly deskFilterDialog = inject(MatDialog);
   readonly deskReservationConfirmDialog = inject(MatDialog);
   protected readonly ReservationState = ReservationState;
 
@@ -278,7 +280,8 @@ export class DeskComponent {
   selectedOffice = this.offices[0]
   pageSize = 10
   pageIndex = 0
-  reservationStates = [ReservationState.PENDING, ReservationState.CONFIRMED]
+  selectedReservationStates = [ReservationState.PENDING, ReservationState.CONFIRMED]
+  reservedByYou = false
   filteredReservations = this.filterReservations()
   reservationsPage = this.paginateAndGroupReservations()
   paginatorLength = this.totalReservations()
@@ -295,10 +298,12 @@ export class DeskComponent {
     this.paginatorLength = this.totalReservations()
   }
 
-  handleFilter(officeId: string, reservationStates: ReservationState[], reservedByYou: boolean) {
+  handleFilter(selectedOfficeId: string, selectedReservationStates: ReservationState[], reservedByYou: boolean) {
     // TODO: Replace with more robust code, the below is temporary only
-    this.selectedOffice = this.offices.find(office => office.id === officeId) || this.offices[0]
-    this.reservationStates = reservationStates
+    console.log(`Filtering by officeId: ${selectedOfficeId}, selectedReservationStates: ${selectedReservationStates}, reservedByYou: ${reservedByYou}`)
+    this.reservedByYou = reservedByYou
+    this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || this.offices[0]
+    this.selectedReservationStates = selectedReservationStates
     this.filteredReservations = this.filterReservations()
     this.pageIndex = 0
     this.reservationsPage = this.paginateAndGroupReservations()
@@ -306,7 +311,7 @@ export class DeskComponent {
   }
 
   filterReservations() {
-    return (this.reservations[this.selectedOffice.id] || []).filter(reservation => !this.reservationStates || this.reservationStates.includes(reservation.state))
+    return (this.reservations[this.selectedOffice.id] || []).filter(reservation => !this.selectedReservationStates || this.selectedReservationStates.includes(reservation.state))
   }
 
   paginateAndGroupReservations(): { [key: string]: any[] } {
@@ -357,6 +362,21 @@ export class DeskComponent {
           textColor: "white"
         }
     }
+  }
+
+  openFilterDialog() {
+    const dialogRef = this.deskFilterDialog.open(DeskFilterDialogComponent, {
+      data: {
+        offices: this.offices,
+        selectedOfficeId: this.selectedOffice.id,
+        selectedReservationStates: this.selectedReservationStates,
+        reservedByYou: this.reservedByYou
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(({selectedOfficeId, selectedReservationStates, reservedByYou}) => {
+      this.handleFilter(selectedOfficeId, selectedReservationStates, reservedByYou)
+    });
   }
 
   confirmReservation(reservationId: string, deskName: string, userName: string, startDate: string, endDate: string) {

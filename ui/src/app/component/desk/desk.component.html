@@ -1,8 +1,8 @@
 <div class="page-title">
   <div class="title-button">
-    <button mat-button class="mat-h1" matTooltip="Change office">{{ selectedOffice.name }} Desks</button>
+    <button mat-button class="mat-h1" matTooltip="Change office" (click)="openFilterDialog()">{{ selectedOffice.name }} Desks</button>
   </div>
-  <button class="filter-button" mat-icon-button matTooltip="Filters">
+  <button class="filter-button" mat-icon-button matTooltip="Filters" (click)="openFilterDialog()">
     <mat-icon>tune</mat-icon>
   </button>
   <mat-divider></mat-divider>
