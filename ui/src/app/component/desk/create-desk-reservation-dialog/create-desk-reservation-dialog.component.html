@@ -1,0 +1,38 @@
+<h2 mat-dialog-title class="title">New reservation</h2>
+<mat-dialog-content>
+  <!-- TODO: Capture the input -->
+  <mat-selection-list [multiple]="false">
+    @for (desk of desks; track desk) {
+      <mat-list-option color="primary" [value]="desk" [selected]="desk && $index === 0">
+        <div class="desk-horizontal">
+          <span>{{ desk.name }}</span>
+          <div class="monitors-count" matTooltip="Monitors">
+            <mat-icon>monitor</mat-icon>
+            <span>{{ desk.monitorsCount }}</span>
+          </div>
+          <mat-icon *ngIf="desk.isStanding" class="standing-icon" matTooltip="Standing">boy</mat-icon>
+          <mat-icon *ngIf="desk.hasPhone" matTooltip="Phone">phone</mat-icon>
+        </div>
+      </mat-list-option>
+      <mat-divider *ngIf="!$last"></mat-divider>
+    }
+  </mat-selection-list>
+  <mat-form-field>
+    <mat-label>Reservation date range</mat-label>
+    <mat-date-range-input [rangePicker]="picker">
+      <input matStartDate placeholder="Start date">
+      <input matEndDate placeholder="End date">
+    </mat-date-range-input>
+    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+    <mat-date-range-picker [touchUi]="touchUiQuery.matches" #picker></mat-date-range-picker>
+  </mat-form-field>
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>Comment (optional)</mat-label>
+    <textarea matInput></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Back</button>
+  <!-- TODO: Validate that desk and reservation date range is selected -->
+  <button mat-button color="primary" type="submit" (click)="onConfirm()" cdkFocusInitial>Confirm</button>
+</mat-dialog-actions>

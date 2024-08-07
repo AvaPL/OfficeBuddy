@@ -1,0 +1,44 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+
+  mat-selection-list {
+    overflow: scroll;
+    max-height: 200px;
+    margin-bottom: 16px;
+  }
+
+  width: min(450px, 80vw);
+}
+
+.desk-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  .monitors-count {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-left: 15px;
+
+    span {
+      margin-left: 4px;
+      margin-right: 4px;
+    }
+  }
+
+  .standing-icon {
+    transform: scale(1.2);
+  }
+}

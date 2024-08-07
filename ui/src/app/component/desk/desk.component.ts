@@ -2,8 +2,13 @@ import {Component, inject} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
 import {MatDialog} from "@angular/material/dialog";
-import {DeskReservationConfirmDialogComponent} from "./desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
+import {
+  DeskReservationConfirmDialogComponent
+} from "./desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
 import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
+import {
+  CreateDeskReservationDialogComponent
+} from "./create-desk-reservation-dialog/create-desk-reservation-dialog.component";
 
 export enum ReservationState {
   CANCELLED = "Cancelled",
@@ -21,6 +26,7 @@ export class DeskComponent {
 
   readonly deskFilterDialog = inject(MatDialog);
   readonly deskReservationConfirmDialog = inject(MatDialog);
+  readonly createDeskReservationDialog = inject(MatDialog);
   protected readonly ReservationState = ReservationState;
 
   offices = [
@@ -437,6 +443,18 @@ export class DeskComponent {
         console.log(`Cancelled reservation ${reservationId}`);
       } else {
         console.log(`Cancelled cancelling reservation ${reservationId}`);
+      }
+    });
+  }
+
+  createReservation() {
+    const dialogRef = this.createDeskReservationDialog.open(CreateDeskReservationDialogComponent);
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Created reservation`);
+      } else {
+        console.log(`Cancelled creating reservation`);
       }
     });
   }

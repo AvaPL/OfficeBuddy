@@ -30,10 +30,17 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/edit-office-dialog.component";
 import {MatChipsModule} from "@angular/material/chips";
-import {DeskReservationConfirmDialogComponent} from "./component/desk/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
+import {
+  DeskReservationConfirmDialogComponent
+} from "./component/desk/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
 import {DeskFilterDialogComponent} from "./component/desk/desks-filter-dialog/desk-filter-dialog.component";
 import {MatSelectModule} from "@angular/material/select";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {
+  CreateDeskReservationDialogComponent
+} from "./component/desk/create-desk-reservation-dialog/create-desk-reservation-dialog.component";
+import {MatDatepickerModule} from "@angular/material/datepicker";
+import {MAT_DATE_LOCALE, MatNativeDateModule} from "@angular/material/core";
 
 @NgModule({
   declarations: [
@@ -43,6 +50,7 @@ import {MatSlideToggleModule} from "@angular/material/slide-toggle";
     DeleteOfficeDialogComponent,
     DeskComponent,
     DeskFilterDialogComponent,
+    CreateDeskReservationDialogComponent,
     DeskReservationConfirmDialogComponent,
     EditOfficeDialogComponent,
     NavbarComponent,
@@ -60,12 +68,14 @@ import {MatSlideToggleModule} from "@angular/material/slide-toggle";
     MatButtonModule,
     MatCardModule,
     MatChipsModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatListModule,
     MatMenuModule,
+    MatNativeDateModule,
     MatPaginatorModule,
     MatSelectModule,
     MatSidenavModule,
@@ -86,6 +96,10 @@ import {MatSlideToggleModule} from "@angular/material/slide-toggle";
       useValue: {
         appearance: 'outline'
       }
+    },
+    {
+      provide: MAT_DATE_LOCALE,
+      useValue: 'en-GB'
     },
     provideAnimationsAsync()
   ],
