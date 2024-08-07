@@ -2,7 +2,7 @@ import {Component, inject} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
 import {MatDialog} from "@angular/material/dialog";
-import {DeskReservationConfirmDialogComponent} from "./confirm-dialog/desk-reservation-confirm-dialog.component";
+import {DeskReservationConfirmDialogComponent} from "./desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
 import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
 
 export enum ReservationState {
@@ -318,7 +318,7 @@ export class DeskComponent {
     const page = this.filteredReservations.slice(this.pageIndex * this.pageSize, (this.pageIndex + 1) * this.pageSize)
     const sortedPage = page.sort((a, b) => a.startDate.localeCompare(b.startDate))
     return sortedPage.reduce((groups, reservation) => {
-      let today = new Date("2024-08-03"); // TODO: Use current date
+      let today = new Date("2024-08-03"); // TODO: Allow setting this date, default to today
       const offset = today.getTimezoneOffset()
       today = new Date(today.getTime() - (offset * 60 * 1000))
       const todayString = today.toISOString().split('T')[0]

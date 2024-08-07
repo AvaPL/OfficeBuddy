@@ -30,7 +30,7 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/edit-office-dialog.component";
 import {MatChipsModule} from "@angular/material/chips";
-import {DeskReservationConfirmDialogComponent} from "./component/desk/confirm-dialog/desk-reservation-confirm-dialog.component";
+import {DeskReservationConfirmDialogComponent} from "./component/desk/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
 import {DeskFilterDialogComponent} from "./component/desk/desks-filter-dialog/desk-filter-dialog.component";
 import {MatSelectModule} from "@angular/material/select";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
