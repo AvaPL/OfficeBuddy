@@ -27,6 +27,6 @@ export class CreateOfficeDialogComponent {
   }
 
   onCancel() {
-    this.dialogRef.close();
+    this.dialogRef.close(false);
   }
 }

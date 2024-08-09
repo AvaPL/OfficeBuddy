@@ -40,7 +40,8 @@ import {
   CreateDeskReservationDialogComponent
 } from "./component/desk/create-desk-reservation-dialog/create-desk-reservation-dialog.component";
 import {MatDatepickerModule} from "@angular/material/datepicker";
-import {MAT_DATE_LOCALE, MatNativeDateModule} from "@angular/material/core";
+import {DateAdapter, MAT_DATE_LOCALE, MatNativeDateModule} from "@angular/material/core";
+import {AppDateAdapter} from "./date/app-date-adapter.service";
 
 @NgModule({
   declarations: [
@@ -98,8 +99,8 @@ import {MAT_DATE_LOCALE, MatNativeDateModule} from "@angular/material/core";
       }
     },
     {
-      provide: MAT_DATE_LOCALE,
-      useValue: 'en-GB'
+      provide: DateAdapter,
+      useClass: AppDateAdapter
     },
     provideAnimationsAsync()
   ],

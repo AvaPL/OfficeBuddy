@@ -450,11 +450,11 @@ export class DeskComponent {
   createReservation() {
     const dialogRef = this.createDeskReservationDialog.open(CreateDeskReservationDialogComponent);
 
-    dialogRef.afterClosed().subscribe(isConfirmed => {
-      if (isConfirmed) {
-        console.log(`Created reservation`);
+    dialogRef.afterClosed().subscribe(createdReservation => {
+      if (createdReservation) {
+        console.log(`Created new reservation: `, createdReservation);
       } else {
-        console.log(`Cancelled creating reservation`);
+        console.log(`Cancelled creating new reservation`);
       }
     });
   }

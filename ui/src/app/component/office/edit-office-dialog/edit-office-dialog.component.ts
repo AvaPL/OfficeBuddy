@@ -39,6 +39,6 @@ export class EditOfficeDialogComponent {
   }
 
   onCancel() {
-    this.dialogRef.close();
+    this.dialogRef.close(false);
   }
 }
