@@ -20,8 +20,8 @@
     <mat-form-field class="reservation-date-range">
       <mat-label>Reservation date range</mat-label>
       <mat-date-range-input [rangePicker]="picker">
-        <input matStartDate formControlName="startDate" placeholder="Start date" required (click)="picker.open()">
-        <input matEndDate formControlName="endDate" placeholder="End date" required (click)="picker.open()">
+        <input matStartDate formControlName="startDate" placeholder="Start date" required>
+        <input matEndDate formControlName="endDate" placeholder="End date" required>
       </mat-date-range-input>
       <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-date-range-picker [touchUi]="touchUiQuery.matches" #picker></mat-date-range-picker>
