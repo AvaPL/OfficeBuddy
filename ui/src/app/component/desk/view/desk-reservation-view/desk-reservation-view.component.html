@@ -1,0 +1,79 @@
+<div class="page-title">
+  <div class="title-button">
+    <button mat-button class="mat-h1" matTooltip="Change office" (click)="openFilterDialog()">{{ selectedOffice.name }}</button>
+  </div>
+  <button class="desk-list-button" mat-icon-button matTooltip="Switch to desks view" (click)="openDeskListView()">
+    <mat-icon>table_restaurant</mat-icon>
+  </button>
+  <button class="filter-button" mat-icon-button matTooltip="Filters" (click)="openFilterDialog()">
+    <mat-icon>tune</mat-icon>
+  </button>
+  <mat-divider></mat-divider>
+</div>
+<div class="reservation-cards">
+  <ng-container *ngFor="let group of reservationsPage | keyvalue">
+    <h3 class="mat-body-strong">{{ group.key }}</h3>
+    <mat-divider></mat-divider>
+    <mat-card *ngFor="let reservation of group.value" appearance="raised">
+      <mat-card-header>
+        <mat-card-title-group>
+          <mat-card-title>
+            <span>{{ reservation.deskName }}</span>
+            <span class="mat-body reservation-state"
+                  [style.background-color]="stateChipStyle(reservation.state).backgroundColor"
+                  [style.color]="stateChipStyle(reservation.state).textColor">{{ reservation.state }}</span>
+          </mat-card-title>
+          <mat-card-subtitle class="reservation-subtitle-line">
+            <mat-icon matListItemIcon>person</mat-icon>
+            <span>{{ reservation.userName }}</span>
+          </mat-card-subtitle>
+          <mat-card-subtitle class="reservation-subtitle-line" matTooltip="Ends at">
+            <mat-icon matListItemIcon>event</mat-icon>
+            <span>{{ reservation.endDate }}</span>
+          </mat-card-subtitle>
+          <div class="reservation-notes">
+            <div *ngIf="reservation.notes" [matTooltip]="notesTooltipQuery.matches ? reservation.notes : 'Notes'">
+              <mat-icon matListItemIcon>edit_note</mat-icon>
+              <span matListItemLine>{{ reservation.notes }}</span>
+            </div>
+          </div>
+          <div class="buttons-row">
+            <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button"
+                    matTooltip="Confirm"
+                    (click)="confirmReservation(reservation.id, reservation.deskName, reservation.userName, reservation.startDate, reservation.endDate)">
+              <mat-icon>check_circle</mat-icon>
+            </button>
+            <button *ngIf="reservation.state === ReservationState.CONFIRMED" mat-icon-button class="reservation-button"
+                    matTooltip="Reject"
+                    (click)="rejectReservation(reservation.id, reservation.deskName, reservation.userName, reservation.startDate, reservation.endDate)">
+              <mat-icon>unpublished</mat-icon>
+            </button>
+            <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button"
+                    matTooltip="Reject"
+                    (click)="rejectReservation(reservation.id, reservation.deskName, reservation.userName, reservation.startDate, reservation.endDate)">
+              <mat-icon>do_not_disturb_on</mat-icon>
+            </button>
+            <button
+              *ngIf="reservation.state === ReservationState.PENDING || reservation.state === ReservationState.CONFIRMED"
+              mat-icon-button class="reservation-button"
+              matTooltip="Cancel"
+              (click)="cancelReservation(reservation.id, reservation.deskName, reservation.startDate, reservation.endDate)">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </div>
+        </mat-card-title-group>
+      </mat-card-header>
+    </mat-card>
+  </ng-container>
+  <mat-paginator
+    [length]="paginatorLength"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    (page)="handlePageEvent($event)"
+    hidePageSize>
+  </mat-paginator>
+  <button mat-fab class="add-button" color="primary" matTooltip="Reserve a desk"
+          matTooltipPosition="above" (click)="createReservation()">
+    <mat-icon>add</mat-icon>
+  </button>
+</div>

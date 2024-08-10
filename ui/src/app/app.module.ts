@@ -32,16 +32,25 @@ import {EditOfficeDialogComponent} from "./component/office/edit-office-dialog/e
 import {MatChipsModule} from "@angular/material/chips";
 import {
   DeskReservationConfirmDialogComponent
-} from "./component/desk/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
-import {DeskFilterDialogComponent} from "./component/desk/desks-filter-dialog/desk-filter-dialog.component";
+} from "./component/desk/view/desk-reservation-view/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
+import {
+  DeskFilterDialogComponent as DeskReservationFilterDialogComponent
+} from "./component/desk/view/desk-reservation-view/desks-filter-dialog/desk-filter-dialog.component";
 import {MatSelectModule} from "@angular/material/select";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {
   CreateDeskReservationDialogComponent
-} from "./component/desk/create-desk-reservation-dialog/create-desk-reservation-dialog.component";
+} from "./component/desk/view/desk-reservation-view/create-desk-reservation-dialog/create-desk-reservation-dialog.component";
 import {MatDatepickerModule} from "@angular/material/datepicker";
-import {DateAdapter, MAT_DATE_LOCALE, MatNativeDateModule} from "@angular/material/core";
+import {DateAdapter, MatNativeDateModule} from "@angular/material/core";
 import {AppDateAdapter} from "./date/app-date-adapter.service";
+import {DeskListViewComponent} from "./component/desk/view/desk-list-view/desk-list-view.component";
+import {
+  DeskReservationViewComponent
+} from "./component/desk/view/desk-reservation-view/desk-reservation-view.component";
+import {
+  DeskFilterDialogComponent as DeskListFilterDialogComponent
+} from "./component/desk/view/desk-list-view/desks-filter-dialog/desk-filter-dialog.component";
 
 @NgModule({
   declarations: [
@@ -50,7 +59,10 @@ import {AppDateAdapter} from "./date/app-date-adapter.service";
     CreateOfficeDialogComponent,
     DeleteOfficeDialogComponent,
     DeskComponent,
-    DeskFilterDialogComponent,
+    DeskListFilterDialogComponent,
+    DeskListViewComponent,
+    DeskReservationFilterDialogComponent,
+    DeskReservationViewComponent,
     CreateDeskReservationDialogComponent,
     DeskReservationConfirmDialogComponent,
     EditOfficeDialogComponent,

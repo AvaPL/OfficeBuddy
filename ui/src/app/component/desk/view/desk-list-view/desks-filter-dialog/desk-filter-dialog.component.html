@@ -1,0 +1,15 @@
+<h2 mat-dialog-title class="title">Select office</h2>
+<mat-dialog-content>
+  <mat-form-field class="office-select" subscriptSizing="dynamic">
+    <mat-label>Office</mat-label>
+    <mat-select [(value)]="selectedOfficeId">
+      @for (office of data.offices; track office) {
+        <mat-option [value]="office.id">{{ office.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Back</button>
+  <button mat-button color="primary" type="submit" (click)="onApply()" cdkFocusInitial>Apply</button>
+</mat-dialog-actions>

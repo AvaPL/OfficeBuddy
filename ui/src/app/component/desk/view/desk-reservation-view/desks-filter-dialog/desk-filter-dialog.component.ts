@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {ReservationState} from "../desk.component";
+import {ReservationState} from "../model/reservation-state.enum";
 
 export interface DeskFilterDialogData {
   offices: { id: string, name: string }[],
@@ -10,7 +10,7 @@ export interface DeskFilterDialogData {
 }
 
 @Component({
-  selector: 'app-desk-filter-dialog',
+  selector: 'app-desk-reservation-filter-dialog',
   templateUrl: './desk-filter-dialog.component.html',
   styleUrl: './desk-filter-dialog.component.scss'
 })
