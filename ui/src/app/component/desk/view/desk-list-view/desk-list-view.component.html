@@ -10,3 +10,55 @@
   </button>
   <mat-divider></mat-divider>
 </div>
+<div class="desk-cards">
+  <mat-card *ngFor="let desk of desksPage" appearance="raised">
+    <mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>
+          <span>{{ desk.name }}</span>
+          <span *ngIf="!desk.isAvailable" class="mat-body disabled-desk-label">Disabled</span>
+        </mat-card-title>
+        <mat-card-subtitle class="desk-stats">
+          <div class="desk-stats-item" matTooltip="Monitors">
+            <mat-icon matListItemIcon>monitor</mat-icon>
+            <span matListItemLine>{{ desk.monitorsCount }}</span>
+          </div>
+          <mat-icon *ngIf="desk.isStanding" class="desk-stats-item standing-icon" matTooltip="Standing">boy</mat-icon>
+          <mat-icon *ngIf="desk.hasPhone" class="desk-stats-item" matTooltip="Phone">phone</mat-icon>
+        </mat-card-subtitle>
+        <button mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item>
+            <mat-icon>edit</mat-icon>
+            <span>Edit desk</span>
+          </button>
+          <button *ngIf="!desk.isAvailable" mat-menu-item>
+            <mat-icon>visibility_on</mat-icon>
+            <span>Enable desk</span>
+          </button>
+          <button *ngIf="desk.isAvailable" mat-menu-item>
+            <mat-icon>visibility_off</mat-icon>
+            <span>Disable desk</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>highlight_remove</mat-icon>
+            <span>Delete desk</span>
+          </button>
+        </mat-menu>
+      </mat-card-title-group>
+    </mat-card-header>
+  </mat-card>
+</div>
+<mat-paginator
+  [length]="selectedOffice.desks.length"
+  [pageSize]="pageSize"
+  [pageIndex]="pageIndex"
+  (page)="handlePageEvent($event)"
+  hidePageSize>
+</mat-paginator>
+<button mat-fab class="add-button" color="primary" (click)="createDesk()" matTooltip="Add new desk"
+        matTooltipPosition="above">
+  <mat-icon>add</mat-icon>
+</button>
