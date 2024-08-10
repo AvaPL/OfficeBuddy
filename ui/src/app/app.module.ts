@@ -60,6 +60,9 @@ import {
 import {
   CreateDeskDialogComponent
 } from "./component/desk/view/desk-list-view/create-desk-dialog/create-desk-dialog.component";
+import {
+  EditDeskDialogComponent
+} from "./component/desk/view/desk-list-view/edit-desk-dialog/edit-desk-dialog.component";
 
 @NgModule({
   declarations: [
@@ -76,6 +79,7 @@ import {
     DeskReservationFilterDialogComponent,
     DeskReservationViewComponent,
     DeskReservationConfirmDialogComponent,
+    EditDeskDialogComponent,
     EditOfficeDialogComponent,
     NavbarComponent,
     OfficeComponent,

@@ -5,6 +5,7 @@ import {PageEvent} from "@angular/material/paginator";
 import {DeleteDeskDialogComponent} from "./delete-desk-dialog/delete-desk-dialog.component";
 import {ToggleEnabledDeskDialogComponent} from "./toggle-enabled-desk-dialog/toggle-enabled-desk-dialog.component";
 import {CreateDeskDialogComponent} from "./create-desk-dialog/create-desk-dialog.component";
+import {EditDeskDialogComponent, EditDeskInitialValuesDialogData} from "./edit-desk-dialog/edit-desk-dialog.component";
 
 @Component({
   selector: 'app-desk-list-view',
@@ -17,6 +18,7 @@ export class DeskListViewComponent {
 
   readonly deskFilterDialog = inject(MatDialog);
   readonly createDeskDialog = inject(MatDialog);
+  readonly editDeskDialog = inject(MatDialog);
   readonly toggleEnabledDeskDialog = inject(MatDialog);
   readonly deleteDeskDialog = inject(MatDialog);
 
@@ -419,6 +421,20 @@ export class DeskListViewComponent {
         console.log(`Created new desk in office ${createdDesk.officeId}: `, createdDesk);
       } else {
         console.log(`Cancelled creating new desk`);
+      }
+    });
+  }
+
+  editDesk(deskId: string, editDeskInitialValues: EditDeskInitialValuesDialogData) {
+    const dialogRef = this.editDeskDialog.open(EditDeskDialogComponent, {
+      data: editDeskInitialValues
+    })
+
+    dialogRef.afterClosed().subscribe(editedDesk => {
+      if (editedDesk) {
+        console.log(`Edited desk [${deskId}] in ${editedDesk.officeId}: `, editedDesk);
+      } else {
+        console.log(`Cancelled editing desk ${deskId}`);
       }
     });
   }

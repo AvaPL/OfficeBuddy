@@ -1,5 +1,5 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <h2 mat-dialog-title class="title">Edit {{form.get('name')?.value}}</h2>
+  <h2 mat-dialog-title class="title">Edit {{initialValues.name}}</h2>
   <mat-divider></mat-divider>
   <mat-dialog-content>
     <h3>Name</h3>
