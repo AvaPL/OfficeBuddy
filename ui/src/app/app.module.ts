@@ -57,11 +57,15 @@ import {
 import {
   ToggleEnabledDeskDialogComponent
 } from "./component/desk/view/desk-list-view/toggle-enabled-desk-dialog/toggle-enabled-desk-dialog.component";
+import {
+  CreateDeskDialogComponent
+} from "./component/desk/view/desk-list-view/create-desk-dialog/create-desk-dialog.component";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AppComponent,
+    CreateDeskDialogComponent,
     CreateDeskReservationDialogComponent,
     CreateOfficeDialogComponent,
     DeleteDeskDialogComponent,

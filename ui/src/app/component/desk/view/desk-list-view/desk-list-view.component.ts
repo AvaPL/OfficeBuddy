@@ -4,6 +4,7 @@ import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialo
 import {PageEvent} from "@angular/material/paginator";
 import {DeleteDeskDialogComponent} from "./delete-desk-dialog/delete-desk-dialog.component";
 import {ToggleEnabledDeskDialogComponent} from "./toggle-enabled-desk-dialog/toggle-enabled-desk-dialog.component";
+import {CreateDeskDialogComponent} from "./create-desk-dialog/create-desk-dialog.component";
 
 @Component({
   selector: 'app-desk-list-view',
@@ -15,6 +16,7 @@ export class DeskListViewComponent {
   @Output() changeToReservationsView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
+  readonly createDeskDialog = inject(MatDialog);
   readonly toggleEnabledDeskDialog = inject(MatDialog);
   readonly deleteDeskDialog = inject(MatDialog);
 
@@ -407,18 +409,18 @@ export class DeskListViewComponent {
     });
   }
 
-  createDesk() {
-    // TODO: Use
-    // const dialogRef = this.createDeskDialog.open(CreateDeskDialogComponent);
-    //
-    // dialogRef.afterClosed().subscribe(createdDesk => {
-    //   if (createdDesk) {
-    //     console.log(`Created new desk: `, createdDesk, ` in office ${this.selectedOffice.id}`);
-    //   } else {
-    //     console.log(`Cancelled creating new desk`);
-    //   }
-    // });
-    console.log(`Created new desk in office ${this.selectedOffice.id}`);
+  createDesk(officeId: string, officeName: string) {
+    const dialogRef = this.createDeskDialog.open(CreateDeskDialogComponent, {
+      data: {officeId, officeName}
+    });
+
+    dialogRef.afterClosed().subscribe(createdDesk => {
+      if (createdDesk) {
+        console.log(`Created new desk in office ${createdDesk.officeId}: `, createdDesk);
+      } else {
+        console.log(`Cancelled creating new desk`);
+      }
+    });
   }
 
   toggleEnabledDesk(deskId: string, deskName: string, officeName: string, enabled: boolean) {

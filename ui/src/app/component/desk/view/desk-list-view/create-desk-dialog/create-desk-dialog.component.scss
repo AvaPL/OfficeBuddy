@@ -1,0 +1,44 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  width: min(75vw, 400px);
+}
+
+.mat-mdc-dialog-content {
+  padding-bottom: 0;
+}
+
+.name-and-monitors-count {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  padding-bottom: 8px;
+
+  .name {
+    flex: 1;
+    margin-right: 16px;
+  }
+
+  .monitors-count {
+    width: 90px;
+  }
+}
+
+.slide-toggles {
+  mat-slide-toggle {
+    margin-right: 8px;
+  }
+}
+
+mat-divider {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}

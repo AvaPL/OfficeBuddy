@@ -1,0 +1,26 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h2 mat-dialog-title class="title">New desk in {{data.officeName}}</h2>
+  <mat-divider></mat-divider>
+  <mat-dialog-content>
+    <div class="name-and-monitors-count">
+      <mat-form-field class="name">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" required>
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+      </mat-form-field>
+      <mat-form-field class="monitors-count">
+        <mat-label>Monitors</mat-label>
+        <input matInput type="number" min="0" formControlName="monitorsCount" required>
+      </mat-form-field>
+    </div>
+    <div class="slide-toggles">
+      <mat-slide-toggle formControlName="isAvailable">Enabled</mat-slide-toggle>
+      <mat-slide-toggle formControlName="isStanding">Standing</mat-slide-toggle>
+      <mat-slide-toggle formControlName="hasPhone">Phone</mat-slide-toggle>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Back</button>
+    <button mat-button color="primary" type="submit" [disabled]="!form.valid">Create</button>
+  </mat-dialog-actions>
+</form>
