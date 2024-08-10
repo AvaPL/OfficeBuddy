@@ -34,11 +34,13 @@
             <mat-icon>edit</mat-icon>
             <span>Edit desk</span>
           </button>
-          <button *ngIf="!desk.isAvailable" mat-menu-item>
+          <button *ngIf="!desk.isAvailable" mat-menu-item
+                  (click)="toggleEnabledDesk(desk.id, desk.name, selectedOffice.name, true)">
             <mat-icon>visibility_on</mat-icon>
             <span>Enable desk</span>
           </button>
-          <button *ngIf="desk.isAvailable" mat-menu-item>
+          <button *ngIf="desk.isAvailable" mat-menu-item
+                  (click)="toggleEnabledDesk(desk.id, desk.name, selectedOffice.name, false)">
             <mat-icon>visibility_off</mat-icon>
             <span>Disable desk</span>
           </button>

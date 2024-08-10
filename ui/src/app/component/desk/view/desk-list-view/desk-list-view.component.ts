@@ -3,6 +3,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
 import {PageEvent} from "@angular/material/paginator";
 import {DeleteDeskDialogComponent} from "./delete-desk-dialog/delete-desk-dialog.component";
+import {ToggleEnabledDeskDialogComponent} from "./toggle-enabled-desk-dialog/toggle-enabled-desk-dialog.component";
 
 @Component({
   selector: 'app-desk-list-view',
@@ -14,6 +15,7 @@ export class DeskListViewComponent {
   @Output() changeToReservationsView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
+  readonly toggleEnabledDeskDialog = inject(MatDialog);
   readonly deleteDeskDialog = inject(MatDialog);
 
   offices = [
@@ -417,6 +419,25 @@ export class DeskListViewComponent {
     //   }
     // });
     console.log(`Created new desk in office ${this.selectedOffice.id}`);
+  }
+
+  toggleEnabledDesk(deskId: string, deskName: string, officeName: string, enabled: boolean) {
+    const dialogRef = this.toggleEnabledDeskDialog.open(ToggleEnabledDeskDialogComponent, {
+      data: {
+        officeName,
+        deskName,
+        enabled
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        if (enabled) console.log(`Enabled desk ${deskId}`);
+        else console.log(`Disabled desk ${deskId}`);
+      } else {
+        console.log(`Cancelled toggling enabled desk ${deskId}`);
+      }
+    })
   }
 
   deleteDesk(deskId: string, deskName: string, officeName: string) {

@@ -54,11 +54,15 @@ import {
 import {
   DeleteDeskDialogComponent
 } from "./component/desk/view/desk-list-view/delete-desk-dialog/delete-desk-dialog.component";
+import {
+  ToggleEnabledDeskDialogComponent
+} from "./component/desk/view/desk-list-view/toggle-enabled-desk-dialog/toggle-enabled-desk-dialog.component";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AppComponent,
+    CreateDeskReservationDialogComponent,
     CreateOfficeDialogComponent,
     DeleteDeskDialogComponent,
     DeleteOfficeDialogComponent,
@@ -67,13 +71,13 @@ import {
     DeskListViewComponent,
     DeskReservationFilterDialogComponent,
     DeskReservationViewComponent,
-    CreateDeskReservationDialogComponent,
     DeskReservationConfirmDialogComponent,
     EditOfficeDialogComponent,
     NavbarComponent,
     OfficeComponent,
     ParkingComponent,
     RoomComponent,
+    ToggleEnabledDeskDialogComponent
   ],
   imports: [
     AppRoutingModule,
