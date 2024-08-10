@@ -4,11 +4,11 @@
             (click)="openFilterDialog()">{{ selectedOffice.name }}
     </button>
   </div>
-  <button class="desk-list-button" mat-icon-button matTooltip="Switch to desks view" (click)="changeToDesksView.emit()">
-    <mat-icon>table_restaurant</mat-icon>
-  </button>
   <button class="filter-button" mat-icon-button matTooltip="Filters" (click)="openFilterDialog()">
     <mat-icon>tune</mat-icon>
+  </button>
+  <button class="desk-list-button" mat-icon-button matTooltip="Switch to desks view" (click)="changeToDesksView.emit()">
+    <mat-icon>table_restaurant</mat-icon>
   </button>
   <mat-divider></mat-divider>
 </div>

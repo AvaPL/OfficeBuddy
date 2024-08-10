@@ -1,7 +1,21 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
   <h2 mat-dialog-title class="title">New reservation</h2>
   <mat-dialog-content>
-    <mat-selection-list formControlName="deskId" [multiple]="false">
+    <mat-form-field class="reservation-date-range">
+      <mat-label>Reservation date range</mat-label>
+      <mat-date-range-input [rangePicker]="picker">
+        <input matStartDate formControlName="startDate" placeholder="Start date" required>
+        <input matEndDate formControlName="endDate" placeholder="End date" required>
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-date-range-picker [touchUi]="touchUiQuery.matches" #picker></mat-date-range-picker>
+      <mat-error *ngIf="form.get('startDate')?.hasError('required') || form.get('endDate')?.hasError('required')">
+        Reservation date range is required
+      </mat-error>
+    </mat-form-field>
+    <mat-selection-list
+      *ngIf="!form.get('startDate')?.hasError('required') && !form.get('endDate')?.hasError('required')"
+      formControlName="deskId" [multiple]="false">
       @for (desk of desks; track desk) {
         <mat-list-option color="primary" [value]="desk.id" [selected]="[desk.id] === form.get('deskId')?.value">
           <div class="desk-horizontal">
@@ -17,18 +31,6 @@
         <mat-divider *ngIf="!$last"></mat-divider>
       }
     </mat-selection-list>
-    <mat-form-field class="reservation-date-range">
-      <mat-label>Reservation date range</mat-label>
-      <mat-date-range-input [rangePicker]="picker">
-        <input matStartDate formControlName="startDate" placeholder="Start date" required>
-        <input matEndDate formControlName="endDate" placeholder="End date" required>
-      </mat-date-range-input>
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-date-range-picker [touchUi]="touchUiQuery.matches" #picker></mat-date-range-picker>
-      <mat-error *ngIf="form.get('startDate')?.hasError('required') || form.get('endDate')?.hasError('required')">
-        Reservation date range is required
-      </mat-error>
-    </mat-form-field>
     <mat-form-field subscriptSizing="dynamic">
       <mat-label>Comment (optional)</mat-label>
       <textarea formControlName="comment" class="comment" matInput></textarea>
