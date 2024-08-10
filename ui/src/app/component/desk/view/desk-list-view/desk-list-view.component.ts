@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, EventEmitter, inject, Output} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
 
@@ -8,6 +8,8 @@ import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialo
   styleUrl: './desk-list-view.component.scss'
 })
 export class DeskListViewComponent {
+
+  @Output() changeToReservationsView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
 
@@ -54,9 +56,5 @@ export class DeskListViewComponent {
     dialogRef.afterClosed().subscribe(selectedOfficeId => {
       this.handleFilter(selectedOfficeId)
     });
-  }
-
-  openReservationView() {
-    console.log('Opening reservation view');
   }
 }

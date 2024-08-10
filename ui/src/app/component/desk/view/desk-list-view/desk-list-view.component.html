@@ -1,8 +1,11 @@
 <div class="page-title">
   <div class="title-button">
-    <button mat-button class="mat-h1" matTooltip="Change office" (click)="openFilterDialog()">{{ selectedOffice.name }}</button>
+    <button mat-button class="mat-h1" matTooltip="Change office"
+            (click)="openFilterDialog()">{{ selectedOffice.name }}
+    </button>
   </div>
-  <button class="reservation-button" mat-icon-button matTooltip="Switch to reservations view" (click)="openReservationView()">
+  <button class="reservation-button" mat-icon-button matTooltip="Switch to reservations view"
+          (click)="changeToReservationsView.emit()">
     <mat-icon>calendar_month</mat-icon>
   </button>
   <mat-divider></mat-divider>

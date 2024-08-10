@@ -1,8 +1,8 @@
 @switch (mode) {
   @case (Mode.LIST) {
-    <app-desk-list-view></app-desk-list-view>
+    <app-desk-list-view (changeToReservationsView)="mode = Mode.RESERVATION"></app-desk-list-view>
   }
   @case (Mode.RESERVATION) {
-    <app-desk-reservation-view></app-desk-reservation-view>
+    <app-desk-reservation-view (changeToDesksView)="mode = Mode.LIST"></app-desk-reservation-view>
   }
 }

@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, EventEmitter, inject, Output} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
 import {MatDialog} from "@angular/material/dialog";
@@ -17,6 +17,8 @@ import {ReservationState} from "./model/reservation-state.enum";
   styleUrl: './desk-reservation-view.component.scss'
 })
 export class DeskReservationViewComponent {
+
+  @Output() changeToDesksView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
   readonly deskReservationConfirmDialog = inject(MatDialog);
@@ -362,10 +364,6 @@ export class DeskReservationViewComponent {
           textColor: "white"
         }
     }
-  }
-
-  openDeskListView() {
-    console.log(`Opening desk list view`);
   }
 
   openFilterDialog() {
