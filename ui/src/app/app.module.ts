@@ -51,12 +51,16 @@ import {
 import {
   DeskFilterDialogComponent as DeskListFilterDialogComponent
 } from "./component/desk/view/desk-list-view/desks-filter-dialog/desk-filter-dialog.component";
+import {
+  DeleteDeskDialogComponent
+} from "./component/desk/view/desk-list-view/delete-desk-dialog/delete-desk-dialog.component";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AppComponent,
     CreateOfficeDialogComponent,
+    DeleteDeskDialogComponent,
     DeleteOfficeDialogComponent,
     DeskComponent,
     DeskListFilterDialogComponent,

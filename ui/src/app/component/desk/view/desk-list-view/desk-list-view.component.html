@@ -42,7 +42,7 @@
             <mat-icon>visibility_off</mat-icon>
             <span>Disable desk</span>
           </button>
-          <button mat-menu-item>
+          <button mat-menu-item (click)="deleteDesk(desk.id, desk.name, selectedOffice.name)">
             <mat-icon>highlight_remove</mat-icon>
             <span>Delete desk</span>
           </button>

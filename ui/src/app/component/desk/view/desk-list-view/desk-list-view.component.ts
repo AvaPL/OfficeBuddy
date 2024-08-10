@@ -2,7 +2,7 @@ import {Component, EventEmitter, inject, Output} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
 import {PageEvent} from "@angular/material/paginator";
-import {CreateOfficeDialogComponent} from "../../../office/create-office-dialog/create-office-dialog.component";
+import {DeleteDeskDialogComponent} from "./delete-desk-dialog/delete-desk-dialog.component";
 
 @Component({
   selector: 'app-desk-list-view',
@@ -14,6 +14,7 @@ export class DeskListViewComponent {
   @Output() changeToReservationsView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
+  readonly deleteDeskDialog = inject(MatDialog);
 
   offices = [
     {
@@ -63,7 +64,7 @@ export class DeskListViewComponent {
         {
           id: "6",
           name: "108/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -95,7 +96,7 @@ export class DeskListViewComponent {
         {
           id: "10",
           name: "109/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -111,7 +112,7 @@ export class DeskListViewComponent {
         {
           id: "12",
           name: "109/4",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: true,
           monitorsCount: 2,
           hasPhone: false
@@ -127,7 +128,7 @@ export class DeskListViewComponent {
         {
           id: "14",
           name: "110/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -143,7 +144,7 @@ export class DeskListViewComponent {
         {
           id: "16",
           name: "110/4",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: true,
           monitorsCount: 2,
           hasPhone: false
@@ -191,7 +192,7 @@ export class DeskListViewComponent {
         {
           id: "22",
           name: "112/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -207,7 +208,7 @@ export class DeskListViewComponent {
         {
           id: "24",
           name: "112/4",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: true,
           monitorsCount: 2,
           hasPhone: false
@@ -223,7 +224,7 @@ export class DeskListViewComponent {
         {
           id: "26",
           name: "113/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -239,7 +240,7 @@ export class DeskListViewComponent {
         {
           id: "28",
           name: "113/4",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: true,
           monitorsCount: 2,
           hasPhone: false
@@ -271,7 +272,7 @@ export class DeskListViewComponent {
         {
           id: "32",
           name: "114/4",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: true,
           monitorsCount: 2,
           hasPhone: false
@@ -287,7 +288,7 @@ export class DeskListViewComponent {
         {
           id: "34",
           name: "115/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -317,7 +318,7 @@ export class DeskListViewComponent {
         {
           id: "10",
           name: "109/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -333,7 +334,7 @@ export class DeskListViewComponent {
         {
           id: "12",
           name: "109/4",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: true,
           monitorsCount: 2,
           hasPhone: false
@@ -349,7 +350,7 @@ export class DeskListViewComponent {
         {
           id: "14",
           name: "110/2",
-          isAvailable: false,
+          isAvailable: true,
           isStanding: false,
           monitorsCount: 1,
           hasPhone: false,
@@ -399,7 +400,7 @@ export class DeskListViewComponent {
       }
     });
 
-    dialogRef.afterClosed().subscribe(selectedOfficeId => {
+    dialogRef.afterClosed().subscribe(({selectedOfficeId}) => {
       this.handleFilter(selectedOfficeId)
     });
   }
@@ -416,6 +417,18 @@ export class DeskListViewComponent {
     //   }
     // });
     console.log(`Created new desk in office ${this.selectedOffice.id}`);
+  }
+
+  deleteDesk(deskId: string, deskName: string, officeName: string) {
+    const dialogRef = this.deleteDeskDialog.open(DeleteDeskDialogComponent, {data: {officeName, deskName}});
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Deleted desk ${deskId}`);
+      } else {
+        console.log(`Cancelled deleting desk ${deskId}`);
+      }
+    });
   }
 
   handlePageEvent(event: PageEvent) {
