@@ -1,4 +1,4 @@
-import {Component, EventEmitter, inject, Input, Output} from '@angular/core';
+import {Component, EventEmitter, inject, Input, OnInit, Output} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
 import {MatDialog} from "@angular/material/dialog";
@@ -16,7 +16,7 @@ import {ReservationState} from "./model/reservation-state.enum";
   templateUrl: './desk-reservation-view.component.html',
   styleUrl: './desk-reservation-view.component.scss'
 })
-export class DeskReservationViewComponent {
+export class DeskReservationViewComponent implements OnInit {
 
   @Input() selectedOfficeId!: string | null
   @Output() selectedOfficeIdChange = new EventEmitter<string>();

@@ -8,11 +8,11 @@ import {AccountComponent} from "./component/account/account.component";
 import {OfficeComponent} from "./component/office/office.component";
 
 const routes: Routes = [
-  {path: 'desk', component: DeskComponent}, // TODO: Add AuthGuard
-  {path: 'parking', component: ParkingComponent}, // TODO: Add AuthGuard
-  {path: 'room', component: RoomComponent}, // TODO: Add AuthGuard
-  {path: 'account', component: AccountComponent, canActivate: [AuthGuard]}, // TODO: Disable for users
-  {path: 'office', component: OfficeComponent}, // TODO: Add AuthGuard, disable for users
+  {path: 'desk', component: DeskComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard
+  {path: 'parking', component: ParkingComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard
+  {path: 'room', component: RoomComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard
+  {path: 'account', component: AccountComponent, /* canActivate: [AuthGuard] */}, // TODO: Disable for users
+  {path: 'office', component: OfficeComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard, disable for users
   {path: '**', redirectTo: 'account'}
 ];
 

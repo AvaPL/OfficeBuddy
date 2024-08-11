@@ -57,7 +57,11 @@
             <span>Edit office</span>
           </button>
           <button mat-menu-item (click)="editManagers(office.id)">
-            <mat-icon>person</mat-icon>
+            <mat-icon>person_add</mat-icon>
+            <span>Assign user</span>
+          </button>
+          <button mat-menu-item (click)="editManagers(office.id)">
+            <mat-icon>manage_accounts</mat-icon>
             <span>Edit managers</span>
           </button>
           <button mat-menu-item (click)="deleteOffice(office.id, office.name)">
