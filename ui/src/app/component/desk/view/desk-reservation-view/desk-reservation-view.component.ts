@@ -1,4 +1,4 @@
-import {Component, EventEmitter, inject, Output} from '@angular/core';
+import {Component, EventEmitter, inject, Input, Output} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MediaMatcher} from "@angular/cdk/layout";
 import {MatDialog} from "@angular/material/dialog";
@@ -18,6 +18,8 @@ import {ReservationState} from "./model/reservation-state.enum";
 })
 export class DeskReservationViewComponent {
 
+  @Input() selectedOfficeId!: string | null
+  @Output() selectedOfficeIdChange = new EventEmitter<string>();
   @Output() changeToDesksView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
@@ -279,7 +281,7 @@ export class DeskReservationViewComponent {
 
   notesTooltipQuery: MediaQueryList;
 
-  selectedOffice = this.offices[0]
+  selectedOffice = this.selectOffice(this.selectedOfficeId)
   pageSize = 10
   pageIndex = 0
   selectedReservationStates = [ReservationState.PENDING, ReservationState.CONFIRMED]
@@ -294,17 +296,28 @@ export class DeskReservationViewComponent {
     this.notesTooltipQuery = media.matchMedia('(max-width: 374px)');
   }
 
+  ngOnInit() {
+    this.handleFilter(this.selectedOfficeId, this.selectedReservationStates, this.reservedByYou)
+  }
+
   handlePageEvent(event: PageEvent) {
     this.pageIndex = event.pageIndex
     this.reservationsPage = this.paginateAndGroupReservations()
     this.paginatorLength = this.totalReservations()
   }
 
-  handleFilter(selectedOfficeId: string, selectedReservationStates: ReservationState[], reservedByYou: boolean) {
+  selectOffice(selectedOfficeId: string | null) {
+    const selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || this.offices[0]
+    if (selectedOfficeId)
+      this.selectedOfficeIdChange.emit(selectedOffice.id)
+    return selectedOffice
+  }
+
+  handleFilter(selectedOfficeId: string | null, selectedReservationStates: ReservationState[], reservedByYou: boolean) {
     // TODO: Replace with more robust code, the below is temporary only
     console.log(`Filtering by officeId: ${selectedOfficeId}, selectedReservationStates: ${selectedReservationStates}, reservedByYou: ${reservedByYou}`)
     this.reservedByYou = reservedByYou
-    this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || this.offices[0]
+    this.selectedOffice = this.selectOffice(selectedOfficeId)
     this.selectedReservationStates = selectedReservationStates
     this.filteredReservations = this.filterReservations()
     this.pageIndex = 0

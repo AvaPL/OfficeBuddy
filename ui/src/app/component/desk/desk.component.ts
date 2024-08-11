@@ -13,6 +13,11 @@ enum Mode {
 export class DeskComponent {
 
   mode: Mode = Mode.RESERVATION;
+  selectedOfficeId: string | null = null;
+
+  changeSelectedOfficeId(selectedOfficeId: string | null) {
+    this.selectedOfficeId = selectedOfficeId;
+  }
 
   protected readonly Mode = Mode;
 }

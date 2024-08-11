@@ -1,4 +1,4 @@
-import {Component, EventEmitter, inject, Output} from '@angular/core';
+import {Component, EventEmitter, inject, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
 import {PageEvent} from "@angular/material/paginator";
@@ -12,8 +12,10 @@ import {EditDeskDialogComponent, EditDeskInitialValuesDialogData} from "./edit-d
   templateUrl: './desk-list-view.component.html',
   styleUrl: './desk-list-view.component.scss'
 })
-export class DeskListViewComponent {
+export class DeskListViewComponent implements OnInit {
 
+  @Input() selectedOfficeId!: string | null
+  @Output() selectedOfficeIdChange = new EventEmitter<string>();
   @Output() changeToReservationsView = new EventEmitter();
 
   readonly deskFilterDialog = inject(MatDialog);
@@ -391,11 +393,22 @@ export class DeskListViewComponent {
   pageIndex = 0
   desksPage = this.paginateDesks()
 
-  handleFilter(selectedOfficeId: string) {
+  ngOnInit() {
+    this.handleFilter(this.selectedOfficeId)
+  }
+
+  handleFilter(selectedOfficeId: string | null) {
     console.log(`Filtering by officeId: ${selectedOfficeId}`)
-    this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || this.offices[0]
+    this.selectedOffice = this.selectOffice(this.selectedOfficeId)
     this.pageIndex = 0
     this.desksPage = this.paginateDesks()
+  }
+
+  selectOffice(selectedOfficeId: string | null) {
+    const selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || this.offices[0]
+    if (selectedOfficeId)
+      this.selectedOfficeIdChange.emit(selectedOffice.id)
+    return selectedOffice
   }
 
   openFilterDialog() {

@@ -4,6 +4,7 @@
             (click)="openFilterDialog()">{{ selectedOffice.name }}
     </button>
   </div>
+  <!-- TODO: Retain selected office between both views -->
   <button class="reservation-button" mat-icon-button matTooltip="Switch to reservations view"
           (click)="changeToReservationsView.emit()">
     <mat-icon>calendar_month</mat-icon>
