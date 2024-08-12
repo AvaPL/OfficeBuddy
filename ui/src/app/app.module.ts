@@ -23,7 +23,7 @@ import {MatMenuModule} from "@angular/material/menu";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatDialogModule} from "@angular/material/dialog";
 import {DeleteOfficeDialogComponent} from "./component/office/delete-office-dialog/delete-office-dialog.component";
-import {CommonModule} from "@angular/common";
+import {AsyncPipe, CommonModule} from "@angular/common";
 import {CreateOfficeDialogComponent} from "./component/office/create-office-dialog/create-office-dialog.component";
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule} from "@angular/material/form-field";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
@@ -63,6 +63,7 @@ import {
 import {
   EditDeskDialogComponent
 } from "./component/desk/view/desk-list-view/edit-desk-dialog/edit-desk-dialog.component";
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
 
 @NgModule({
   declarations: [
@@ -94,6 +95,7 @@ import {
     CommonModule,
     FormsModule,
     KeycloakAngularModule,
+    MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,
     MatChipsModule,

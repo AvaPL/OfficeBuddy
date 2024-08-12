@@ -3,7 +3,21 @@
   <!-- TODO: Add filter by office -->
   <mat-divider></mat-divider>
 </div>
-<!-- TODO: Add search bar -->
+<!-- TODO: Move to top right? -->
+<mat-form-field class="search-bar" subscriptSizing="dynamic">
+  <mat-icon matPrefix>search</mat-icon>
+  <input type="search"
+         placeholder="Search..."
+         matInput
+         [formControl]="searchControl"
+         [matAutocomplete]="auto">
+  <!-- TODO: Use the main list instead of displaying the options -->
+  <mat-autocomplete #auto="matAutocomplete">
+    @for (searchAccount of searchFilteredAccounts | async; track searchAccount) {
+      <mat-option [value]="searchAccount.name">{{ searchAccount.name }} ({{ searchAccount.email }})</mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>
 <div class="account-cards">
   <mat-card *ngFor="let account of accountsPage" appearance="raised">
     <mat-card-header>
@@ -17,27 +31,17 @@
           <mat-icon matListItemIcon>email</mat-icon>
           <span>{{ account.email }}</span>
         </mat-card-subtitle>
-        <mat-card-subtitle *ngIf="squeezeOffices.matches" class="account-subtitle-line"
+        <mat-card-subtitle class="account-subtitle-line"
                            matTooltip="Assigned office">
           <mat-icon matListItemIcon>domain</mat-icon>
           <span matListItemLine>{{ account.assignedOffice.name }}</span>
         </mat-card-subtitle>
-        <mat-card-subtitle *ngIf="squeezeOffices.matches && account.managedOffices.length > 0"
+        <mat-card-subtitle *ngIf="account.managedOffices.length > 0"
                            class="account-subtitle-line"
                            matTooltip="Managed offices">
           <mat-icon matListItemIcon>person</mat-icon>
           <span matListItemLine>{{ joinWithComma(account.managedOffices) }}</span>
         </mat-card-subtitle>
-        <div class="offices-details" *ngIf="!squeezeOffices.matches">
-          <div class="offices-details-item" matTooltip="Assigned office">
-            <mat-icon matListItemIcon>domain</mat-icon>
-            <span matListItemLine>{{ account.assignedOffice.name }}</span>
-          </div>
-          <div *ngIf="account.managedOffices.length > 0" class="offices-details-item" matTooltip="Managed offices">
-            <mat-icon matListItemIcon>person</mat-icon>
-            <span matListItemLine class="office-managers">{{ joinWithComma(account.managedOffices) }}</span>
-          </div>
-        </div>
         <button mat-icon-button [matMenuTriggerFor]="menu">
           <mat-icon>more_vert</mat-icon>
         </button>
@@ -54,14 +58,14 @@
       </mat-card-title-group>
     </mat-card-header>
   </mat-card>
-  <mat-paginator
-    [length]="accounts.length"
-    [pageSize]="pageSize"
-    [pageIndex]="pageIndex"
-    (page)="handlePageEvent($event)"
-    hidePageSize>
-  </mat-paginator>
-  <button mat-fab class="add-button" color="primary" matTooltip="Add new account" matTooltipPosition="above">
-    <mat-icon>add</mat-icon>
-  </button>
 </div>
+<mat-paginator
+  [length]="accounts.length"
+  [pageSize]="pageSize"
+  [pageIndex]="pageIndex"
+  (page)="handlePageEvent($event)"
+  hidePageSize>
+</mat-paginator>
+<button mat-fab class="add-button" color="primary" matTooltip="Add new account" matTooltipPosition="above">
+  <mat-icon>add</mat-icon>
+</button>

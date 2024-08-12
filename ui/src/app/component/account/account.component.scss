@@ -19,17 +19,39 @@
   }
 }
 
+.search-bar {
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 88px 32px 8px 32px;
+  max-width: 600px;
+
+  ::ng-deep .mdc-notched-outline__leading {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+  }
+
+  ::ng-deep .mdc-notched-outline__trailing {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+}
+
 .account-cards {
-  padding: 96px 24px 8px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(400px, 50%)), 1fr));
+
+  padding: 0 24px 8px 24px;
 
   @media (max-width: 600px) {
     padding-bottom: 68px;
+    grid-template-columns: 1fr;
   }
 }
 
 mat-card {
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin: 5px
 }
 
 mat-card-header {
@@ -43,10 +65,6 @@ mat-card-header {
   }
 }
 
-mat-card-subtitle {
-  width: 220px;
-}
-
 .account-name {
   margin-right: 8px;
 }
@@ -57,12 +75,6 @@ mat-card-subtitle {
   padding: 2px 6px 0 6px;
   border-radius: 4px;
   color: white;
-}
-
-.offices-details {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .account-subtitle-line {
@@ -78,19 +90,6 @@ mat-card-subtitle {
   }
 
   span {
-    text-wrap: wrap;
-  }
-}
-
-.offices-details-item {
-  display: flex;
-  flex-direction: row;
-  padding: 2px 0 2px 0;
-
-  span {
-    margin-left: 4px;
-    display: inline-flex;
-    align-items: center;
     text-wrap: wrap;
   }
 }

@@ -1,7 +1,8 @@
 import {Component} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
-import {MediaMatcher} from "@angular/cdk/layout";
 import {AccountRole} from "./model/account-role.enum";
+import {FormControl} from "@angular/forms";
+import {map, Observable, startWith} from "rxjs";
 
 @Component({
   selector: 'app-account',
@@ -155,20 +156,49 @@ export class AccountComponent {
           name: "New York Office",
         }
       ]
+    },
+    {
+      id: "12",
+      name: "Jane Brown",
+      email: "brownie@mymail.com",
+      role: "User",
+      assignedOffice: {
+        id: "5",
+        name: "New York Office",
+      },
+      managedOffices: []
+    },
+    {
+      id: "13",
+      name: "John Doe",
+      email: "jjd@example.com",
+      role: "User",
+      assignedOffice: {
+        id: "6",
+        name: "San Francisco Office",
+      },
+      managedOffices: []
     }
   ]
 
-  squeezeOffices: MediaQueryList;
+  searchControl = new FormControl('');
+  searchFilteredAccounts: Observable<any[]> = this.searchControl.valueChanges.pipe(
+    startWith(''),
+    map(value => this.filterAccounts(value || '')),
+  );
 
-  pageSize = 10;
+  private filterAccounts(value: string): any[] {
+    const filterValue = value.toLowerCase();
+
+    return this.accounts.filter(account =>
+      account.name.toLowerCase().includes(filterValue) ||
+      account.email.toLowerCase().includes(filterValue)
+    );
+  }
+
+  pageSize = 12;
   pageIndex = 0;
   accountsPage = this.paginateAccounts()
-
-  constructor(
-    media: MediaMatcher,
-  ) {
-    this.squeezeOffices = media.matchMedia('(max-width: 700px)');
-  }
 
   roleChipStyle(role: string) {
     switch (role) {
