@@ -1,8 +1,10 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {AccountRole} from "./model/account-role.enum";
 import {FormControl} from "@angular/forms";
 import {BehaviorSubject, combineLatest, map, Observable, startWith} from "rxjs";
+import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-account-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
 
 @Component({
   selector: 'app-account',
@@ -10,6 +12,8 @@ import {BehaviorSubject, combineLatest, map, Observable, startWith} from "rxjs";
   styleUrl: './account.component.scss'
 })
 export class AccountComponent implements OnInit {
+
+  readonly deleteAccountDialog = inject(MatDialog);
 
   accounts = [
     {
@@ -245,6 +249,18 @@ export class AccountComponent implements OnInit {
   paginateAccounts(searchFilteredAccounts: any[], pageIndex: number) {
     this.paginatorLength = searchFilteredAccounts.length
     return searchFilteredAccounts.slice(pageIndex * this.pageSize, (pageIndex + 1) * this.pageSize)
+  }
+
+  deleteAccount(accountId: string, userName: string, email: string) {
+    const dialogRef = this.deleteAccountDialog.open(DeleteAccountDialogComponent, {data: {userName, email}});
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        console.log(`Deleted account ${accountId}`);
+      } else {
+        console.log(`Cancelled deleting account ${accountId}`);
+      }
+    });
   }
 
   // TODO: To be removed, only to validate integration with Keycloak

@@ -43,7 +43,7 @@
             <mat-icon>admin_panel_settings</mat-icon>
             <span>Change role</span>
           </button>
-          <button mat-menu-item>
+          <button mat-menu-item (click)="deleteAccount(account.id, account.name, account.email)">
             <mat-icon>highlight_remove</mat-icon>
             <span>Delete account</span>
           </button>
