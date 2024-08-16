@@ -1,15 +1,15 @@
-import {Component} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {AccountRole} from "./model/account-role.enum";
 import {FormControl} from "@angular/forms";
-import {map, Observable, startWith} from "rxjs";
+import {BehaviorSubject, combineLatest, map, Observable, startWith} from "rxjs";
 
 @Component({
   selector: 'app-account',
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss'
 })
-export class AccountComponent {
+export class AccountComponent implements OnInit {
 
   accounts = [
     {
@@ -181,24 +181,33 @@ export class AccountComponent {
     }
   ]
 
+  paginatorLength = this.accounts.length
+  pageSize = 12;
+
   searchControl = new FormControl('');
-  searchFilteredAccounts: Observable<any[]> = this.searchControl.valueChanges.pipe(
-    startWith(''),
-    map(value => this.filterAccounts(value || '')),
+  pageIndex = new BehaviorSubject<number>(0);
+  searchFilteredAccounts = combineLatest([
+    this.searchControl.valueChanges.pipe(startWith('')),
+    this.pageIndex
+  ]).pipe(
+    map(([searchValue, pageIndex]) => this.filterAccounts(searchValue || '', pageIndex))
   );
 
-  private filterAccounts(value: string): any[] {
+  ngOnInit() {
+    this.searchControl.valueChanges.subscribe(() => {
+      this.pageIndex.next(0);
+    });
+  }
+
+  private filterAccounts(value: string, pageIndex: number) {
     const filterValue = value.toLowerCase();
 
-    return this.accounts.filter(account =>
+    const searchFilteredAccounts = this.accounts.filter(account =>
       account.name.toLowerCase().includes(filterValue) ||
       account.email.toLowerCase().includes(filterValue)
     );
+    return this.paginateAccounts(searchFilteredAccounts, pageIndex)
   }
-
-  pageSize = 12;
-  pageIndex = 0;
-  accountsPage = this.paginateAccounts()
 
   roleChipStyle(role: string) {
     switch (role) {
@@ -230,12 +239,12 @@ export class AccountComponent {
   }
 
   handlePageEvent(event: PageEvent) {
-    this.pageIndex = event.pageIndex;
-    this.accountsPage = this.paginateAccounts();
+    this.pageIndex.next(event.pageIndex);
   }
 
-  paginateAccounts() {
-    return this.accounts.slice(this.pageIndex * this.pageSize, (this.pageIndex + 1) * this.pageSize)
+  paginateAccounts(searchFilteredAccounts: any[], pageIndex: number) {
+    this.paginatorLength = searchFilteredAccounts.length
+    return searchFilteredAccounts.slice(pageIndex * this.pageSize, (pageIndex + 1) * this.pageSize)
   }
 
   // TODO: To be removed, only to validate integration with Keycloak

@@ -9,17 +9,10 @@
   <input type="search"
          placeholder="Search..."
          matInput
-         [formControl]="searchControl"
-         [matAutocomplete]="auto">
-  <!-- TODO: Use the main list instead of displaying the options -->
-  <mat-autocomplete #auto="matAutocomplete">
-    @for (searchAccount of searchFilteredAccounts | async; track searchAccount) {
-      <mat-option [value]="searchAccount.name">{{ searchAccount.name }} ({{ searchAccount.email }})</mat-option>
-    }
-  </mat-autocomplete>
+         [formControl]="searchControl">
 </mat-form-field>
 <div class="account-cards">
-  <mat-card *ngFor="let account of accountsPage" appearance="raised">
+  <mat-card *ngFor="let account of searchFilteredAccounts | async" appearance="raised">
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>
@@ -60,9 +53,9 @@
   </mat-card>
 </div>
 <mat-paginator
-  [length]="accounts.length"
+  [length]="paginatorLength"
   [pageSize]="pageSize"
-  [pageIndex]="pageIndex"
+  [pageIndex]="pageIndex | async"
   (page)="handlePageEvent($event)"
   hidePageSize>
 </mat-paginator>
