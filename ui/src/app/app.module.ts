@@ -35,7 +35,7 @@ import {
 } from "./component/desk/view/desk-reservation-view/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
 import {
   DeskFilterDialogComponent as DeskReservationFilterDialogComponent
-} from "./component/desk/view/desk-reservation-view/desks-filter-dialog/desk-filter-dialog.component";
+} from "./component/desk/view/desk-reservation-view/desk-filter-dialog/desk-filter-dialog.component";
 import {MatSelectModule} from "@angular/material/select";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {
@@ -65,10 +65,12 @@ import {
 } from "./component/desk/view/desk-list-view/edit-desk-dialog/edit-desk-dialog.component";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {DeleteAccountDialogComponent} from "./component/account/delete-account-dialog/delete-account-dialog.component";
+import {AccountFilterDialogComponent} from "./component/account/account-filter-dialog/account-filter-dialog.component";
 
 @NgModule({
   declarations: [
     AccountComponent,
+    AccountFilterDialogComponent,
     AppComponent,
     CreateDeskDialogComponent,
     CreateDeskReservationDialogComponent,

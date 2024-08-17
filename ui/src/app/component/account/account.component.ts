@@ -2,9 +2,10 @@ import {Component, inject, OnInit} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {AccountRole} from "./model/account-role.enum";
 import {FormControl} from "@angular/forms";
-import {BehaviorSubject, combineLatest, map, Observable, startWith} from "rxjs";
+import {BehaviorSubject, combineLatest, map, startWith} from "rxjs";
 import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-account-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
+import {AccountFilterDialogComponent} from "./account-filter-dialog/account-filter-dialog.component";
 
 @Component({
   selector: 'app-account',
@@ -13,8 +14,23 @@ import {MatDialog} from "@angular/material/dialog";
 })
 export class AccountComponent implements OnInit {
 
+  readonly accountFilterDialog = inject(MatDialog);
   readonly deleteAccountDialog = inject(MatDialog);
 
+  offices = [
+    {
+      id: "1",
+      name: "Wroclaw Office",
+    },
+    {
+      id: "2",
+      name: "Krakow Office",
+    },
+    {
+      id: "3",
+      name: "Warsaw Office",
+    }
+  ]
   accounts = [
     {
       id: "1",
@@ -185,6 +201,9 @@ export class AccountComponent implements OnInit {
     }
   ]
 
+  selectedOffice: { id: string, name: string } | null = null
+  selectedRoles: AccountRole[] = Object.values(AccountRole)
+
   paginatorLength = this.accounts.length
   pageSize = 12;
 
@@ -249,6 +268,26 @@ export class AccountComponent implements OnInit {
   paginateAccounts(searchFilteredAccounts: any[], pageIndex: number) {
     this.paginatorLength = searchFilteredAccounts.length
     return searchFilteredAccounts.slice(pageIndex * this.pageSize, (pageIndex + 1) * this.pageSize)
+  }
+
+  openFilterDialog() {
+    const dialogRef = this.accountFilterDialog.open(AccountFilterDialogComponent, {
+      data: {
+        offices: this.offices,
+        selectedOfficeId: this.selectedOffice?.id,
+        selectedRoles: this.selectedRoles,
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(({selectedOfficeId, selectedReservationStates}) => {
+      this.handleFilter(selectedOfficeId, selectedReservationStates)
+    });
+  }
+
+  handleFilter(selectedOfficeId: string | null, selectedRoles: AccountRole[]) {
+    console.log(`Filtering by officeId: ${selectedOfficeId}, roles: ${selectedRoles}`);
+    this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || null
+    this.selectedRoles = selectedRoles
   }
 
   deleteAccount(accountId: string, userName: string, email: string) {

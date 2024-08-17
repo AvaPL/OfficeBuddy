@@ -5,7 +5,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {
   DeskReservationConfirmDialogComponent
 } from "./desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
-import {DeskFilterDialogComponent} from "./desks-filter-dialog/desk-filter-dialog.component";
+import {DeskFilterDialogComponent} from "./desk-filter-dialog/desk-filter-dialog.component";
 import {
   CreateDeskReservationDialogComponent
 } from "./create-desk-reservation-dialog/create-desk-reservation-dialog.component";

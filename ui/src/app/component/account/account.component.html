@@ -1,9 +1,10 @@
 <div class="page-title">
   <h1>Accounts</h1>
-  <!-- TODO: Add filter by office -->
+  <button class="filter-button" mat-icon-button matTooltip="Filters" (click)="openFilterDialog()">
+    <mat-icon>tune</mat-icon>
+  </button>
   <mat-divider></mat-divider>
 </div>
-<!-- TODO: Move to top right? -->
 <mat-form-field class="search-bar" subscriptSizing="dynamic">
   <mat-icon matPrefix>search</mat-icon>
   <input type="search"
