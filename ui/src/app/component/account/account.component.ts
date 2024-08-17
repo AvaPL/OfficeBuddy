@@ -285,7 +285,7 @@ export class AccountComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        const { selectedOfficeId, selectedReservationStates } = result;
+        const {selectedOfficeId, selectedReservationStates} = result;
         this.handleFilter(selectedOfficeId, selectedReservationStates);
       }
     });
@@ -298,7 +298,7 @@ export class AccountComponent implements OnInit {
   }
 
   createAccount() {
-    const dialogRef = this.createAccountDialog.open(CreateAccountDialogComponent);
+    const dialogRef = this.createAccountDialog.open(CreateAccountDialogComponent, {data: {offices: this.offices}});
 
     dialogRef.afterClosed().subscribe(createdAccount => {
       if (createdAccount) {
@@ -310,7 +310,13 @@ export class AccountComponent implements OnInit {
   }
 
   changeRole(accountId: string, userName: string, currentRole: AccountRole) {
-    const dialogRef = this.changeAccountRoleDialog.open(ChangeAccountRoleDialogComponent, {data: {accountId, userName, currentRole}});
+    const dialogRef = this.changeAccountRoleDialog.open(ChangeAccountRoleDialogComponent, {
+      data: {
+        accountId,
+        userName,
+        currentRole
+      }
+    });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {

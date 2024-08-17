@@ -13,12 +13,37 @@
         <input matInput formControlName="lastName" required>
         <mat-error *ngIf="form.get('lastName')?.hasError('required')">Last name is required</mat-error>
       </mat-form-field>
+      <mat-form-field>
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" required>
+        <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Assigned office</mat-label>
+        <mat-select formControlName="assignedOfficeId">
+          @for (office of data.offices; track office) {
+            <mat-option [value]="office.id">{{ office.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          @for (role of Object.values(AccountRole); track role) {
+            <mat-option [value]="role">{{ role }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field
+        *ngIf="form.get('role')?.value === AccountRole.OFFICE_MANAGER || form.get('role')?.value === AccountRole.SUPER_ADMIN">
+        <mat-label>Managed offices</mat-label>
+        <mat-select formControlName="managedOfficesIds" multiple>
+          @for (office of data.offices; track office) {
+            <mat-option [value]="office.id">{{ office.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
     </div>
-    <mat-form-field class="email-input">
-      <mat-label>Email</mat-label>
-      <input matInput formControlName="email" required>
-      <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
-    </mat-form-field>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button type="button" (click)="onCancel()">Back</button>
