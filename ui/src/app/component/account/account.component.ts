@@ -7,6 +7,7 @@ import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-accou
 import {MatDialog} from "@angular/material/dialog";
 import {AccountFilterDialogComponent} from "./account-filter-dialog/account-filter-dialog.component";
 import {ChangeAccountRoleDialogComponent} from "./change-account-role-dialog/change-account-role-dialog.component";
+import {CreateAccountDialogComponent} from "./create-account-dialog/create-account-dialog.component";
 
 @Component({
   selector: 'app-account',
@@ -16,6 +17,7 @@ import {ChangeAccountRoleDialogComponent} from "./change-account-role-dialog/cha
 export class AccountComponent implements OnInit {
 
   readonly accountFilterDialog = inject(MatDialog);
+  readonly createAccountDialog = inject(MatDialog);
   readonly changeAccountRoleDialog = inject(MatDialog);
   readonly deleteAccountDialog = inject(MatDialog);
 
@@ -293,6 +295,18 @@ export class AccountComponent implements OnInit {
     console.log(`Filtering by officeId: ${selectedOfficeId}, roles: ${selectedRoles}`);
     this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || null
     this.selectedRoles = selectedRoles
+  }
+
+  createAccount() {
+    const dialogRef = this.createAccountDialog.open(CreateAccountDialogComponent);
+
+    dialogRef.afterClosed().subscribe(createdAccount => {
+      if (createdAccount) {
+        console.log(`Created new account: `, createdAccount);
+      } else {
+        console.log(`Cancelled creating new account`);
+      }
+    });
   }
 
   changeRole(accountId: string, userName: string, currentRole: AccountRole) {

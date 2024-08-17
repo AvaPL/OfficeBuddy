@@ -1,0 +1,27 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h2 mat-dialog-title class="title">New account</h2>
+  <mat-divider></mat-divider>
+  <mat-dialog-content>
+    <div class="name-input">
+      <mat-form-field>
+        <mat-label>First name</mat-label>
+        <input matInput formControlName="firstName" required>
+        <mat-error *ngIf="form.get('firstName')?.hasError('required')">First name is required</mat-error>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Last name</mat-label>
+        <input matInput formControlName="lastName" required>
+        <mat-error *ngIf="form.get('lastName')?.hasError('required')">Last name is required</mat-error>
+      </mat-form-field>
+    </div>
+    <mat-form-field class="email-input">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" required>
+      <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Back</button>
+    <button mat-button color="primary" type="submit" [disabled]="!form.valid">Create</button>
+  </mat-dialog-actions>
+</form>

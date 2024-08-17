@@ -60,6 +60,7 @@
   (page)="handlePageEvent($event)"
   hidePageSize>
 </mat-paginator>
-<button mat-fab class="add-button" color="primary" matTooltip="Add new account" matTooltipPosition="above">
+<button mat-fab class="add-button" color="primary" matTooltip="Add new account" matTooltipPosition="above"
+        (click)="createAccount()">
   <mat-icon>add</mat-icon>
 </button>

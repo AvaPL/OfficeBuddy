@@ -69,6 +69,7 @@ import {AccountFilterDialogComponent} from "./component/account/account-filter-d
 import {
   ChangeAccountRoleDialogComponent
 } from "./component/account/change-account-role-dialog/change-account-role-dialog.component";
+import {CreateAccountDialogComponent} from "./component/account/create-account-dialog/create-account-dialog.component";
 
 @NgModule({
   declarations: [
@@ -76,6 +77,7 @@ import {
     AccountFilterDialogComponent,
     AppComponent,
     ChangeAccountRoleDialogComponent,
+    CreateAccountDialogComponent,
     CreateDeskDialogComponent,
     CreateDeskReservationDialogComponent,
     CreateOfficeDialogComponent,

@@ -1,0 +1,34 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  min-width: 75vw;
+}
+
+.mat-mdc-dialog-content {
+  padding-bottom: 0;
+}
+
+mat-divider {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.name-input {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(250px, 40%)), 1fr));
+  grid-auto-rows: 80px;
+  grid-gap: 10px;
+}
+
+.email-input {
+  width: 100%;
+  margin-top: 10px;
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
