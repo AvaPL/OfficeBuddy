@@ -19,7 +19,7 @@
         <mat-card-title>
           <span class="account-name">{{ account.name }}</span>
           <span class="mat-body account-role"
-                [style.background-color]="roleChipStyle(account.role).backgroundColor">{{ roleChipStyle(account.role).displayName }}</span>
+                [style.background-color]="roleChipBackgroundColor(account.role)">{{ AccountRoleCompanion.displayName(account.role) }}</span>
         </mat-card-title>
         <mat-card-subtitle class="account-subtitle-line" matTooltip="Email">
           <mat-icon matListItemIcon>email</mat-icon>

@@ -13,7 +13,7 @@ import {MatSelect} from "@angular/material/select";
 import {
   DeskFilterDialogData
 } from "../../desk/view/desk-reservation-view/desk-filter-dialog/desk-filter-dialog.component";
-import {AccountRole} from "../model/account-role.enum";
+import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
 
 export interface ChangeAccountRoleDialogData {
   accountId: string
@@ -45,4 +45,5 @@ export class ChangeAccountRoleDialogComponent {
 
   protected readonly Object = Object;
   protected readonly AccountRole = AccountRole;
+  protected readonly AccountRoleCompanion = AccountRoleCompanion;
 }

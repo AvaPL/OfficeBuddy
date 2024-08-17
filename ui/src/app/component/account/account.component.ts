@@ -1,6 +1,6 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
-import {AccountRole} from "./model/account-role.enum";
+import {AccountRole, AccountRoleCompanion} from "./model/account-role.enum";
 import {FormControl} from "@angular/forms";
 import {BehaviorSubject, combineLatest, map, startWith} from "rxjs";
 import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-account-dialog.component";
@@ -236,28 +236,16 @@ export class AccountComponent implements OnInit {
     return this.paginateAccounts(searchFilteredAccounts, pageIndex)
   }
 
-  roleChipStyle(role: string) {
+  roleChipBackgroundColor(role: string) {
     switch (role) {
       case AccountRole.SUPER_ADMIN:
-        return {
-          displayName: "Super Admin",
-          backgroundColor: "rgb(64,64,64)",
-        }
+        return "rgb(64,64,64)"
       case AccountRole.OFFICE_MANAGER:
-        return {
-          displayName: "Office Manager",
-          backgroundColor: "rgb(117, 179, 240)",
-        }
+        return "rgb(117, 179, 240)"
       case AccountRole.USER:
-        return {
-          displayName: "User",
-          backgroundColor: "rgb(121,181,117)",
-        }
+        return "rgb(121,181,117)"
       default:
-        return {
-          displayName: "Unknown",
-          backgroundColor: "grey",
-        }
+        return "grey"
     }
   }
 
@@ -357,4 +345,6 @@ export class AccountComponent implements OnInit {
   //     this.formattedAttributes = JSON.stringify(this.userProfile.attributes, null, 1);
   //   }
   // }
+  protected readonly AccountRole = AccountRole;
+  protected readonly AccountRoleCompanion = AccountRoleCompanion;
 }

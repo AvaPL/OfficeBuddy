@@ -30,7 +30,7 @@
         <mat-label>Role</mat-label>
         <mat-select formControlName="role">
           @for (role of Object.values(AccountRole); track role) {
-            <mat-option [value]="role">{{ role }}</mat-option>
+            <mat-option [value]="role">{{ AccountRoleCompanion.displayName(role) }}</mat-option>
           }
         </mat-select>
       </mat-form-field>

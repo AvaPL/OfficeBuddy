@@ -12,7 +12,7 @@ import {MatError, MatFormField, MatLabel} from "@angular/material/form-field";
 import {MatInput} from "@angular/material/input";
 import {NgIf} from "@angular/common";
 import {FormBuilder, ReactiveFormsModule} from "@angular/forms";
-import {AccountRole} from "../model/account-role.enum";
+import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
 import {AccountFilterDialogData} from "../account-filter-dialog/account-filter-dialog.component";
 
 export interface CreateAccountDialogData {
@@ -47,4 +47,5 @@ export class CreateAccountDialogComponent {
 
   protected readonly AccountRole = AccountRole;
   protected readonly Object = Object;
+  protected readonly AccountRoleCompanion = AccountRoleCompanion;
 }
