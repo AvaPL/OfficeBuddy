@@ -6,6 +6,7 @@ import {BehaviorSubject, combineLatest, map, startWith} from "rxjs";
 import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-account-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
 import {AccountFilterDialogComponent} from "./account-filter-dialog/account-filter-dialog.component";
+import {ChangeAccountRoleDialogComponent} from "./change-account-role-dialog/change-account-role-dialog.component";
 
 @Component({
   selector: 'app-account',
@@ -15,6 +16,7 @@ import {AccountFilterDialogComponent} from "./account-filter-dialog/account-filt
 export class AccountComponent implements OnInit {
 
   readonly accountFilterDialog = inject(MatDialog);
+  readonly changeAccountRoleDialog = inject(MatDialog);
   readonly deleteAccountDialog = inject(MatDialog);
 
   offices = [
@@ -291,6 +293,18 @@ export class AccountComponent implements OnInit {
     console.log(`Filtering by officeId: ${selectedOfficeId}, roles: ${selectedRoles}`);
     this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || null
     this.selectedRoles = selectedRoles
+  }
+
+  changeRole(accountId: string, userName: string, currentRole: AccountRole) {
+    const dialogRef = this.changeAccountRoleDialog.open(ChangeAccountRoleDialogComponent, {data: {accountId, userName, currentRole}});
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        console.log(`Changed role for account ${accountId} to ${result.selectedRole}`);
+      } else {
+        console.log(`Cancelled changing role for account ${accountId}`);
+      }
+    });
   }
 
   deleteAccount(accountId: string, userName: string, email: string) {

@@ -66,12 +66,16 @@ import {
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {DeleteAccountDialogComponent} from "./component/account/delete-account-dialog/delete-account-dialog.component";
 import {AccountFilterDialogComponent} from "./component/account/account-filter-dialog/account-filter-dialog.component";
+import {
+  ChangeAccountRoleDialogComponent
+} from "./component/account/change-account-role-dialog/change-account-role-dialog.component";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AccountFilterDialogComponent,
     AppComponent,
+    ChangeAccountRoleDialogComponent,
     CreateDeskDialogComponent,
     CreateDeskReservationDialogComponent,
     CreateOfficeDialogComponent,

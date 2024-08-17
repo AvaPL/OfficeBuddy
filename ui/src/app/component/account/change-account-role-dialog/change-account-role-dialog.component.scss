@@ -1,0 +1,20 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+
+  .role-select {
+    margin-top: 8px;
+  }
+
+  width: min(450px, 80vw);
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}

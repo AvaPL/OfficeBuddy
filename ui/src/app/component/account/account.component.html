@@ -40,7 +40,7 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item>
+          <button mat-menu-item (click)="changeRole(account.id, account.name, account.role)">
             <mat-icon>admin_panel_settings</mat-icon>
             <span>Change role</span>
           </button>

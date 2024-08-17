@@ -1,0 +1,15 @@
+<h2 mat-dialog-title class="title">Edit {{ data.userName }} role</h2>
+<mat-dialog-content>
+  <mat-form-field class="role-select" subscriptSizing="dynamic">
+    <mat-label>Role</mat-label>
+    <mat-select [(value)]="selectedRole">
+      @for (role of Object.values(AccountRole); track role) {
+        <mat-option [value]="role">{{ role }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Back</button>
+  <button mat-button color="primary" type="submit" (click)="onConfirm()" cdkFocusInitial>Confirm</button>
+</mat-dialog-actions>
