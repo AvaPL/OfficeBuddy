@@ -389,8 +389,11 @@ export class DeskReservationViewComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(({selectedOfficeId, selectedReservationStates, reservedByYou}) => {
-      this.handleFilter(selectedOfficeId, selectedReservationStates, reservedByYou)
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const {selectedOfficeId, selectedReservationStates, reservedByYou} = result
+        this.handleFilter(selectedOfficeId, selectedReservationStates, reservedByYou)
+      }
     });
   }
 

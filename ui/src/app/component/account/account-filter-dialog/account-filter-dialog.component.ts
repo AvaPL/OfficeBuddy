@@ -1,20 +1,5 @@
 import {Component, inject} from '@angular/core';
-import {MatButton} from "@angular/material/button";
-import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle
-} from "@angular/material/dialog";
-import {MatFormField, MatLabel} from "@angular/material/form-field";
-import {MatOption} from "@angular/material/core";
-import {MatSelect} from "@angular/material/select";
-import {MatSlideToggle} from "@angular/material/slide-toggle";
-import {
-  DeskFilterDialogData
-} from "../../desk/view/desk-reservation-view/desk-filter-dialog/desk-filter-dialog.component";
-import {ReservationState} from "../../desk/view/desk-reservation-view/model/reservation-state.enum";
+import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {AccountRole} from "../model/account-role.enum";
 
 export interface AccountFilterDialogData {

@@ -274,13 +274,16 @@ export class AccountComponent implements OnInit {
     const dialogRef = this.accountFilterDialog.open(AccountFilterDialogComponent, {
       data: {
         offices: this.offices,
-        selectedOfficeId: this.selectedOffice?.id,
+        selectedOfficeId: this.selectedOffice?.id || null,
         selectedRoles: this.selectedRoles,
       }
     });
 
-    dialogRef.afterClosed().subscribe(({selectedOfficeId, selectedReservationStates}) => {
-      this.handleFilter(selectedOfficeId, selectedReservationStates)
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const { selectedOfficeId, selectedReservationStates } = result;
+        this.handleFilter(selectedOfficeId, selectedReservationStates);
+      }
     });
   }
 

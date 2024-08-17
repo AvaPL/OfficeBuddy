@@ -419,8 +419,11 @@ export class DeskListViewComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(({selectedOfficeId}) => {
-      this.handleFilter(selectedOfficeId)
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const {selectedOfficeId} = result
+        this.handleFilter(selectedOfficeId)
+      }
     });
   }
 
