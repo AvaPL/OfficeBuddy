@@ -44,6 +44,7 @@
         </button>
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="editOffice(office.id, {
+            id: office.id,
             name: office.name,
             address: {
               addressLine1: office.address.addressLine1,

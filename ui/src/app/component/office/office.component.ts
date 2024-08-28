@@ -305,7 +305,7 @@ export class OfficeComponent {
   }
 
   deleteOffice(officeId: string, officeName: string) {
-    const dialogRef = this.deleteOfficeDialog.open(DeleteOfficeDialogComponent, {data: {officeName}});
+    const dialogRef = this.deleteOfficeDialog.open(DeleteOfficeDialogComponent, {data: {officeId, officeName}});
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {

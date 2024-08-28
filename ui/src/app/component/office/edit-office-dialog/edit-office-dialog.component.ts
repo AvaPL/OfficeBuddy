@@ -1,8 +1,10 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {FormBuilder} from "@angular/forms";
+import {OfficeService} from "../../../service/office.service";
 
 export interface EditOfficeInitialValuesDialogData {
+  id: string;
   name: string;
   address: {
     addressLine1: string;
@@ -33,9 +35,16 @@ export class EditOfficeDialogComponent {
       country: [this.initialValues.address.country]
     })
   });
+  readonly officeService = inject(OfficeService);
 
-  onSubmit() {
-    this.dialogRef.close(this.form.value);
+  async onSubmit() {
+    try {
+      const response = await this.officeService.updateOffice(this.initialValues.id, this.form.value);
+      this.dialogRef.close(response);
+    } catch (error) {
+      // TODO: Add toast notification
+      console.error('Error updating office:', error);
+    }
   }
 
   onCancel() {

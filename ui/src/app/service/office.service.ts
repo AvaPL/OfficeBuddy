@@ -24,4 +24,26 @@ export class OfficeService {
     // TODO: Extract /api/internal as common base URL
     return firstValueFrom(this.http.post(this.baseUrl, {...officeData, notes: []}, {headers}));
   }
+
+  // TODO: Use concrete types instead of any
+  async updateOffice(officeId: string, officeData: any): Promise<any> {
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    // TODO: Backend expects all properties to be present, has to be fixed
+    return firstValueFrom(this.http.patch(`${this.baseUrl}/${officeId}`, officeData, {headers}));
+  }
+
+  // TODO: Use concrete types instead of any
+  async archiveOffice(officeId: string): Promise<any> {
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    return firstValueFrom(this.http.delete(`${this.baseUrl}/${officeId}`, {headers}));
+  }
 }
