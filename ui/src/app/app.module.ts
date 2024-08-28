@@ -70,6 +70,7 @@ import {
   ChangeAccountRoleDialogComponent
 } from "./component/account/change-account-role-dialog/change-account-role-dialog.component";
 import {CreateAccountDialogComponent} from "./component/account/create-account-dialog/create-account-dialog.component";
+import {HttpClientModule, provideHttpClient, withInterceptorsFromDi} from "@angular/common/http";
 
 @NgModule({
   declarations: [
@@ -142,7 +143,8 @@ import {CreateAccountDialogComponent} from "./component/account/create-account-d
       provide: DateAdapter,
       useClass: AppDateAdapter
     },
-    provideAnimationsAsync()
+    provideAnimationsAsync(),
+    provideHttpClient(withInterceptorsFromDi())
   ],
   bootstrap: [
     AppComponent

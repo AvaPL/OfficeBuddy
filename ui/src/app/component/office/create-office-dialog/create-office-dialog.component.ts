@@ -1,6 +1,7 @@
 import {Component, inject} from '@angular/core';
 import {FormBuilder} from "@angular/forms";
 import {MatDialogRef} from "@angular/material/dialog";
+import {OfficeService} from "../../../service/office.service";
 
 @Component({
   selector: 'app-create-office-dialog',
@@ -13,7 +14,7 @@ export class CreateOfficeDialogComponent {
   readonly formBuilder = inject(FormBuilder);
   readonly form = this.formBuilder.group({
     name: [''],
-    address: this.formBuilder.group( {
+    address: this.formBuilder.group({
       addressLine1: [''],
       addressLine2: [''],
       postalCode: [''],
@@ -21,9 +22,16 @@ export class CreateOfficeDialogComponent {
       country: ['']
     })
   });
+  readonly officeService = inject(OfficeService);
 
-  onSubmit() {
-    this.dialogRef.close(this.form.value);
+  async onSubmit() {
+    try {
+      const response = await this.officeService.createOffice(this.form.value);
+      this.dialogRef.close(response);
+    } catch (error) {
+      // TODO: Add toast notification
+      console.error('Error creating office:', error);
+    }
   }
 
   onCancel() {

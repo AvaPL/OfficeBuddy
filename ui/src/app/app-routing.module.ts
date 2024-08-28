@@ -12,7 +12,7 @@ const routes: Routes = [
   {path: 'parking', component: ParkingComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard
   {path: 'room', component: RoomComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard
   {path: 'account', component: AccountComponent, /* canActivate: [AuthGuard] */}, // TODO: Disable for users
-  {path: 'office', component: OfficeComponent, /* canActivate: [AuthGuard] */}, // TODO: Add AuthGuard, disable for users
+  {path: 'office', component: OfficeComponent, canActivate: [AuthGuard]},
   {path: '**', redirectTo: 'account'}
 ];
 
