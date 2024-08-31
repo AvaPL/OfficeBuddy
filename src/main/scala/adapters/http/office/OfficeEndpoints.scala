@@ -172,9 +172,16 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
   )
 
   private lazy val apiUpdateOfficeExample = ApiUpdateOffice(
-    name = "Wroclaw",
-    notes = List("Everyone's favorite", "The funniest one"),
-    address = apiAddressExample,
-    isArchived = false
+    name = Some("Wroclaw"),
+    notes = Some(List("Everyone's favorite", "The funniest one")),
+    address = apiUpdateAddressExample
+  )
+
+  private lazy val apiUpdateAddressExample = ApiUpdateAddress(
+    addressLine1 = Some("Powstancow Slaskich 9"),
+    addressLine2 = Some("1st floor"),
+    postalCode = Some("53-332"),
+    city = Some("Wroclaw"),
+    country = Some("Poland")
   )
 }

@@ -50,12 +50,10 @@ case class ApiCreateOffice(
 @derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Office (update)")
 case class ApiUpdateOffice(
-  name: String,
-  notes: List[String],
+  name: Option[String] = None,
+  notes: Option[List[String]] = None,
   //
-  address: ApiAddress,
-  //
-  isArchived: Boolean
+  address: ApiUpdateAddress = ApiUpdateAddress()
 ) {
 
   lazy val toDomain: UpdateOffice =

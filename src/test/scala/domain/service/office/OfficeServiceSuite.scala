@@ -2,13 +2,14 @@ package io.github.avapl
 package domain.service.office
 
 import cats.effect.IO
+import domain.model.error.office.DuplicateOfficeName
+import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.CreateOffice
 import domain.model.office.Office
+import domain.model.office.UpdateAddress
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
-import domain.model.error.office.DuplicateOfficeName
-import domain.model.error.office.OfficeNotFound
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
@@ -110,7 +111,14 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
     val officeUpdate = anyUpdateOffice
 
     val officeRepository = mock[OfficeRepository[IO]]
-    val office = Office(officeId, officeUpdate.name, officeUpdate.notes, officeUpdate.address)
+    val address = Address(
+      addressLine1 = officeUpdate.address.addressLine1.get,
+      addressLine2 = officeUpdate.address.addressLine2.get,
+      postalCode = officeUpdate.address.postalCode.get,
+      city = officeUpdate.address.city.get,
+      country = officeUpdate.address.country.get
+    )
+    val office = Office(officeId, officeUpdate.name.get, officeUpdate.notes.get, address)
     whenF(officeRepository.update(any, any)) thenReturn office
     val officeService = new OfficeService[IO](officeRepository)
 
@@ -195,9 +203,9 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
   )
 
   private lazy val anyUpdateOffice = UpdateOffice(
-    name = anyOfficeName,
-    notes = anyOfficeNotes,
-    address = anyOfficeAddress
+    name = Some(anyOfficeName),
+    notes = Some(anyOfficeNotes),
+    address = anyOfficeUpdateAddress
   )
 
   private lazy val anyOfficeId =
@@ -215,5 +223,13 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
     postalCode = "12-345",
     city = "Wroclaw",
     country = "Poland"
+  )
+
+  private lazy val anyOfficeUpdateAddress = UpdateAddress(
+    addressLine1 = Some("Test Street"),
+    addressLine2 = Some("Building 42"),
+    postalCode = Some("12-345"),
+    city = Some("Wroclaw"),
+    country = Some("Poland")
   )
 }

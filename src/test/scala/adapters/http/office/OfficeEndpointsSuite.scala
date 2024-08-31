@@ -145,7 +145,14 @@ object OfficeEndpointsSuite
   ) {
     val officeToUpdate = anyApiUpdateOffice
     val officeId = anyOfficeId
-    val office = Office(officeId, officeToUpdate.name, officeToUpdate.notes, officeToUpdate.address.toDomain)
+    val address = Address(
+      addressLine1 = officeToUpdate.address.addressLine1.get,
+      addressLine2 = officeToUpdate.address.addressLine2.get,
+      postalCode = officeToUpdate.address.postalCode.get,
+      city = officeToUpdate.address.city.get,
+      country = officeToUpdate.address.country.get
+    )
+    val office = Office(officeId, officeToUpdate.name.get, officeToUpdate.notes.get, address)
     val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenReturn office
 
     val response = sendRequest(officeService, role = OfficeManager) {
@@ -287,10 +294,9 @@ object OfficeEndpointsSuite
   )
 
   private lazy val anyApiUpdateOffice = ApiUpdateOffice(
-    name = anyOfficeName,
-    notes = anyOfficeNotes,
-    address = anyOfficeApiAddress,
-    isArchived = false
+    name = Some(anyOfficeName),
+    notes = Some(anyOfficeNotes),
+    address = anyOfficeApiUpdateAddress
   )
 
   private lazy val anyOfficeId =
@@ -316,5 +322,13 @@ object OfficeEndpointsSuite
     postalCode = "12-345",
     city = "Wroclaw",
     country = "Poland"
+  )
+
+  private lazy val anyOfficeApiUpdateAddress = ApiUpdateAddress(
+    addressLine1 = Some("Test Street"),
+    addressLine2 = Some("Building 42"),
+    postalCode = Some("12-345"),
+    city = Some("Wroclaw"),
+    country = Some("Poland")
   )
 }

@@ -2,7 +2,8 @@ package io.github.avapl
 package adapters.http.office
 
 import derevo.derive
-import domain.model.office.Address
+import domain.model.office.{Address, UpdateAddress}
+
 import io.scalaland.chimney.dsl._
 import sttp.tapir.Schema.annotations.encodedName
 import util.derevo.circe.circeDecoder
@@ -21,4 +22,18 @@ case class ApiAddress(
 
   lazy val toDomain: Address =
     this.transformInto[Address]
+}
+
+@derive(circeEncoder, circeDecoder, tapirSchema)
+@encodedName("Address (update)")
+case class ApiUpdateAddress(
+  addressLine1: Option[String] = None,
+  addressLine2: Option[String] = None,
+  postalCode: Option[String] = None,
+  city: Option[String] = None,
+  country: Option[String] = None
+) {
+
+  lazy val toDomain: UpdateAddress =
+    this.transformInto[UpdateAddress]
 }

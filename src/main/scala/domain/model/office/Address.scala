@@ -8,3 +8,11 @@ case class Address(
   city: String,
   country: String
 )
+
+case class UpdateAddress(
+  addressLine1: Option[String] = None,
+  addressLine2: Option[String] = None,
+  postalCode: Option[String] = None,
+  city: Option[String] = None,
+  country: Option[String] = None
+)

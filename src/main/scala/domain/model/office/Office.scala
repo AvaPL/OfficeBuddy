@@ -30,10 +30,8 @@ case class CreateOffice(
 }
 
 case class UpdateOffice(
-  name: String,
-  notes: List[String],
+  name: Option[String] = None,
+  notes: Option[List[String]] = None,
   //
-  address: Address,
-  //
-  isArchived: Boolean = false
+  address: UpdateAddress = UpdateAddress(),
 )

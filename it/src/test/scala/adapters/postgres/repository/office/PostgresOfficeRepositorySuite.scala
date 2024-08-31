@@ -9,6 +9,7 @@ import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.model.office.UpdateAddress
 import domain.model.office.UpdateOffice
 import java.util.UUID
 import skunk.Command
@@ -90,25 +91,25 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
       |""".stripMargin
   ) { officeRepository =>
     val office = anyOffice
-    val officeUpdate = anyUpdateOffice
-      .modifyAll(
-        _.name,
-        _.address.addressLine1,
-        _.address.addressLine2,
-        _.address.postalCode,
-        _.address.city,
-        _.address.country
+    val officeUpdate = UpdateOffice( // only some properties updated
+      name = Some(office.name + "updated"),
+      notes = Some("updated" :: anyOfficeNotes),
+      address = UpdateAddress(
+        addressLine2 = Some(office.address.addressLine2 + "updated"),
+        country = Some(office.address.country + "updated")
       )
-      .using(_ + "updated")
-      .modify(_.notes)
-      .using("updated" :: _)
+    )
 
     for {
       _ <- officeRepository.create(office)
       _ <- officeRepository.update(office.id, officeUpdate)
       readOffice <- officeRepository.read(office.id)
     } yield {
-      val expectedOffice = Office(office.id, officeUpdate.name, officeUpdate.notes, officeUpdate.address)
+      val expectedAddress = office.address.copy(
+        addressLine2 = officeUpdate.address.addressLine2.get,
+        country = officeUpdate.address.country.get
+      )
+      val expectedOffice = Office(office.id, officeUpdate.name.get, officeUpdate.notes.get, expectedAddress)
       expect(readOffice == expectedOffice)
     }
   }
@@ -121,7 +122,17 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
       |""".stripMargin
   ) { officeRepository =>
     val office = anyOffice
-    val officeUpdate = UpdateOffice(office.name, office.notes, office.address)
+    val officeUpdate = UpdateOffice(
+      name = None,
+      notes = None,
+      address = UpdateAddress(
+        addressLine1 = None,
+        addressLine2 = None,
+        postalCode = None,
+        city = None,
+        country = None
+      )
+    )
 
     for {
       _ <- officeRepository.create(office)
@@ -160,7 +171,7 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
       id = UUID.fromString("96cb8558-8fe8-4330-b50a-00e7e1917757"),
       name = "other"
     )
-    val officeUpdate = anyUpdateOffice.copy(name = office2.name)
+    val officeUpdate = anyUpdateOffice.copy(name = Some(office2.name))
 
     for {
       _ <- officeRepository.create(office1)
@@ -218,9 +229,9 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
   )
 
   private lazy val anyUpdateOffice = UpdateOffice(
-    name = anyOfficeName,
-    notes = anyOfficeNotes,
-    address = anyOfficeAddress
+    name = Some(anyOfficeName),
+    notes = Some(anyOfficeNotes),
+    address = anyOfficeUpdateAddress
   )
 
   private lazy val anyOfficeId =
@@ -238,5 +249,13 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
     postalCode = "12-345",
     city = "Wroclaw",
     country = "Poland"
+  )
+
+  private lazy val anyOfficeUpdateAddress = UpdateAddress(
+    addressLine1 = Some("Test Street"),
+    addressLine2 = Some("Building 42"),
+    postalCode = Some("12-345"),
+    city = Some("Wroclaw"),
+    country = Some("Poland")
   )
 }

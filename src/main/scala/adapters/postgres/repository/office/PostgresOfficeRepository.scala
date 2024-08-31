@@ -11,15 +11,13 @@ import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
-
 import java.util.UUID
+import scala.annotation.nowarn
 import skunk._
 import skunk.codec.all._
 import skunk.data.Arr
 import skunk.data.Completion
 import skunk.implicits._
-
-import scala.annotation.nowarn
 
 class PostgresOfficeRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
@@ -62,48 +60,57 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
     """.query(officeDecoder)
 
   override def update(officeId: UUID, updateOffice: UpdateOffice): F[Office] =
-    session.use { session =>
-      for {
-        sql <- session.prepare(updateSql)
-        _ <- sql
-          .execute(officeId *: updateOffice *: EmptyTuple)
-          .ensureOr {
-            case Completion.Update(0) => OfficeNotFound(officeId)
-            case completion           => new RuntimeException(s"Expected 1 updated office, but got: $completion")
-          }(_ == Completion.Update(1))
-          .recoverWith {
-            case SqlState.UniqueViolation(e) if e.constraintName.contains("office_name_key") =>
-              DuplicateOfficeName(updateOffice.name).raiseError
-          }
-        office <- read(officeId)
-      } yield office
+    for {
+      _ <- updateOptionally(officeId, updateOffice)
+      office <- read(officeId)
+    } yield office
+
+  private def updateOptionally(officeId: UUID, updateOffice: UpdateOffice) =
+    updateSql(officeId, updateOffice) match {
+      case Some(appliedFragment) =>
+        session.use { session =>
+          for {
+            sql <- session.prepare(appliedFragment.fragment.command)
+            _ <- sql
+              .execute(appliedFragment.argument)
+              .ensureOr {
+                case Completion.Update(0) => OfficeNotFound(officeId)
+                case completion           => new RuntimeException(s"Expected 1 updated office, but got: $completion")
+              }(_ == Completion.Update(1))
+              .recoverWith {
+                case SqlState.UniqueViolation(e)
+                    if e.constraintName.contains("office_name_key") && updateOffice.name.isDefined =>
+                  DuplicateOfficeName(updateOffice.name.get).raiseError
+              }
+          } yield ()
+        }
+      case None => // Nothing to update
+        ().pure[F]
     }
 
-  @nowarn("msg=match may not be exhaustive")
-  private lazy val updateSql: Command[UUID *: UpdateOffice *: EmptyTuple] =
-    sql"""
-      UPDATE office
-      SET    name = $varchar,
-             notes = ${_varchar},
-             address_line_1 = $varchar,
-             address_line_2 = $varchar,
-             postal_code = $varchar,
-             city = $varchar,
-             country = $varchar
-      WHERE id = $uuid
-    """.command
-      .contramap {
-        case officeId *: updateOffice *: EmptyTuple =>
-          updateOffice.name *:
-            Arr(updateOffice.notes: _*) *:
-            updateOffice.address.addressLine1 *:
-            updateOffice.address.addressLine2 *:
-            updateOffice.address.postalCode *:
-            updateOffice.address.city *:
-            updateOffice.address.country *:
-            officeId *:
-            EmptyTuple
-      }
+  private def updateSql(officeId: UUID, update: UpdateOffice): Option[AppliedFragment] = {
+    val setName = sql"name = $varchar"
+    val setNotes = sql"notes = ${_varchar}"
+    val setAddressLine1 = sql"address_line_1 = $varchar"
+    val setAddressLine2 = sql"address_line_2 = $varchar"
+    val setPostalCode = sql"postal_code = $varchar"
+    val setCity = sql"city = $varchar"
+    val setCountry = sql"country = $varchar"
+
+    val appliedSets = List(
+      update.name.map(setName),
+      update.notes.map(Arr(_: _*)).map(setNotes),
+      update.address.addressLine1.map(setAddressLine1),
+      update.address.addressLine2.map(setAddressLine2),
+      update.address.postalCode.map(setPostalCode),
+      update.address.city.map(setCity),
+      update.address.country.map(setCountry)
+    ).flatten
+
+    Option.when(appliedSets.nonEmpty) {
+      appliedSets.foldSmash(sql"UPDATE office SET ".apply(Void), void", ", sql" WHERE id = $uuid".apply(officeId))
+    }
+  }
 
   override def archive(officeId: UUID): F[Unit] =
     session.use { session =>
