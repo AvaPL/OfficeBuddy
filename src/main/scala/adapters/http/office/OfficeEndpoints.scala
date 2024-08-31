@@ -5,6 +5,8 @@ import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
+import adapters.http.office.model._
+import adapters.http.office.model.view._
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -12,6 +14,7 @@ import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.User
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
+import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
 import java.util.UUID
 import sttp.model.StatusCode
@@ -21,6 +24,7 @@ import sttp.tapir.server.ServerEndpoint
 
 class OfficeEndpoints[F[_]: Clock: MonadThrow](
   officeService: OfficeService[F],
+  officeViewRepository: OfficeViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val rolesExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F] {
@@ -32,6 +36,7 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       readOfficeEndpoint ::
       updateOfficeEndpoint ::
       archiveOfficeEndpoint ::
+      officeListViewEndpoint ::
       Nil
 
   private lazy val createOfficeEndpoint =
@@ -149,6 +154,39 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       .archiveOffice(officeId)
       .as(().asRight[ApiError])
 
+  private lazy val officeListViewEndpoint =
+    securedEndpoint(requiredRole = User).get
+      .summary("Offices list view")
+      .description(
+        """Lists offices with statistics to be displayed in the UI.
+          |
+          |Required role: user
+          |""".stripMargin
+      )
+      .in("view" / "list")
+      .in(
+        query[Int]("limit")
+          .description("Maximum number of results to return (pagination)")
+          .example(10) // TODO: Add validation
+      )
+      .in(
+        query[Int]("offset")
+          .description("Number of results to skip (pagination)")
+          .example(0) // TODO: Add validation
+      )
+      .out(
+        jsonBody[ApiOfficeListView]
+          .description("Array of offices with statistics and pagination information")
+          .example(apiOfficeListViewExample)
+      )
+      .serverLogic(_ => (officeListView _).tupled)
+
+  private def officeListView(limit: Int, offset: Int) =
+    officeViewRepository
+      .listOffices(limit, offset)
+      .map(ApiOfficeListView.fromDomain)
+      .map(_.asRight[ApiError])
+
   private lazy val apiOfficeExample = ApiOffice(
     id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
     name = "Wroclaw",
@@ -184,4 +222,68 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
     city = Some("Wroclaw"),
     country = Some("Poland")
   )
+
+  private lazy val apiOfficeListViewExample =
+    ApiOfficeListView(
+      offices = List(
+        ApiOfficeView(
+          id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
+          name = "Wroclaw",
+          notes = List("Everyone's favorite", "The funniest one"),
+          address = ApiAddressView(
+            addressLine1 = "Powstancow Slaskich 9",
+            addressLine2 = "1st floor",
+            postalCode = "53-332",
+            city = "Wroclaw",
+            country = "Poland"
+          ),
+          officeManagers = List(
+            ApiOfficeManagerView(
+              id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297"),
+              firstName = "John",
+              lastName = "Doe"
+            ),
+            ApiOfficeManagerView(
+              id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227296"),
+              firstName = "Jane",
+              lastName = "Doe"
+            )
+          ),
+          assignedAccountsCount = 20,
+          desksCount = 10,
+          parkingSpotsCount = 2,
+          roomsCount = 1,
+          activeReservationsCount = 5
+        ),
+        ApiOfficeView(
+          id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227299"),
+          name = "Krakow",
+          notes = List("Headquarters"),
+          address = ApiAddressView(
+            addressLine1 = "Rynek Glowny 1",
+            addressLine2 = "2nd floor",
+            postalCode = "31-042",
+            city = "Krakow",
+            country = "Poland"
+          ),
+          officeManagers = List(
+            ApiOfficeManagerView(
+              id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227295"),
+              firstName = "Sam",
+              lastName = "Smith"
+            )
+          ),
+          assignedAccountsCount = 100,
+          desksCount = 50,
+          parkingSpotsCount = 10,
+          roomsCount = 5,
+          activeReservationsCount = 25
+        )
+      ),
+      pagination = ApiPagination(
+        limit = 2,
+        offset = 0,
+        hasMoreResults = true
+      )
+    )
 }

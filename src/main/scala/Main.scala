@@ -6,11 +6,13 @@ import adapters.http.account.AccountEndpoints
 import adapters.http.desk.DeskEndpoints
 import adapters.http.office.OfficeEndpoints
 import adapters.http.reservation.ReservationEndpoints
+import adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
+import adapters.keycloak.auth.service.KeycloakClaimsExtractorService
 import adapters.postgres.migration.FlywayMigration
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
+import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresReservationRepository
-import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
@@ -23,8 +25,6 @@ import domain.service.account.AccountService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
-import io.github.avapl.adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
-import io.github.avapl.adapters.keycloak.auth.service.KeycloakClaimsExtractorService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -104,14 +104,20 @@ object Main extends IOApp.Simple {
       val reservationRepository = new PostgresReservationRepository[F](session)
       val accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session)
 
+      val officeViewRepository = new PostgresOfficeViewRepository[F](session)
+
       val officeService = new OfficeService[F](officeRepository)
       val deskService = new DeskService[F](deskRepository)
       val reservationService = new ReservationService[F](reservationRepository)
       val accountService = new AccountService[F](accountRepository)
       val rolesExtractorService = KeycloakClaimsExtractorService
 
-      val officeEndpoints =
-        new OfficeEndpoints[F](officeService, publicKeyRepository, rolesExtractorService).endpoints
+      val officeEndpoints = new OfficeEndpoints[F](
+        officeService,
+        officeViewRepository,
+        publicKeyRepository,
+        rolesExtractorService
+      ).endpoints
       val deskEndpoints =
         new DeskEndpoints[F](deskService, publicKeyRepository, rolesExtractorService).endpoints
       val reservationEndpoints =

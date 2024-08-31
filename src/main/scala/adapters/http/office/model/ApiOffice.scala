@@ -1,5 +1,5 @@
 package io.github.avapl
-package adapters.http.office
+package adapters.http.office.model
 
 import derevo.derive
 import domain.model.office.CreateOffice

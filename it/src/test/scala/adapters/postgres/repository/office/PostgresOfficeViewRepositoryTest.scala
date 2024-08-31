@@ -71,6 +71,8 @@ object PostgresOfficeViewRepositoryTest extends IOSuite with PostgresFixture {
     )
   }
 
+  // TODO: Test errors for negative limit/offset
+
   private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
     val sql: Command[Void] =
       sql"""

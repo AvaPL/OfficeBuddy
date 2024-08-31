@@ -3,6 +3,7 @@ package adapters.http.office
 
 import adapters.auth.model.PublicKey
 import adapters.http.fixture.SecuredApiEndpointFixture
+import adapters.http.office.model._
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -12,6 +13,7 @@ import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
 import io.circe.parser._
 import io.circe.syntax._
@@ -270,12 +272,32 @@ object OfficeEndpointsSuite
     }
   }
 
-  private def sendRequest(officeService: OfficeService[IO], role: Role = SuperAdmin)(
+  // TODO: Test view endpoint
+  // TODO: Test negative values for limit/offset and return 400
+
+  private def sendRequest(
+    officeService: OfficeService[IO],
+    role: Role = SuperAdmin
+  )(
     request: Request[Either[String, String], Any]
-  ) =
+  ): IO[Response[Either[PublicKey, PublicKey]]] = {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
     sendSecuredApiEndpointRequest(request, role) { rolesExtractorService =>
-      new OfficeEndpoints[IO](officeService, publicKeyRepository, rolesExtractorService).endpoints
+      new OfficeEndpoints[IO](officeService, officeViewRepository, publicKeyRepository, rolesExtractorService).endpoints
     }
+  }
+
+  private def sendViewRequest(
+    officeViewRepository: OfficeViewRepository[IO],
+    role: Role = SuperAdmin
+  )(
+    request: Request[Either[String, String], Any]
+  ): IO[Response[Either[PublicKey, PublicKey]]] = {
+    val officeService = mock[OfficeService[IO]]
+    sendSecuredApiEndpointRequest(request, role) { rolesExtractorService =>
+      new OfficeEndpoints[IO](officeService, officeViewRepository, publicKeyRepository, rolesExtractorService).endpoints
+    }
+  }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get

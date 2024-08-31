@@ -13,6 +13,5 @@ case class OfficeView(
   desksCount: Int,
   parkingSpotsCount: Int,
   roomsCount: Int,
-  activeReservationsCount: Int,
-  isArchived: Boolean
+  activeReservationsCount: Int
 )

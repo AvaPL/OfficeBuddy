@@ -42,6 +42,7 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
     sql"""
       SELECT   *, 0, 0, 0, 0, 0
       FROM     office
+      WHERE    is_archived = 'no'
       ORDER BY name
       LIMIT    $int4
       OFFSET   $int4
@@ -65,7 +66,7 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
         int4 *: // rooms_count
         int4 // active_reservations_count
     ).map {
-      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: isArchived *: assignedAccountsCount *: desksCount *: parkingSpotsCount *: roomsCount *: activeReservationsCount *: EmptyTuple =>
+      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: _ *: assignedAccountsCount *: desksCount *: parkingSpotsCount *: roomsCount *: activeReservationsCount *: EmptyTuple =>
         val address = AddressView(addressLine1, addressLine2, postalCode, city, country)
         OfficeView(
           id,
@@ -77,8 +78,7 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
           desksCount,
           parkingSpotsCount,
           roomsCount,
-          activeReservationsCount,
-          isArchived
+          activeReservationsCount
         )
     }
 }
