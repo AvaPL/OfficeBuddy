@@ -167,12 +167,14 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       .in(
         query[Int]("limit")
           .description("Maximum number of results to return (pagination)")
-          .example(10) // TODO: Add validation
+          .validate(Validator.min(1))
+          .example(10)
       )
       .in(
         query[Int]("offset")
           .description("Number of results to skip (pagination)")
-          .example(0) // TODO: Add validation
+          .validate(Validator.min(0))
+          .example(0)
       )
       .out(
         jsonBody[ApiOfficeListView]

@@ -141,7 +141,8 @@ object PostgresOfficeRepository {
         varchar *: // address_line_2
         varchar *: // postal_code
         varchar *: // city
-        varchar // country
+        varchar *: // country
+        bool // is_archived
     ).contramap { office =>
       office.id *:
         office.name *:
@@ -151,6 +152,7 @@ object PostgresOfficeRepository {
         office.address.postalCode *:
         office.address.city *:
         office.address.country *:
+        office.isArchived *:
         EmptyTuple
     }
 

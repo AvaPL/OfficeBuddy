@@ -4,6 +4,7 @@ package adapters.http.office
 import adapters.auth.model.PublicKey
 import adapters.http.fixture.SecuredApiEndpointFixture
 import adapters.http.office.model._
+import adapters.http.office.model.view.ApiOfficeListView
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -13,6 +14,7 @@ import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.model.office.view._
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
 import io.circe.parser._
@@ -272,8 +274,131 @@ object OfficeEndpointsSuite
     }
   }
 
-  // TODO: Test view endpoint
-  // TODO: Test negative values for limit/offset and return 400
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called with limit and offset
+      | THEN 200 OK and the list of offices is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val officeListView = OfficeListView(
+      offices = List(
+        anyOfficeView.copy(id = UUID.randomUUID(), name = "Office 1"),
+        anyOfficeView.copy(id = UUID.randomUUID(), name = "Office 2")
+      ),
+      pagination = Pagination(
+        limit = 10,
+        offset = 0,
+        hasMoreResults = false
+      )
+    )
+    whenF(officeViewRepository.listOffices(any, any)) thenReturn officeListView
+
+    val response = sendViewRequest(officeViewRepository, role = User) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiOfficeListView.fromDomain(officeListView).asJson
+    )
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called with limit less than 1
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository, role = User) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "0",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called with negative offset
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository, role = User) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "-1"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called with limit that is not a number
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository, role = User) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "notANumber",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called with offset that is not a number
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository, role = User) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "notANumber"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
 
   private def sendRequest(
     officeService: OfficeService[IO],
@@ -352,5 +477,35 @@ object OfficeEndpointsSuite
     postalCode = Some("12-345"),
     city = Some("Wroclaw"),
     country = Some("Poland")
+  )
+
+  private lazy val anyOfficeView = OfficeView(
+    id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
+    name = "Wroclaw",
+    notes = List("Everyone's favorite", "The funniest one"),
+    address = AddressView(
+      addressLine1 = "Powstancow Slaskich 9",
+      addressLine2 = "1st floor",
+      postalCode = "53-332",
+      city = "Wroclaw",
+      country = "Poland"
+    ),
+    officeManagers = List(
+      OfficeManagerView(
+        id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297"),
+        firstName = "John",
+        lastName = "Doe"
+      ),
+      OfficeManagerView(
+        id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227296"),
+        firstName = "Jane",
+        lastName = "Doe"
+      )
+    ),
+    assignedAccountsCount = 20,
+    desksCount = 10,
+    parkingSpotsCount = 2,
+    roomsCount = 1,
+    activeReservationsCount = 5
   )
 }

@@ -60,10 +60,10 @@ object PostgresOfficeViewRepositoryTest extends IOSuite with PostgresFixture {
       | THEN return an empty list of results
       |""".stripMargin
   ) { (officeRepository, officeViewRepository) =>
-    val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
+    val office = anyOffice
 
     for {
-      _ <- officeRepository.create(office1)
+      _ <- officeRepository.create(office)
       officeListView <- officeViewRepository.listOffices(limit = 1, offset = 1)
     } yield expect.all(
       officeListView.offices.isEmpty,
@@ -71,7 +71,20 @@ object PostgresOfficeViewRepositoryTest extends IOSuite with PostgresFixture {
     )
   }
 
-  // TODO: Test errors for negative limit/offset
+  beforeTest(
+    """
+      |GIVEN one archived office in the database
+      | WHEN listOffices is called with limit 1 and offset 0
+      | THEN return an empty list of results
+      |""".stripMargin
+  ) { (officeRepository, officeViewRepository) =>
+    val archivedOffice = anyOffice.copy(isArchived = true)
+
+    for {
+      _ <- officeRepository.create(archivedOffice)
+      officeListView <- officeViewRepository.listOffices(limit = 1, offset = 0)
+    } yield expect(officeListView.offices.isEmpty)
+  }
 
   private def truncateOfficeTable(session: Resource[IO, Session[IO]]) = {
     val sql: Command[Void] =
