@@ -3,7 +3,7 @@
   <mat-divider></mat-divider>
 </div>
 <div class="office-cards">
-  <mat-card *ngFor="let office of officesPage" appearance="raised">
+  <mat-card *ngFor="let office of offices" appearance="raised">
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>{{ office.name }}</mat-card-title>
@@ -18,24 +18,24 @@
           </div>
           <div class="office-stats-item" matTooltip="Assigned accounts">
             <mat-icon matListItemIcon>supervisor_account</mat-icon>
-            <span matListItemLine>{{ office.assignedAccounts }}</span>
+            <span matListItemLine>{{ office.assignedAccountsCount }}</span>
           </div>
           <div class="office-stats-horizontal">
             <div class="office-stats-item office-stats-item-horizontal" matTooltip="Desks">
               <mat-icon matListItemIcon>table_restaurant</mat-icon>
-              <span matListItemLine>{{ office.desks }}</span>
+              <span matListItemLine>{{ office.desksCount }}</span>
             </div>
             <div class="office-stats-item office-stats-item-horizontal" matTooltip="Parking spots">
               <mat-icon matListItemIcon>local_parking</mat-icon>
-              <span matListItemLine>{{ office.parkingSpots }}</span>
+              <span matListItemLine>{{ office.parkingSpotsCount }}</span>
             </div>
             <div class="office-stats-item office-stats-item-horizontal" matTooltip="Rooms">
               <mat-icon matListItemIcon>meeting_room</mat-icon>
-              <span matListItemLine>{{ office.rooms }}</span>
+              <span matListItemLine>{{ office.roomsCount }}</span>
             </div>
             <div class="office-stats-item office-stats-item-horizontal" matTooltip="Active reservations">
               <mat-icon matListItemIcon>calendar_month</mat-icon>
-              <span matListItemLine>{{ office.activeReservations }}</span>
+              <span matListItemLine>{{ office.activeReservationsCount }}</span>
             </div>
           </div>
         </div>
@@ -74,9 +74,9 @@
     </mat-card-header>
   </mat-card>
   <mat-paginator
-    [length]="offices.length"
-    [pageSize]="pageSize"
-    [pageIndex]="pageIndex"
+    [length]="pagination.offset + pagination.limit + (pagination.hasMoreResults ? 1 : 0)"
+    [pageSize]="pagination.limit"
+    [pageIndex]="pagination.offset / pagination.limit"
     (page)="handlePageEvent($event)"
     hidePageSize>
   </mat-paginator>
