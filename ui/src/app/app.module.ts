@@ -70,7 +70,8 @@ import {
   ChangeAccountRoleDialogComponent
 } from "./component/account/change-account-role-dialog/change-account-role-dialog.component";
 import {CreateAccountDialogComponent} from "./component/account/create-account-dialog/create-account-dialog.component";
-import {HttpClientModule, provideHttpClient, withInterceptorsFromDi} from "@angular/common/http";
+import {provideHttpClient, withInterceptorsFromDi} from "@angular/common/http";
+import {MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule} from "@angular/material/snack-bar";
 
 @NgModule({
   declarations: [
@@ -122,6 +123,7 @@ import {HttpClientModule, provideHttpClient, withInterceptorsFromDi} from "@angu
     MatSelectModule,
     MatSidenavModule,
     MatSlideToggleModule,
+    MatSnackBarModule,
     MatTooltipModule,
     MatToolbarModule,
     ReactiveFormsModule
@@ -142,6 +144,14 @@ import {HttpClientModule, provideHttpClient, withInterceptorsFromDi} from "@angu
     {
       provide: DateAdapter,
       useClass: AppDateAdapter
+    },
+    {
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
+      useValue: {
+        duration: 3000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top'
+      }
     },
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi())

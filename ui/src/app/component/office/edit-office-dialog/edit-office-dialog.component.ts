@@ -2,6 +2,7 @@ import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {FormBuilder} from "@angular/forms";
 import {OfficeService} from "../../../service/office.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 export interface EditOfficeInitialValuesDialogData {
   id: string;
@@ -36,14 +37,16 @@ export class EditOfficeDialogComponent {
     })
   });
   readonly officeService = inject(OfficeService);
+  readonly snackbar = inject(MatSnackBar);
 
   async onSubmit() {
     try {
       const response = await this.officeService.updateOffice(this.initialValues.id, this.form.value);
+      this.snackbar.open(`${this.form.value.name} edited`);
       this.dialogRef.close(response);
     } catch (error) {
-      // TODO: Add toast notification
-      console.error('Error updating office:', error);
+      this.snackbar.open(`Unexpected error occurred when editing ${this.initialValues.name}`, undefined, {panelClass: ['error-snackbar']});
+      console.error(`Error updating office ${this.initialValues.name}:`, error);
     }
   }
 

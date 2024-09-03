@@ -10,6 +10,7 @@ import {
 import {OfficeView} from "../../model/office-view.model";
 import {Pagination} from "../../model/pagination.model";
 import {OfficeService} from "../../service/office.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-office',
@@ -54,25 +55,19 @@ export class OfficeComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(createdOffice => {
       if (createdOffice) {
-        console.log(`Created new office: `, createdOffice);
         this.fetchOffices(this.pagination.limit, 0)
-      } else {
-        console.log(`Cancelled creating new office`);
       }
     });
   }
 
-  editOffice(officeId: string, editOfficeInitialValues: EditOfficeInitialValuesDialogData) {
+  editOffice(editOfficeInitialValues: EditOfficeInitialValuesDialogData) {
     const dialogRef = this.editOfficeDialog.open(EditOfficeDialogComponent, {
       data: editOfficeInitialValues
     })
 
     dialogRef.afterClosed().subscribe(editedOffice => {
       if (editedOffice) {
-        console.log(`Edited office [${officeId}]: `, editedOffice);
         this.fetchOffices(this.pagination.limit, 0)
-      } else {
-        console.log(`Cancelled editing office ${officeId}`);
       }
     });
   }
@@ -82,10 +77,7 @@ export class OfficeComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Deleted office ${officeId}`);
         this.fetchOffices(this.pagination.limit, 0)
-      } else {
-        console.log(`Cancelled deleting office ${officeId}`);
       }
     });
   }
