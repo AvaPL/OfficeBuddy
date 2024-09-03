@@ -2,7 +2,7 @@
   <h1>Offices</h1>
   <mat-divider></mat-divider>
 </div>
-<div class="office-cards">
+<div class="office-cards" #officeCards>
   <mat-card *ngFor="let office of offices" appearance="raised">
     <mat-card-header>
       <mat-card-title-group>
@@ -12,7 +12,7 @@
         <mat-card-subtitle>{{ office.address.postalCode }} {{ office.address.city }}, {{ office.address.country }}
         </mat-card-subtitle>
         <div class="office-stats">
-          <div class="office-stats-item" matTooltip="Office managers">
+          <div *ngIf="office.officeManagers.length" class="office-stats-item" matTooltip="Office managers">
             <mat-icon matListItemIcon>person</mat-icon>
             <span matListItemLine class="office-managers">{{ office.officeManagers.join(", ") }}</span>
           </div>

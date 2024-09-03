@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, ElementRef, inject, OnInit, ViewChild} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {MatDialog} from "@angular/material/dialog";
 import {DeleteOfficeDialogComponent} from "./delete-office-dialog/delete-office-dialog.component";
@@ -10,7 +10,6 @@ import {
 import {OfficeView} from "../../model/office-view.model";
 import {Pagination} from "../../model/pagination.model";
 import {OfficeService} from "../../service/office.service";
-import {ViewportScroller} from "@angular/common";
 
 @Component({
   selector: 'app-office',
@@ -18,6 +17,8 @@ import {ViewportScroller} from "@angular/common";
   styleUrl: './office.component.scss'
 })
 export class OfficeComponent implements OnInit {
+
+  @ViewChild('officeCards') officeCards!: ElementRef;
 
   readonly createOfficeDialog = inject(MatDialog);
   readonly editOfficeDialog = inject(MatDialog);
@@ -30,18 +31,17 @@ export class OfficeComponent implements OnInit {
     hasMoreResults: false
   };
 
-  constructor(private officeService: OfficeService, private viewportScroller: ViewportScroller) {
+  constructor(private officeService: OfficeService) {
   }
 
   ngOnInit() {
     this.fetchOffices(this.pagination.limit, this.pagination.offset);
   }
 
-  fetchOffices(limit: number, offset: number) {
-    this.officeService.getOfficeListView(limit, offset).then(response => {
-      this.offices = response.offices;
-      this.pagination = response.pagination;
-    });
+  async fetchOffices(limit: number, offset: number) {
+    let response = await this.officeService.getOfficeListView(limit, offset);
+    this.offices = response.offices;
+    this.pagination = response.pagination;
   }
 
   editManagers(officeId: string) {
@@ -87,7 +87,8 @@ export class OfficeComponent implements OnInit {
   }
 
   // TODO: Scroll to top on page change
-  handlePageEvent(event: PageEvent) {
-    this.fetchOffices(this.pagination.limit, event.pageIndex * this.pagination.limit)
+  async handlePageEvent(event: PageEvent) {
+    await this.fetchOffices(this.pagination.limit, event.pageIndex * this.pagination.limit)
+    this.officeCards.nativeElement.scrollIntoView(true);
   }
 }
