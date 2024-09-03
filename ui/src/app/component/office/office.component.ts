@@ -42,6 +42,7 @@ export class OfficeComponent implements OnInit {
     let response = await this.officeService.getOfficeListView(limit, offset);
     this.offices = response.offices;
     this.pagination = response.pagination;
+    this.officeCards.nativeElement.scrollIntoView(true);
   }
 
   editManagers(officeId: string) {
@@ -54,6 +55,7 @@ export class OfficeComponent implements OnInit {
     dialogRef.afterClosed().subscribe(createdOffice => {
       if (createdOffice) {
         console.log(`Created new office: `, createdOffice);
+        this.fetchOffices(this.pagination.limit, 0)
       } else {
         console.log(`Cancelled creating new office`);
       }
@@ -68,6 +70,7 @@ export class OfficeComponent implements OnInit {
     dialogRef.afterClosed().subscribe(editedOffice => {
       if (editedOffice) {
         console.log(`Edited office [${officeId}]: `, editedOffice);
+        this.fetchOffices(this.pagination.limit, 0)
       } else {
         console.log(`Cancelled editing office ${officeId}`);
       }
@@ -80,6 +83,7 @@ export class OfficeComponent implements OnInit {
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
         console.log(`Deleted office ${officeId}`);
+        this.fetchOffices(this.pagination.limit, 0)
       } else {
         console.log(`Cancelled deleting office ${officeId}`);
       }
@@ -87,8 +91,7 @@ export class OfficeComponent implements OnInit {
   }
 
   // TODO: Scroll to top on page change
-  async handlePageEvent(event: PageEvent) {
-    await this.fetchOffices(this.pagination.limit, event.pageIndex * this.pagination.limit)
-    this.officeCards.nativeElement.scrollIntoView(true);
+  handlePageEvent(event: PageEvent) {
+    this.fetchOffices(this.pagination.limit, event.pageIndex * this.pagination.limit)
   }
 }
