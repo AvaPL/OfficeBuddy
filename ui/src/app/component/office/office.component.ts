@@ -7,8 +7,8 @@ import {
   EditOfficeDialogComponent,
   EditOfficeInitialValuesDialogData
 } from "./edit-office-dialog/edit-office-dialog.component";
-import {OfficeView} from "../../model/office-view.model";
-import {Pagination} from "../../model/pagination.model";
+import {OfficeView} from "../../service/model/office/office-view.model";
+import {Pagination} from "../../service/model/pagination/pagination.model";
 import {OfficeService} from "../../service/office.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
 

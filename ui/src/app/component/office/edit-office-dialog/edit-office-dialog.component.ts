@@ -3,6 +3,7 @@ import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {FormBuilder} from "@angular/forms";
 import {OfficeService} from "../../../service/office.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {UpdateOffice} from "../../../service/model/office/update-office.model";
 
 export interface EditOfficeInitialValuesDialogData {
   id: string;
@@ -41,13 +42,27 @@ export class EditOfficeDialogComponent {
 
   async onSubmit() {
     try {
-      const response = await this.officeService.updateOffice(this.initialValues.id, this.form.value);
+      const response = await this.officeService.updateOffice(this.initialValues.id, this.formToUpdateOffice());
       this.snackbar.open(`${this.form.value.name} edited`);
       this.dialogRef.close(response);
     } catch (error) {
       this.snackbar.open(`Unexpected error occurred when editing ${this.initialValues.name}`, undefined, {panelClass: ['error-snackbar']});
       console.error(`Error updating office ${this.initialValues.name}:`, error);
     }
+  }
+
+  formToUpdateOffice(): UpdateOffice {
+    return {
+      name: this.form.value.name || null,
+      notes: null,
+      address: {
+        addressLine1: this.form.value.address!.addressLine1 || null,
+        addressLine2: this.form.value.address!.addressLine2 || null,
+        postalCode: this.form.value.address!.postalCode || null,
+        city: this.form.value.address!.city || null,
+        country: this.form.value.address!.country || null
+      }
+    };
   }
 
   onCancel() {

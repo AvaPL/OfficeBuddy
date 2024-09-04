@@ -1,4 +1,4 @@
-import {Pagination} from "./pagination.model";
+import {Pagination} from "../pagination/pagination.model";
 
 export interface AddressView {
   addressLine1: string;

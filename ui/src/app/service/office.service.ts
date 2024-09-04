@@ -2,7 +2,10 @@ import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {KeycloakService} from 'keycloak-angular';
 import {firstValueFrom} from 'rxjs';
-import {OfficeListView} from "../model/office-view.model";
+import {OfficeListView} from "./model/office/office-view.model";
+import {CreateOffice} from "./model/office/create-office.model";
+import {UpdateOffice} from "./model/office/update-office.model";
+import {Office} from "./model/office/office.model";
 
 @Injectable({
   providedIn: 'root'
@@ -21,39 +24,35 @@ export class OfficeService {
       'Authorization': `Bearer ${token}`
     });
 
-    return firstValueFrom(this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=${limit}&offset=${offset}`, { headers }));
+    return firstValueFrom(this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=${limit}&offset=${offset}`, {headers}));
   }
 
-  // TODO: Use concrete types instead of any
-  async createOffice(officeData: any): Promise<any> {
+  async createOffice(office: CreateOffice): Promise<Office> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     });
 
-    // TODO: Extract /api/internal as common base URL
-    return firstValueFrom(this.http.post(this.baseUrl, {...officeData, notes: []}, {headers}));
+    return firstValueFrom(this.http.post<Office>(this.baseUrl, office, {headers}));
   }
 
-  // TODO: Use concrete types instead of any
-  async updateOffice(officeId: string, officeData: any): Promise<any> {
+  async updateOffice(officeId: string, update: UpdateOffice): Promise<Office> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     });
 
-    return firstValueFrom(this.http.patch(`${this.baseUrl}/${officeId}`, officeData, {headers}));
+    return firstValueFrom(this.http.patch<Office>(`${this.baseUrl}/${officeId}`, update, {headers}));
   }
 
-  // TODO: Use concrete types instead of any
-  async archiveOffice(officeId: string): Promise<any> {
+  async archiveOffice(officeId: string): Promise<void> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
 
-    return firstValueFrom(this.http.delete(`${this.baseUrl}/${officeId}`, {headers}));
+    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${officeId}`, {headers}));
   }
 }
