@@ -1,0 +1,20 @@
+<h2 mat-dialog-title class="title">Assign user to {{ data.officeName }}</h2>
+<mat-dialog-content>
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>User</mat-label>
+    <input type="text"
+           placeholder="Start typing..."
+           matInput
+           [formControl]="accountControl"
+           [matAutocomplete]="auto">
+    <mat-autocomplete #auto="matAutocomplete">
+      @for (account of filteredAccounts | async; track account) {
+        <mat-option [value]="account">{{ account }}</mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Back</button>
+  <button mat-button color="primary" (click)="onAssign()" cdkFocusInitial>Assign</button>
+</mat-dialog-actions>

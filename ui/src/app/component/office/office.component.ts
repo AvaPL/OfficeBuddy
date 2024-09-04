@@ -10,7 +10,7 @@ import {
 import {OfficeView} from "../../service/model/office/office-view.model";
 import {Pagination} from "../../service/model/pagination/pagination.model";
 import {OfficeService} from "../../service/office.service";
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {AssignUserDialogComponent} from "./assign-user-dialog/assign-user-dialog.component";
 
 @Component({
   selector: 'app-office',
@@ -24,6 +24,7 @@ export class OfficeComponent implements OnInit {
   readonly createOfficeDialog = inject(MatDialog);
   readonly editOfficeDialog = inject(MatDialog);
   readonly deleteOfficeDialog = inject(MatDialog);
+  readonly assignUserDialog = inject(MatDialog);
 
   offices: OfficeView[] = [];
   pagination: Pagination = {
@@ -44,6 +45,18 @@ export class OfficeComponent implements OnInit {
     this.offices = response.offices;
     this.pagination = response.pagination;
     this.officeCards.nativeElement.scrollIntoView(true);
+  }
+
+  assignUser(officeId: string, officeName: string) {
+    const dialogRef = this.assignUserDialog.open(AssignUserDialogComponent, {data: {officeId, officeName}});
+
+    dialogRef.afterClosed().subscribe(assignedUser => {
+      if (assignedUser) {
+        console.log(`Assigning ${assignedUser} to office ${officeId}`);
+      } else {
+        console.log(`Assigning user to office cancelled`);
+      }
+    });
   }
 
   editManagers(officeId: string) {
@@ -82,7 +95,6 @@ export class OfficeComponent implements OnInit {
     });
   }
 
-  // TODO: Scroll to top on page change
   handlePageEvent(event: PageEvent) {
     this.fetchOffices(this.pagination.limit, event.pageIndex * this.pagination.limit)
   }

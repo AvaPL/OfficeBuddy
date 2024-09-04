@@ -72,12 +72,14 @@ import {
 import {CreateAccountDialogComponent} from "./component/account/create-account-dialog/create-account-dialog.component";
 import {provideHttpClient, withInterceptorsFromDi} from "@angular/common/http";
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule} from "@angular/material/snack-bar";
+import {AssignUserDialogComponent} from "./component/office/assign-user-dialog/assign-user-dialog.component";
 
 @NgModule({
   declarations: [
     AccountComponent,
     AccountFilterDialogComponent,
     AppComponent,
+    AssignUserDialogComponent,
     ChangeAccountRoleDialogComponent,
     CreateAccountDialogComponent,
     CreateDeskDialogComponent,

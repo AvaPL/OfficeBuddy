@@ -1,0 +1,22 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  mat-form-field {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  width: min(450px, 80vw);
+}
+
+.mat-mdc-dialog-content {
+  padding-bottom: 8px;
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
