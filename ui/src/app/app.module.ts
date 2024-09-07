@@ -73,6 +73,7 @@ import {CreateAccountDialogComponent} from "./component/account/create-account-d
 import {provideHttpClient, withInterceptorsFromDi} from "@angular/common/http";
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule} from "@angular/material/snack-bar";
 import {AssignUserDialogComponent} from "./component/office/assign-user-dialog/assign-user-dialog.component";
+import {EditManagersDialogComponent} from "./component/office/edit-managers-dialog/edit-managers-dialog.component";
 
 @NgModule({
   declarations: [
@@ -95,6 +96,7 @@ import {AssignUserDialogComponent} from "./component/office/assign-user-dialog/a
     DeskReservationViewComponent,
     DeskReservationConfirmDialogComponent,
     EditDeskDialogComponent,
+    EditManagersDialogComponent,
     EditOfficeDialogComponent,
     NavbarComponent,
     OfficeComponent,

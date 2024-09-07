@@ -19,14 +19,14 @@ export class AssignUserDialogComponent {
   readonly data = inject<DeleteOfficeDialogData>(MAT_DIALOG_DATA);
 
   accountControl = new FormControl('');
-  accounts: any[] = ['John Doe', 'Jane Doe', 'Jane Smith'];
+  accounts: any[] = ['John Doe (john.doe@example.com)', 'Jane Doe (jane.doe@example.com)', 'Jane Smith (js@mail.com)'];
   filteredAccounts = this.accountControl.valueChanges.pipe(
     startWith(''),
     map(value => this.filterAccounts(value || '')),
   );
 
   private filterAccounts(value: string): string[] {
-    if (value.length < 1)
+    if (value.length < 2)
       return []
     else {
       const filterValue = value.toLowerCase();

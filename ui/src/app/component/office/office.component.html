@@ -61,7 +61,7 @@
             <mat-icon>person_add</mat-icon>
             <span>Assign user</span>
           </button>
-          <button mat-menu-item (click)="editManagers(office.id)">
+          <button mat-menu-item (click)="editManagers(office.id, office.name, office.officeManagers)">
             <mat-icon>manage_accounts</mat-icon>
             <span>Edit managers</span>
           </button>

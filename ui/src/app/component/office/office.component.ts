@@ -7,10 +7,11 @@ import {
   EditOfficeDialogComponent,
   EditOfficeInitialValuesDialogData
 } from "./edit-office-dialog/edit-office-dialog.component";
-import {OfficeView} from "../../service/model/office/office-view.model";
+import {OfficeManagerView, OfficeView} from "../../service/model/office/office-view.model";
 import {Pagination} from "../../service/model/pagination/pagination.model";
 import {OfficeService} from "../../service/office.service";
 import {AssignUserDialogComponent} from "./assign-user-dialog/assign-user-dialog.component";
+import {EditManagersDialogComponent} from "./edit-managers-dialog/edit-managers-dialog.component";
 
 @Component({
   selector: 'app-office',
@@ -25,6 +26,7 @@ export class OfficeComponent implements OnInit {
   readonly editOfficeDialog = inject(MatDialog);
   readonly deleteOfficeDialog = inject(MatDialog);
   readonly assignUserDialog = inject(MatDialog);
+  readonly editManagersDialog = inject(MatDialog);
 
   offices: OfficeView[] = [];
   pagination: Pagination = {
@@ -59,8 +61,21 @@ export class OfficeComponent implements OnInit {
     });
   }
 
-  editManagers(officeId: string) {
-    console.log(`Editing office managers of office ${officeId}`);
+  editManagers(officeId: string, officeName: string, officeManagers: OfficeManagerView[]) {
+    const dialogRef = this.editManagersDialog.open(EditManagersDialogComponent, {
+      data: {
+        officeName: officeName,
+        currentManagers: officeManagers.map(manager => `${manager.firstName} ${manager.lastName} (${manager.email})`)
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(newManagers => {
+        if (newManagers)
+          console.log(`New managers for office ${officeId}: ${newManagers}`);
+        else
+          console.log(`Editing managers cancelled`);
+      }
+    );
   }
 
   createOffice() {
