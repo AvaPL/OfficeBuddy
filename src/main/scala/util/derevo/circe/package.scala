@@ -19,4 +19,14 @@ package object circe {
   object circeDecoder extends Derivation[Decoder] {
     def instance[T]: Decoder[T] = macro Derevo.delegate[Decoder, T]
   }
+
+  @delegating("io.circe.generic.extras.semiauto.deriveConfiguredEncoder")
+  object circeConfiguredEncoder extends Derivation[Encoder] {
+    def instance[T]: Encoder[T] = macro Derevo.delegate[Encoder, T]
+  }
+
+  @delegating("io.circe.generic.extras.semiauto.deriveConfiguredDecoder")
+  object circeConfiguredDecoder extends Derivation[Decoder] {
+    def instance[T]: Decoder[T] = macro Derevo.delegate[Decoder, T]
+  }
 }

@@ -3,14 +3,18 @@ package adapters.http.account
 
 import derevo.derive
 import domain.model.account._
+import io.circe.generic.extras.{Configuration => CirceConfiguration}
 import io.scalaland.chimney.dsl._
 import java.util.UUID
 import sttp.tapir.Schema.annotations.encodedName
+import util.derevo.circe.circeConfiguredDecoder
+import util.derevo.circe.circeConfiguredEncoder
 import util.derevo.circe.circeDecoder
 import util.derevo.circe.circeEncoder
+import util.derevo.tapir.tapirOneOfWrappedSchema
 import util.derevo.tapir.tapirSchema
 
-@derive(circeEncoder, circeDecoder, tapirSchema)
+@derive(circeConfiguredEncoder, circeConfiguredDecoder, tapirOneOfWrappedSchema)
 sealed trait ApiAccount {
 
   lazy val toDomain: Account =
@@ -29,9 +33,15 @@ object ApiAccount {
       case officeManager: OfficeManagerAccount => officeManager.transformInto[ApiOfficeManagerAccount]
       case superAdmin: SuperAdminAccount       => superAdmin.transformInto[ApiSuperAdminAccount]
     }
+
+  implicit lazy val circeConfiguration: CirceConfiguration =
+    CirceConfiguration.default.copy(
+      transformConstructorNames = _.stripPrefix("Api").stripSuffix("Account")
+    )
 }
 
-@encodedName("User account")
+@derive(tapirSchema)
+@encodedName("User")
 case class ApiUserAccount(
   id: UUID,
   firstName: String,
@@ -43,7 +53,8 @@ case class ApiUserAccount(
   assignedOfficeId: Option[UUID]
 ) extends ApiAccount
 
-@encodedName("Office manager account")
+@derive(tapirSchema)
+@encodedName("OfficeManager")
 case class ApiOfficeManagerAccount(
   id: UUID,
   firstName: String,
@@ -56,7 +67,8 @@ case class ApiOfficeManagerAccount(
   managedOfficeIds: List[UUID]
 ) extends ApiAccount
 
-@encodedName("Super admin account")
+@derive(tapirSchema)
+@encodedName("SuperAdmin")
 case class ApiSuperAdminAccount(
   id: UUID,
   firstName: String,

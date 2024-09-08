@@ -3,6 +3,8 @@ ThisBuild / scalaVersion := "2.13.11"
 
 val catsEffectVersion = "3.5.0"
 val chimneyVersion = "0.7.5"
+val circeVersion = "0.14.7"
+val circeGenericExtrasVersion = "0.14.4"
 val derevoVersion = "0.13.0"
 val enumeratumVersion = "1.7.2"
 val flywayVersion = "9.20.0"
@@ -32,6 +34,10 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "io.scalaland" %% "chimney" % chimneyVersion,
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "io.circe" %% "circe-generic-extras" % circeGenericExtrasVersion,
       "tf.tofu" %% "derevo-core" % derevoVersion,
       "com.beachape" %% "enumeratum" % enumeratumVersion,
       "com.beachape" %% "enumeratum-circe" % enumeratumVersion,

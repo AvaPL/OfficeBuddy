@@ -13,4 +13,9 @@ package object tapir {
   object tapirSchema extends Derivation[Schema] {
     def instance[T]: Schema[T] = macro Derevo.delegate[Schema, T]
   }
+
+  @delegating("sttp.tapir.Schema.oneOfWrapped")
+  object tapirOneOfWrappedSchema extends Derivation[Schema] {
+    def instance[T]: Schema[T] = macro Derevo.delegate[Schema, T]
+  }
 }
