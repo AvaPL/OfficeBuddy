@@ -36,7 +36,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       assignOfficeEndpoint ::
       unassignOfficeEndpoint ::
       updateManagedOfficesEndpoint ::
-      updateRolesEndpoint ::
+      updateRoleEndpoint ::
       archiveAccountEndpoint ::
       Nil
 
@@ -205,11 +205,11 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         case AccountNotFound(accountId) => ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
       }
 
-  private lazy val updateRolesEndpoint =
+  private lazy val updateRoleEndpoint =
     securedEndpoint(requiredRole = SuperAdmin).put
-      .summary("Update account roles")
+      .summary("Update account role")
       .description(
-        """Updates account roles. The account can be promoted or demoted depending on the roles provided.
+        """Updates account role. The account can be promoted or demoted depending on the role provided.
           |
           |Required role: super admin
           |""".stripMargin
@@ -217,13 +217,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       .in(path[UUID]("accountId") / "role" / path[ApiRole]("role"))
       .out(
         statusCode(StatusCode.NoContent)
-          .description("Roles updated")
-      )
-      .errorOutVariantPrepend(
-        oneOfVariant(
-          statusCode(StatusCode.BadRequest) and jsonBody[ApiError.BadRequest]
-            .description("Roles list cannot be empty")
-        )
+          .description("Role updated")
       )
       .errorOutVariantPrepend(
         oneOfVariant(
