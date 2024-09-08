@@ -1,7 +1,6 @@
 package io.github.avapl
 package adapters.facade.repository.account
 
-import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
 import adapters.keycloak.repository.account.KeycloakRole
 import adapters.keycloak.repository.account.KeycloakUser
 import adapters.keycloak.repository.account.KeycloakUserRepository
@@ -23,106 +22,34 @@ class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
   postgresAccountRepository: PostgresAccountRepository[F]
 ) extends AccountRepository[F] {
 
-  override def createUser(user: UserAccount): F[UserAccount] =
+  override def create(account: Account): F[Account] =
     for {
-      _ <- postgresAccountRepository.createUser(PostgresUserAccount.fromUserAccount(user))
-      _ <- keycloakUserRepository.createUser(KeycloakUser.fromUserAccount(user))
-    } yield user
+      _ <- postgresAccountRepository.create(account)
+      _ <- keycloakUserRepository.createUser(KeycloakUser.fromDomainAccount(account))
+    } yield account
 
-  override def readUser(userId: UUID): F[UserAccount] =
+  override def read(accountId: UUID): F[Account] =
     for {
-      postgresUser <- postgresAccountRepository.readUser(userId)
-      keycloakUser <- keycloakUserRepository.findUserByEmail(postgresUser.email)
-    } yield toUserAccount(postgresUser, keycloakUser)
+      account <- postgresAccountRepository.read(accountId)
+      _ <- keycloakUserRepository.findUserByEmail(account.email)
+    } yield account
 
-  private def toUserAccount(postgresUser: PostgresUserAccount, keycloakUser: KeycloakUser) =
-    UserAccount(
-      id = postgresUser.id,
-      firstName = keycloakUser.firstName,
-      lastName = keycloakUser.lastName,
-      email = postgresUser.email,
-      isArchived = postgresUser.isArchived,
-      assignedOfficeId = postgresUser.assignedOfficeId
-    )
+  override def updateAssignedOffice(accountId: UUID, officeId: Option[UUID]): F[Account] =
+    postgresAccountRepository.updateAssignedOffice(accountId, officeId)
 
-  override def updateUserAssignedOffice(userId: UUID, officeId: Option[UUID]): F[UserAccount] =
-    for {
-      postgresUser <- postgresAccountRepository.updateUserAssignedOffice(userId, officeId)
-      keycloakUser <- keycloakUserRepository.findUserByEmail(postgresUser.email)
-    } yield toUserAccount(postgresUser, keycloakUser)
-
-  override def createOfficeManager(officeManager: OfficeManagerAccount): F[OfficeManagerAccount] =
-    for {
-      _ <- postgresAccountRepository.createOfficeManager(
-        PostgresOfficeManagerAccount.fromOfficeManagerAccount(officeManager)
-      )
-      _ <- keycloakUserRepository.createUser(KeycloakUser.fromOfficeManagerAccount(officeManager))
-    } yield officeManager
-
-  override def readOfficeManager(officeManagerId: UUID): F[OfficeManagerAccount] =
-    for {
-      postgresOfficeManager <- postgresAccountRepository.readOfficeManager(officeManagerId)
-      keycloakUser <- keycloakUserRepository.findUserByEmail(postgresOfficeManager.email)
-    } yield toOfficeManagerAccount(postgresOfficeManager, keycloakUser)
-
-  private def toOfficeManagerAccount(postgresOfficeManager: PostgresOfficeManagerAccount, keycloakUser: KeycloakUser) =
-    OfficeManagerAccount(
-      id = postgresOfficeManager.id,
-      firstName = keycloakUser.firstName,
-      lastName = keycloakUser.lastName,
-      email = postgresOfficeManager.email,
-      isArchived = postgresOfficeManager.isArchived,
-      managedOfficeIds = keycloakUser.attributes.collect {
-        case ManagedOfficeIds(ids) => ids
-      }.flatten
-    )
-
-  override def updateOfficeManagerManagedOffices(
-    officeManagerId: UUID,
-    officeIds: List[UUID]
-  ): F[OfficeManagerAccount] =
-    for {
-      postgresOfficeManager <- postgresAccountRepository.readOfficeManager(officeManagerId)
-      currentAttributes <- keycloakUserRepository.getUserAttributes(postgresOfficeManager.email)
-      updatedAttributes = ManagedOfficeIds(officeIds) :: currentAttributes.filterNot(_.isInstanceOf[ManagedOfficeIds])
-      keycloakUser <- keycloakUserRepository.updateUserAttributes(postgresOfficeManager.email, updatedAttributes)
-    } yield toOfficeManagerAccount(postgresOfficeManager, keycloakUser)
-
-  override def createSuperAdmin(superAdmin: SuperAdminAccount): F[SuperAdminAccount] =
-    for {
-      _ <- postgresAccountRepository.createSuperAdmin(PostgresSuperAdminAccount.fromSuperAdminAccount(superAdmin))
-      _ <- keycloakUserRepository.createUser(KeycloakUser.fromSuperAdminAccount(superAdmin))
-    } yield superAdmin
-
-  override def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount] =
-    for {
-      postgresSuperAdmin <- postgresAccountRepository.readSuperAdmin(superAdminId)
-      keycloakUser <- keycloakUserRepository.findUserByEmail(postgresSuperAdmin.email)
-    } yield toSuperAdminAccount(postgresSuperAdmin, keycloakUser)
-
-  private def toSuperAdminAccount(postgresSuperAdmin: PostgresSuperAdminAccount, keycloakUser: KeycloakUser) =
-    SuperAdminAccount(
-      id = postgresSuperAdmin.id,
-      firstName = keycloakUser.firstName,
-      lastName = keycloakUser.lastName,
-      email = postgresSuperAdmin.email,
-      isArchived = postgresSuperAdmin.isArchived
-    )
+  override def updateManagedOffices(
+    accountId: UUID,
+    managedOfficeIds: List[UUID]
+  ): F[Account] =
+    postgresAccountRepository.updateManagedOffices(accountId, managedOfficeIds)
 
   // TODO: Logout the user after the roles are updated
-  override def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[Account] =
+  override def updateRole(accountId: UUID, role: Role): F[Account] =
     for {
-      postgresAccount <- postgresAccountRepository.updateRoles(accountId, roles)
-      keycloakRoles = roles.map(KeycloakRole.fromDomain).toList
-      keycloakUser <- keycloakUserRepository.updateUserRoles(postgresAccount.email, keycloakRoles)
-    } yield toAccount(postgresAccount, keycloakUser)
-
-  private def toAccount(account: PostgresAccount, keycloakUser: KeycloakUser) =
-    account match {
-      case user: PostgresUserAccount                   => toUserAccount(user, keycloakUser)
-      case officeManager: PostgresOfficeManagerAccount => toOfficeManagerAccount(officeManager, keycloakUser)
-      case superAdmin: PostgresSuperAdminAccount       => toSuperAdminAccount(superAdmin, keycloakUser)
-    }
+      account <- postgresAccountRepository.updateRole(accountId, role)
+      keycloakRole = KeycloakRole.fromDomain(role)
+      _ <- keycloakUserRepository.updateUserRoles(account.email, List(keycloakRole))
+    } yield account
 
   override def archive(accountId: UUID): F[Unit] = {
     for {

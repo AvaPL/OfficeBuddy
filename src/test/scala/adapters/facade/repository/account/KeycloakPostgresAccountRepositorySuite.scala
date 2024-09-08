@@ -44,14 +44,14 @@ object KeycloakPostgresAccountRepositorySuite
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
     whenF(keycloakUserRepository.createUser(any)) thenReturn keycloakUser
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
-    whenF(postgresAccountRepository.createUser(any)) thenReturn postgresUserAccount
+    whenF(postgresAccountRepository.create(any)) thenReturn postgresUserAccount
     val keycloakPostgresAccountRepository =
       new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
 
     for {
       createdUser <- keycloakPostgresAccountRepository.createUser(user)
     } yield {
-      verify(postgresAccountRepository, only).createUser(eqTo(postgresUserAccount))
+      verify(postgresAccountRepository, only).create(eqTo(postgresUserAccount))
       verify(keycloakUserRepository, only).createUser(eqTo(keycloakUser))
       expect(createdUser == user)
     }
@@ -70,7 +70,7 @@ object KeycloakPostgresAccountRepositorySuite
     val keycloakUser = KeycloakUser.fromUserAccount(expectedUser)
 
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
-    whenF(postgresAccountRepository.readUser(any)) thenReturn postgresUserAccount
+    whenF(postgresAccountRepository.read(any)) thenReturn postgresUserAccount
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
     whenF(keycloakUserRepository.findUserByEmail(any)) thenReturn keycloakUser
     val keycloakPostgresAccountRepository =
@@ -79,7 +79,7 @@ object KeycloakPostgresAccountRepositorySuite
     for {
       readUser <- keycloakPostgresAccountRepository.readUser(userId)
     } yield {
-      verify(postgresAccountRepository, only).readUser(eqTo(userId))
+      verify(postgresAccountRepository, only).read(eqTo(userId))
       verify(keycloakUserRepository, only).findUserByEmail(eqTo(postgresUserAccount.email))
       expect(readUser == expectedUser)
     }
@@ -99,7 +99,7 @@ object KeycloakPostgresAccountRepositorySuite
     val keycloakUser = KeycloakUser.fromUserAccount(expectedUpdatedUser)
 
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
-    whenF(postgresAccountRepository.updateUserAssignedOffice(any, any)) thenReturn postgresUserAccount
+    whenF(postgresAccountRepository.updateAssignedOffice(any, any)) thenReturn postgresUserAccount
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
     whenF(keycloakUserRepository.findUserByEmail(any)) thenReturn keycloakUser
     val keycloakPostgresAccountRepository =
@@ -108,7 +108,7 @@ object KeycloakPostgresAccountRepositorySuite
     for {
       updatedUser <- keycloakPostgresAccountRepository.updateUserAssignedOffice(userId, assignedOfficeId)
     } yield {
-      verify(postgresAccountRepository, only).updateUserAssignedOffice(eqTo(userId), eqTo(assignedOfficeId))
+      verify(postgresAccountRepository, only).updateAssignedOffice(eqTo(userId), eqTo(assignedOfficeId))
       verify(keycloakUserRepository, only).findUserByEmail(eqTo(postgresUserAccount.email))
       expect(updatedUser == expectedUpdatedUser)
     }

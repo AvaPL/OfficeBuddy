@@ -1,6 +1,9 @@
 package io.github.avapl
 package domain.model.account
 
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import java.util.UUID
 
 sealed trait Account {
@@ -11,6 +14,10 @@ sealed trait Account {
   def email: String
   //
   def isArchived: Boolean
+  //
+  def role: Role
+  //
+  def assignedOfficeId: Option[UUID]
 }
 
 case class UserAccount(
@@ -22,24 +29,8 @@ case class UserAccount(
   isArchived: Boolean = false,
   //
   assignedOfficeId: Option[UUID]
-) extends Account
-
-case class CreateUserAccount(
-  firstName: String,
-  lastName: String,
-  email: String,
-  //
-  assignedOfficeId: Option[UUID]
-) {
-
-  def toUserAccount(userId: UUID): UserAccount =
-    UserAccount(
-      id = userId,
-      firstName = firstName,
-      lastName = lastName,
-      email = email,
-      assignedOfficeId = assignedOfficeId
-    )
+) extends Account {
+  override val role: Role = User
 }
 
 case class OfficeManagerAccount(
@@ -50,25 +41,10 @@ case class OfficeManagerAccount(
   //
   isArchived: Boolean = false,
   //
-  managedOfficeIds: List[UUID]
-) extends Account
-
-case class CreateOfficeManagerAccount(
-  firstName: String,
-  lastName: String,
-  email: String,
-  //
-  managedOfficeIds: List[UUID]
-) {
-
-  def toOfficeManagerAccount(officeManagerId: UUID): OfficeManagerAccount =
-    OfficeManagerAccount(
-      id = officeManagerId,
-      firstName = firstName,
-      lastName = lastName,
-      email = email,
-      managedOfficeIds = managedOfficeIds
-    )
+  assignedOfficeId: Option[UUID] = None,
+  managedOfficeIds: List[UUID] = Nil
+) extends Account {
+  override val role: Role = OfficeManager
 }
 
 case class SuperAdminAccount(
@@ -77,20 +53,51 @@ case class SuperAdminAccount(
   lastName: String,
   email: String,
   //
-  isArchived: Boolean = false
-) extends Account
+  isArchived: Boolean = false,
+  //
+  assignedOfficeId: Option[UUID] = None,
+  managedOfficeIds: List[UUID] = Nil
+) extends Account {
+  override val role: Role = SuperAdmin
+}
 
-case class CreateSuperAdminAccount(
+case class CreateAccount(
+  role: Role,
   firstName: String,
   lastName: String,
-  email: String
+  email: String,
+  //
+  assignedOfficeId: Option[UUID],
+  managedOfficeIds: List[UUID]
 ) {
 
-  def toSuperAdminAccount(superAdminId: UUID): SuperAdminAccount =
-    SuperAdminAccount(
-      id = superAdminId,
-      firstName = firstName,
-      lastName = lastName,
-      email = email
-    )
+  def toDomain(accountId: UUID): Account =
+    role match {
+      case User =>
+        UserAccount(
+          id = accountId,
+          firstName = firstName,
+          lastName = lastName,
+          email = email,
+          assignedOfficeId = assignedOfficeId
+        )
+      case OfficeManager =>
+        OfficeManagerAccount(
+          id = accountId,
+          firstName = firstName,
+          lastName = lastName,
+          email = email,
+          assignedOfficeId = assignedOfficeId,
+          managedOfficeIds = managedOfficeIds
+        )
+      case SuperAdmin =>
+        SuperAdminAccount(
+          id = accountId,
+          firstName = firstName,
+          lastName = lastName,
+          email = email,
+          assignedOfficeId = assignedOfficeId,
+          managedOfficeIds = managedOfficeIds
+        )
+    }
 }

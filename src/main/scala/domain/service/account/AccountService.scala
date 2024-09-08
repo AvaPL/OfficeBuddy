@@ -2,16 +2,10 @@ package io.github.avapl
 package domain.service.account
 
 import cats.FlatMap
-import cats.data.NonEmptyList
 import cats.syntax.all._
 import domain.model.account.Account
-import domain.model.account.CreateOfficeManagerAccount
-import domain.model.account.CreateSuperAdminAccount
-import domain.model.account.CreateUserAccount
-import domain.model.account.OfficeManagerAccount
+import domain.model.account.CreateAccount
 import domain.model.account.Role
-import domain.model.account.SuperAdminAccount
-import domain.model.account.UserAccount
 import domain.repository.account.AccountRepository
 import java.util.UUID
 import util.FUUID
@@ -20,44 +14,26 @@ class AccountService[F[_]: FlatMap: FUUID](
   accountRepository: AccountRepository[F]
 ) {
 
-  def createUser(createUser: CreateUserAccount): F[UserAccount] =
+  def create(createAccount: CreateAccount): F[Account] =
     for {
-      userId <- FUUID[F].randomUUID()
-      userAccount = createUser.toUserAccount(userId)
-      createdUserAccount <- accountRepository.createUser(userAccount)
-    } yield createdUserAccount
+      accountId <- FUUID[F].randomUUID()
+      account = createAccount.toDomain(accountId)
+      createdAccount <- accountRepository.create(account)
+    } yield createdAccount
 
-  def readUser(userId: UUID): F[UserAccount] =
-    accountRepository.readUser(userId)
+  def read(accountId: UUID): F[Account] =
+    accountRepository.read(accountId)
 
-  def updateUserAssignedOffice(userId: UUID, officeId: Option[UUID]): F[UserAccount] =
-    accountRepository.updateUserAssignedOffice(userId, officeId)
+  def updateAssignedOffice(accountId: UUID, officeId: Option[UUID]): F[Account] =
+    accountRepository.updateAssignedOffice(accountId, officeId)
 
-  def createOfficeManager(createOfficeManager: CreateOfficeManagerAccount): F[OfficeManagerAccount] =
-    for {
-      officeManagerId <- FUUID[F].randomUUID()
-      officeManagerAccount = createOfficeManager.toOfficeManagerAccount(officeManagerId)
-      createdOfficeManagerAccount <- accountRepository.createOfficeManager(officeManagerAccount)
-    } yield createdOfficeManagerAccount
+  def updateManagedOffices(accountId: UUID, officeIds: List[UUID]): F[Account] =
+    // TODO: Validate that the account is either an office manager or a super admin
+    accountRepository.updateManagedOffices(accountId, officeIds)
 
-  def readOfficeManager(officeManagerId: UUID): F[OfficeManagerAccount] =
-    accountRepository.readOfficeManager(officeManagerId)
-
-  def updateOfficeManagerManagedOffices(officeManagerId: UUID, officeIds: List[UUID]): F[OfficeManagerAccount] =
-    accountRepository.updateOfficeManagerManagedOffices(officeManagerId, officeIds)
-
-  def createSuperAdmin(createSuperAdmin: CreateSuperAdminAccount): F[SuperAdminAccount] =
-    for {
-      superAdminId <- FUUID[F].randomUUID()
-      superAdminAccount = createSuperAdmin.toSuperAdminAccount(superAdminId)
-      createdSuperAdminAccount <- accountRepository.createSuperAdmin(superAdminAccount)
-    } yield createdSuperAdminAccount
-
-  def readSuperAdmin(superAdminId: UUID): F[SuperAdminAccount] =
-    accountRepository.readSuperAdmin(superAdminId)
-
-  def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[Account] =
-    accountRepository.updateRoles(accountId, roles)
+  def updateRole(accountId: UUID, role: Role): F[Account] =
+    // TODO: Remove managed offices if the role is a user
+    accountRepository.updateRole(accountId, role)
 
   def archive(accountId: UUID): F[Unit] =
     accountRepository.archive(accountId)

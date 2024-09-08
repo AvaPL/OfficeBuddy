@@ -6,10 +6,8 @@ import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
 import cats.MonadThrow
-import cats.data.NonEmptyList
 import cats.effect.Clock
 import cats.syntax.all._
-import domain.model.account.Account
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.SuperAdmin
@@ -33,32 +31,28 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
   override protected def apiEndpointName: String = "account"
 
   val endpoints: List[ServerEndpoint[Any, F]] =
-    createUserEndpoint ::
-      readUserEndpoint ::
-      assignOfficeToUserEndpoint ::
-      unassignUserOfficeEndpoint ::
-      createOfficeManagerEndpoint ::
-      readOfficeManagerEndpoint ::
-      updateOfficeManagerManagedOfficesEndpoint ::
-      createSuperAdminEndpoint ::
-      readSuperAdminEndpoint ::
+    createAccountEndpoint ::
+      readAccountEndpoint ::
+      assignOfficeEndpoint ::
+      unassignOfficeEndpoint ::
+      updateManagedOfficesEndpoint ::
       updateRolesEndpoint ::
       archiveAccountEndpoint ::
       Nil
 
-  private lazy val createUserEndpoint =
+  // TODO: Office managers and super admins should be creatable only by super admins
+  private lazy val createAccountEndpoint =
     securedEndpoint(requiredRole = OfficeManager).post
-      .summary("Create a user")
+      .summary("Create an account")
       .description("Required role: office manager")
-      .in("user")
       .in(
-        jsonBody[ApiCreateUserAccount]
-          .example(apiCreateUserAccountExample)
+        jsonBody[ApiCreateAccount]
+          .example(apiCreateAccountExample)
       )
       .out(
-        statusCode(StatusCode.Created) and jsonBody[ApiUserAccount]
-          .description("User created")
-          .example(apiUserAccountExample)
+        statusCode(StatusCode.Created) and jsonBody[ApiAccount]
+          .description("Account created")
+          .example(apiOfficeManagerAccountExample)
       )
       .errorOutVariantPrepend(
         oneOfVariant(
@@ -72,56 +66,57 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
             .description("Account with the given email already exists")
         )
       )
-      .serverLogic(_ => createUser)
+      .serverLogic(_ => createAccount)
 
-  private def createUser(apiCreateUser: ApiCreateUserAccount) =
+  private def createAccount(apiCreateAccount: ApiCreateAccount) =
     accountService
-      .createUser(apiCreateUser.toDomain)
-      .map(ApiUserAccount.fromDomain)
+      .create(apiCreateAccount.toDomain)
+      .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
+        // TODO: Recover on non-existent managed office IDs
         case OfficeNotFound(officeId) =>
           ApiError.BadRequest(s"Office [id: $officeId] was not found").asLeft
         case DuplicateAccountEmail(email) =>
           ApiError.Conflict(s"Account with email '$email' is already defined").asLeft
       }
 
-  private lazy val readUserEndpoint =
+  private lazy val readAccountEndpoint =
     securedEndpoint(requiredRole = User).get
-      .summary("Find a user by ID")
+      .summary("Find a account by ID")
       .description("Required role: user")
-      .in("user" / path[UUID]("userId"))
+      .in(path[UUID]("accountId"))
       .out(
-        jsonBody[ApiUserAccount]
-          .description("Found user")
-          .example(apiUserAccountExample)
+        jsonBody[ApiAccount]
+          .description("Found account")
+          .example(apiOfficeManagerAccountExample)
       )
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
-            .description("User with the given ID was not found")
+            .description("Account with the given ID was not found")
         )
       )
-      .serverLogic(_ => readUser)
+      .serverLogic(_ => readAccount)
 
-  private def readUser(userId: UUID) =
+  private def readAccount(accountId: UUID) =
     accountService
-      .readUser(userId)
-      .map(ApiUserAccount.fromDomain)
+      .read(accountId)
+      .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
-        case AccountNotFound(accountId) => ApiError.NotFound(s"User [id: $accountId] was not found").asLeft
+        case AccountNotFound(accountId) => ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
       }
 
-  private lazy val assignOfficeToUserEndpoint =
+  private lazy val assignOfficeEndpoint =
     securedEndpoint(requiredRole = OfficeManager).put
-      .summary("Assign office to a user")
+      .summary("Assign office to an account")
       .description("Required role: office manager")
-      .in("user" / path[UUID]("userId") / "assigned-office-id" / path[UUID]("assignedOfficeId"))
+      .in(path[UUID]("accountId") / "assigned-office-id" / path[UUID]("assignedOfficeId"))
       .out(
-        jsonBody[ApiUserAccount]
-          .description("Updated user")
-          .example(apiUserAccountExample)
+        jsonBody[ApiAccount]
+          .description("Updated account")
+          .example(apiOfficeManagerAccountExample)
       )
       .errorOutVariantPrepend(
         oneOfVariant(
@@ -132,201 +127,82 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
-            .description("User with the given ID was not found")
+            .description("Account with the given ID was not found")
         )
       )
-      .serverLogic(_ => (assignOfficeToUser _).tupled)
+      .serverLogic(_ => (assignOffice _).tupled)
 
-  private def assignOfficeToUser(userId: UUID, assignedOfficeId: UUID) =
+  private def assignOffice(accountId: UUID, assignedOfficeId: UUID) =
     accountService
-      .updateUserAssignedOffice(userId, Some(assignedOfficeId))
-      .map(ApiUserAccount.fromDomain)
+      .updateAssignedOffice(accountId, Some(assignedOfficeId))
+      .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case OfficeNotFound(officeId) =>
           ApiError.BadRequest(s"Office [id: $officeId] was not found").asLeft
         case AccountNotFound(accountId) =>
-          ApiError.NotFound(s"User [id: $accountId] was not found").asLeft
+          ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
       }
 
-  private lazy val unassignUserOfficeEndpoint =
+  private lazy val unassignOfficeEndpoint =
     securedEndpoint(requiredRole = OfficeManager).delete
-      .summary("Unassign user office")
+      .summary("Unassign account office")
       .description("Required role: office manager")
-      .in("user" / path[UUID]("userId") / "assigned-office-id")
+      .in(path[UUID]("accountId") / "assigned-office-id")
       .out(
-        jsonBody[ApiUserAccount]
-          .description("Updated user")
-          .example(apiUserAccountExample)
+        jsonBody[ApiAccount]
+          .description("Updated account")
+          .example(apiOfficeManagerAccountExample)
       )
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
-            .description("User with the given ID was not found")
+            .description("Account with the given ID was not found")
         )
       )
-      .serverLogic(_ => unassignUserOffice)
+      .serverLogic(_ => unassignOffice)
 
-  private def unassignUserOffice(userId: UUID) =
+  private def unassignOffice(accountId: UUID) =
     accountService
-      .updateUserAssignedOffice(userId, officeId = None)
-      .map(ApiUserAccount.fromDomain)
+      .updateAssignedOffice(accountId, officeId = None)
+      .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case AccountNotFound(accountId) =>
-          ApiError.NotFound(s"User [id: $accountId] was not found").asLeft
+          ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
       }
 
-  private lazy val createOfficeManagerEndpoint =
-    securedEndpoint(requiredRole = SuperAdmin).post
-      .summary("Create an office manager")
-      .description("Required role: super admin")
-      .in("office-manager")
-      .in(
-        jsonBody[ApiCreateOfficeManagerAccount]
-          .example(apiCreateOfficeManagerAccountExample)
-      )
-      .out(
-        statusCode(StatusCode.Created) and jsonBody[ApiOfficeManagerAccount]
-          .description("Office manager created")
-          .example(apiOfficeManagerAccountExample)
-      )
-      // TODO: Validate office manager managed office IDs
-      .errorOutVariantPrepend(
-        oneOfVariant(
-          statusCode(StatusCode.Conflict) and jsonBody[ApiError.Conflict]
-            .description("Account with the given email already exists")
-        )
-      )
-      .serverLogic(_ => createOfficeManager)
-
-  private def createOfficeManager(apiCreateOfficeManager: ApiCreateOfficeManagerAccount) =
-    accountService
-      .createOfficeManager(apiCreateOfficeManager.toDomain)
-      .map(ApiOfficeManagerAccount.fromDomain)
-      .map(_.asRight[ApiError])
-      .recover {
-        case DuplicateAccountEmail(email) =>
-          ApiError.Conflict(s"Account with email '$email' is already defined").asLeft
-      }
-
-  private lazy val readOfficeManagerEndpoint =
-    securedEndpoint(requiredRole = OfficeManager).get
-      .summary("Find an office manager by ID")
-      .description("Required role: office manager")
-      .in("office-manager" / path[UUID]("officeManagerId"))
-      .out(
-        jsonBody[ApiOfficeManagerAccount]
-          .description("Found office manager")
-          .example(apiOfficeManagerAccountExample)
-      )
-      .errorOutVariantPrepend(
-        oneOfVariant(
-          statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
-            .description("Office manager with the given ID was not found")
-        )
-      )
-      .serverLogic(_ => readOfficeManager)
-
-  private def readOfficeManager(officeManagerId: UUID) =
-    accountService
-      .readOfficeManager(officeManagerId)
-      .map(ApiOfficeManagerAccount.fromDomain)
-      .map(_.asRight[ApiError])
-      .recover {
-        case AccountNotFound(accountId) => ApiError.NotFound(s"Office manager [id: $accountId] was not found").asLeft
-      }
-
-  private lazy val updateOfficeManagerManagedOfficesEndpoint =
+  private lazy val updateManagedOfficesEndpoint =
     securedEndpoint(requiredRole = SuperAdmin).put
-      .summary("Assign managed offices to an office manager")
+      .summary("Assign managed offices to an account")
       .description("Required role: super admin")
-      .in("office-manager" / path[UUID]("officeManagerId") / "managed-office-ids")
+      .in(path[UUID]("accountId") / "managed-office-ids")
       .in(
         jsonBody[List[UUID]]
           .description("Managed office IDs")
           .example(managedOfficeIdsExample)
       )
       .out(
-        jsonBody[ApiOfficeManagerAccount]
-          .description("Updated office manager")
+        jsonBody[ApiAccount]
+          .description("Updated account")
           .example(apiOfficeManagerAccountExample)
       )
-      // TODO: Validate office manager managed office IDs
+      // TODO: Validate managed office IDs
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
-            .description("Office manager with the given ID was not found")
+            .description("Account with the given ID was not found")
         )
       )
-      .serverLogic(_ => (updateOfficeManagerManagedOffices _).tupled)
+      .serverLogic(_ => (updateManagedOffices _).tupled)
 
-  private def updateOfficeManagerManagedOffices(officeManagerId: UUID, managedOfficeIds: List[UUID]) =
+  private def updateManagedOffices(accountId: UUID, managedOfficeIds: List[UUID]) =
     accountService
-      .updateOfficeManagerManagedOffices(officeManagerId, managedOfficeIds)
-      .map(ApiOfficeManagerAccount.fromDomain)
+      .updateManagedOffices(accountId, managedOfficeIds)
+      .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
-        case AccountNotFound(accountId) => ApiError.NotFound(s"Office manager [id: $accountId] was not found").asLeft
-      }
-
-  private lazy val createSuperAdminEndpoint =
-    securedEndpoint(requiredRole = SuperAdmin).post
-      .summary("Create a super admin")
-      .description("Required role: super admin")
-      .in("super-admin")
-      .in(
-        jsonBody[ApiCreateSuperAdminAccount]
-          .example(apiCreateSuperAdminAccountExample)
-      )
-      .out(
-        statusCode(StatusCode.Created) and jsonBody[ApiSuperAdminAccount]
-          .description("Super admin created")
-          .example(apiSuperAdminAccountExample)
-      )
-      .errorOutVariantPrepend(
-        oneOfVariant(
-          statusCode(StatusCode.Conflict) and jsonBody[ApiError.Conflict]
-            .description("Account with the given email already exists")
-        )
-      )
-      .serverLogic(_ => createSuperAdmin)
-
-  private def createSuperAdmin(apiCreateSuperAdmin: ApiCreateSuperAdminAccount) =
-    accountService
-      .createSuperAdmin(apiCreateSuperAdmin.toDomain)
-      .map(ApiSuperAdminAccount.fromDomain)
-      .map(_.asRight[ApiError])
-      .recover {
-        case DuplicateAccountEmail(email) =>
-          ApiError.Conflict(s"Account with email '$email' is already defined").asLeft
-      }
-
-  private lazy val readSuperAdminEndpoint =
-    securedEndpoint(requiredRole = SuperAdmin).get
-      .summary("Find a super admin by ID")
-      .description("Required role: super admin")
-      .in("super-admin" / path[UUID]("superAdminId"))
-      .out(
-        jsonBody[ApiSuperAdminAccount]
-          .description("Found super admin")
-          .example(apiSuperAdminAccountExample)
-      )
-      .errorOutVariantPrepend(
-        oneOfVariant(
-          statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
-            .description("Super admin with the given ID was not found")
-        )
-      )
-      .serverLogic(_ => readSuperAdmin)
-
-  private def readSuperAdmin(superAdminId: UUID) =
-    accountService
-      .readSuperAdmin(superAdminId)
-      .map(ApiSuperAdminAccount.fromDomain)
-      .map(_.asRight[ApiError])
-      .recover {
-        case AccountNotFound(accountId) => ApiError.NotFound(s"Super admin [id: $accountId] was not found").asLeft
+        case AccountNotFound(accountId) => ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
       }
 
   private lazy val updateRolesEndpoint =
@@ -338,12 +214,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
           |Required role: super admin
           |""".stripMargin
       )
-      .in(path[UUID]("accountId") / "roles")
-      .in(
-        jsonBody[List[ApiRole]]
-          .description("Non-empty list of roles")
-          .example(apiAccountRolesExample)
-      )
+      .in(path[UUID]("accountId") / "role" / path[ApiRole]("role"))
       .out(
         statusCode(StatusCode.NoContent)
           .description("Roles updated")
@@ -360,17 +231,11 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
             .description("Account with the given ID was not found")
         )
       )
-      .serverLogic(_ => (updateRoles _).tupled)
+      .serverLogic(_ => (updateRole _).tupled)
 
-  private def updateRoles(accountId: UUID, apiRoles: List[ApiRole]): F[Either[ApiError, Unit]] =
-    apiRoles.map(_.toDomain) match {
-      case head :: tail => updateRolesNel(accountId, NonEmptyList.of(head, tail: _*))
-      case Nil          => ApiError.BadRequest("Roles list cannot be empty").asLeft.pure[F].widen
-    }
-
-  private def updateRolesNel(accountId: UUID, roles: NonEmptyList[Role]) =
+  private def updateRole(accountId: UUID, apiRole: ApiRole): F[Either[ApiError, Unit]] =
     accountService
-      .updateRoles(accountId, roles)
+      .updateRole(accountId, apiRole.toDomain)
       .as(().asRight[ApiError])
       .recover {
         case AccountNotFound(accountId) => ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
@@ -395,10 +260,9 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
 
   private def archiveAccount(requesterRoles: List[Role])(accountId: UUID): F[Either[ApiError, Unit]] =
     for {
-      isAccountToArchiveSuperAdmin <- exists(_.readSuperAdmin(accountId))
-      isAccountToArchiveOfficeManager <- exists(_.readOfficeManager(accountId))
+      accountToArchiveRole <- accountService.read(accountId).map(_.role)
       hasPermission =
-        if (isAccountToArchiveSuperAdmin || isAccountToArchiveOfficeManager)
+        if (accountToArchiveRole == SuperAdmin || accountToArchiveRole == OfficeManager)
           requesterRoles.exists(_.hasAccess(SuperAdmin))
         else requesterRoles.exists(_.hasAccess(OfficeManager))
       result <-
@@ -406,69 +270,27 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         else ApiError.Forbidden.asLeft.pure[F]
     } yield result
 
-  private def exists(readAccount: AccountService[F] => F[_ <: Account]) =
-    readAccount(accountService).as(true).recover {
-      case AccountNotFound(_) => false
-    }
-
-  private lazy val apiUserAccountExample = ApiUserAccount(
-    id = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40"),
-    firstName = "John",
-    lastName = "Doe",
-    email = "john.doe@example.com",
-    isArchived = false,
-    assignedOfficeId = Some(UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"))
-  )
-
-  private lazy val apiCreateUserAccountExample = ApiCreateUserAccount(
-    firstName = "John",
-    lastName = "Doe",
-    email = "john.doe@example.com",
-    assignedOfficeId = Some(UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"))
-  )
-
   private lazy val apiOfficeManagerAccountExample = ApiOfficeManagerAccount(
     id = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40"),
     firstName = "John",
     lastName = "Doe",
     email = "john.doe@example.com",
     isArchived = false,
-    managedOfficeIds = List(
-      UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
-      UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
-    )
+    assignedOfficeId = Some(managedOfficeIdsExample.head),
+    managedOfficeIds = managedOfficeIdsExample
   )
 
-  private lazy val apiCreateOfficeManagerAccountExample = ApiCreateOfficeManagerAccount(
+  private lazy val apiCreateAccountExample = ApiCreateAccount(
+    role = ApiRole.OfficeManager,
     firstName = "John",
     lastName = "Doe",
     email = "john.doe@example.com",
-    managedOfficeIds = List(
-      UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
-      UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
-    )
+    assignedOfficeId = Some(managedOfficeIdsExample.head),
+    managedOfficeIds = managedOfficeIdsExample
   )
 
   private lazy val managedOfficeIdsExample = List(
     UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
     UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
-  )
-
-  private lazy val apiSuperAdminAccountExample = ApiSuperAdminAccount(
-    id = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40"),
-    firstName = "John",
-    lastName = "Doe",
-    email = "john.doe@example.com",
-    isArchived = false
-  )
-
-  private lazy val apiCreateSuperAdminAccountExample = ApiCreateSuperAdminAccount(
-    firstName = "John",
-    lastName = "Doe",
-    email = "john.doe@example.com"
-  )
-
-  private lazy val apiAccountRolesExample = List(
-    ApiRole.OfficeManager
   )
 }

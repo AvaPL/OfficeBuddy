@@ -44,8 +44,8 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(user)
-      readUser <- accountRepository.readUser(user.id)
+      _ <- accountRepository.create(user)
+      readUser <- accountRepository.read(user.id)
     } yield expect(readUser == user)
   }
 
@@ -59,7 +59,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount.copy(assignedOfficeId = Some(officeId))
 
     for {
-      result <- accountRepository.createUser(user).attempt
+      result <- accountRepository.create(user).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val officeNotFound = OfficeNotFound(officeId)
@@ -77,8 +77,8 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val userWithTheSameEmail = user.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
 
     for {
-      _ <- accountRepository.createUser(user)
-      result <- accountRepository.createUser(userWithTheSameEmail).attempt
+      _ <- accountRepository.create(user)
+      result <- accountRepository.create(userWithTheSameEmail).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val duplicateAccountEmail = DuplicateAccountEmail(user.email)
@@ -95,7 +95,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val userId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
 
     for {
-      result <- accountRepository.readUser(userId).attempt
+      result <- accountRepository.read(userId).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val accountNotFound = AccountNotFound(userId)
@@ -113,9 +113,9 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val newOfficeId = officeId1
 
     for {
-      _ <- accountRepository.createUser(user)
-      _ <- accountRepository.updateUserAssignedOffice(user.id, Some(newOfficeId))
-      readUser <- accountRepository.readUser(user.id)
+      _ <- accountRepository.create(user)
+      _ <- accountRepository.updateAssignedOffice(user.id, Some(newOfficeId))
+      readUser <- accountRepository.read(user.id)
     } yield expect(readUser.assignedOfficeId.contains(newOfficeId))
   }
 
@@ -129,9 +129,9 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val newOfficeId = officeId2
 
     for {
-      _ <- accountRepository.createUser(user)
-      _ <- accountRepository.updateUserAssignedOffice(user.id, Some(newOfficeId))
-      readUser <- accountRepository.readUser(user.id)
+      _ <- accountRepository.create(user)
+      _ <- accountRepository.updateAssignedOffice(user.id, Some(newOfficeId))
+      readUser <- accountRepository.read(user.id)
     } yield expect(readUser.assignedOfficeId.contains(newOfficeId))
   }
 
@@ -144,9 +144,9 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
 
     for {
-      _ <- accountRepository.createUser(user)
-      _ <- accountRepository.updateUserAssignedOffice(user.id, None)
-      readUser <- accountRepository.readUser(user.id)
+      _ <- accountRepository.create(user)
+      _ <- accountRepository.updateAssignedOffice(user.id, None)
+      readUser <- accountRepository.read(user.id)
     } yield expect(readUser.assignedOfficeId.isEmpty)
   }
 
@@ -158,7 +158,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val userId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
 
     for {
-      result <- accountRepository.updateUserAssignedOffice(userId, Some(officeId1)).attempt
+      result <- accountRepository.updateAssignedOffice(userId, Some(officeId1)).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val accountNotFound = AccountNotFound(userId)
@@ -275,7 +275,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.create(user)
       officeManager <- accountRepository.updateRoles(user.id, NonEmptyList.one(OfficeManager))
     } yield {
       val expectedOfficeManager = PostgresOfficeManagerAccount(
@@ -318,7 +318,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.create(user)
       superAdmin <- accountRepository.updateRoles(user.id, NonEmptyList.of(OfficeManager, SuperAdmin))
     } yield {
       val expectedSuperAdmin = PostgresSuperAdminAccount(
@@ -339,7 +339,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val superAdmin = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(superAdmin)
+      _ <- accountRepository.create(superAdmin)
       officeManager <- accountRepository.updateRoles(superAdmin.id, NonEmptyList.of(User, OfficeManager))
     } yield {
       val expectedOfficeManager = PostgresOfficeManagerAccount(
@@ -360,7 +360,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.create(user)
       updatedUser <- accountRepository.updateRoles(user.id, NonEmptyList.one(User))
     } yield expect(updatedUser == user)
   }
@@ -391,9 +391,9 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.create(user)
       _ <- accountRepository.archive(user.id)
-      user <- accountRepository.readUser(user.id)
+      user <- accountRepository.read(user.id)
     } yield expect(user.isArchived)
   }
 
@@ -418,7 +418,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val user = anyUserAccount
 
     for {
-      _ <- accountRepository.createUser(user)
+      _ <- accountRepository.create(user)
       email <- accountRepository.readAccountEmail(user.id)
     } yield expect(email == user.email)
   }

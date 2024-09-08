@@ -11,6 +11,26 @@ import util.derevo.circe.circeEncoder
 import util.derevo.tapir.tapirSchema
 
 @derive(circeEncoder, circeDecoder, tapirSchema)
+sealed trait ApiAccount {
+
+  lazy val toDomain: Account =
+    this match {
+      case user: ApiUserAccount                   => user.transformInto[UserAccount]
+      case officeManager: ApiOfficeManagerAccount => officeManager.transformInto[OfficeManagerAccount]
+      case superAdmin: ApiSuperAdminAccount       => superAdmin.transformInto[SuperAdminAccount]
+    }
+}
+
+object ApiAccount {
+
+  def fromDomain(account: Account): ApiAccount =
+    account match {
+      case user: UserAccount                   => user.transformInto[ApiUserAccount]
+      case officeManager: OfficeManagerAccount => officeManager.transformInto[ApiOfficeManagerAccount]
+      case superAdmin: SuperAdminAccount       => superAdmin.transformInto[ApiSuperAdminAccount]
+    }
+}
+
 @encodedName("User account")
 case class ApiUserAccount(
   id: UUID,
@@ -21,33 +41,8 @@ case class ApiUserAccount(
   isArchived: Boolean,
   //
   assignedOfficeId: Option[UUID]
-) {
+) extends ApiAccount
 
-  lazy val toDomain: UserAccount =
-    this.transformInto[UserAccount]
-}
-
-object ApiUserAccount {
-
-  def fromDomain(userAccount: UserAccount): ApiUserAccount =
-    userAccount.transformInto[ApiUserAccount]
-}
-
-@derive(circeEncoder, circeDecoder, tapirSchema)
-@encodedName("User account (create)")
-case class ApiCreateUserAccount(
-  firstName: String,
-  lastName: String,
-  email: String,
-  //
-  assignedOfficeId: Option[UUID]
-) {
-
-  lazy val toDomain: CreateUserAccount =
-    this.transformInto[CreateUserAccount]
-}
-
-@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Office manager account")
 case class ApiOfficeManagerAccount(
   id: UUID,
@@ -57,34 +52,10 @@ case class ApiOfficeManagerAccount(
   //
   isArchived: Boolean,
   //
+  assignedOfficeId: Option[UUID],
   managedOfficeIds: List[UUID]
-) {
+) extends ApiAccount
 
-  lazy val toDomain: OfficeManagerAccount =
-    this.transformInto[OfficeManagerAccount]
-}
-
-object ApiOfficeManagerAccount {
-
-  def fromDomain(officeManagerAccount: OfficeManagerAccount): ApiOfficeManagerAccount =
-    officeManagerAccount.transformInto[ApiOfficeManagerAccount]
-}
-
-@derive(circeEncoder, circeDecoder, tapirSchema)
-@encodedName("Office manager account (create)")
-case class ApiCreateOfficeManagerAccount(
-  firstName: String,
-  lastName: String,
-  email: String,
-  //
-  managedOfficeIds: List[UUID]
-) {
-
-  lazy val toDomain: CreateOfficeManagerAccount =
-    this.transformInto[CreateOfficeManagerAccount]
-}
-
-@derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Super admin account")
 case class ApiSuperAdminAccount(
   id: UUID,
@@ -92,27 +63,24 @@ case class ApiSuperAdminAccount(
   lastName: String,
   email: String,
   //
-  isArchived: Boolean
-) {
-
-  lazy val toDomain: SuperAdminAccount =
-    this.transformInto[SuperAdminAccount]
-}
-
-object ApiSuperAdminAccount {
-
-  def fromDomain(superAdminAccount: SuperAdminAccount): ApiSuperAdminAccount =
-    superAdminAccount.transformInto[ApiSuperAdminAccount]
-}
+  isArchived: Boolean,
+  //
+  assignedOfficeId: Option[UUID],
+  managedOfficeIds: List[UUID]
+) extends ApiAccount
 
 @derive(circeEncoder, circeDecoder, tapirSchema)
-@encodedName("Super admin account (create)")
-case class ApiCreateSuperAdminAccount(
+@encodedName("Account (create)")
+case class ApiCreateAccount(
+  role: ApiRole,
   firstName: String,
   lastName: String,
-  email: String
+  email: String,
+  //
+  assignedOfficeId: Option[UUID],
+  managedOfficeIds: List[UUID]
 ) {
 
-  lazy val toDomain: CreateSuperAdminAccount =
-    this.transformInto[CreateSuperAdminAccount]
+  lazy val toDomain: CreateAccount =
+    this.transformInto[CreateAccount]
 }

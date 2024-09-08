@@ -300,7 +300,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
   private def insertUsers(session: Resource[IO, Session[IO]]) = {
     val accountRepository = new PostgresAccountRepository[IO](session)
     val user = anyUser(userId1)
-    accountRepository.createUser(user)
+    accountRepository.create(user)
   }
 
   private def anyUser(userId: UUID) = PostgresUserAccount(

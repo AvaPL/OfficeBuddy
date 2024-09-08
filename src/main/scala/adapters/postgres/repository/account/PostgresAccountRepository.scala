@@ -1,190 +1,135 @@
 package io.github.avapl
 package adapters.postgres.repository.account
 
-import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.kernel.MonadCancelThrow
 import cats.effect.kernel.Resource
 import cats.syntax.all._
-import domain.model.account.Role
-import domain.model.account.Role.OfficeManager
-import domain.model.account.Role.SuperAdmin
-import domain.model.account.Role.User
+import domain.model.account._
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
+import enumeratum.values.StringEnum
+import enumeratum.values.StringEnumEntry
 import java.util.UUID
+import scala.annotation.nowarn
 import skunk._
 import skunk.codec.all._
+import skunk.data.Arr
 import skunk.data.Completion
+import skunk.data.Type
 import skunk.implicits._
 
 class PostgresAccountRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
 ) {
 
-  def createUser(user: PostgresUserAccount): F[PostgresUserAccount] =
+  import PostgresAccountRepository._
+  import PostgresAccountRepository.PostgresAccountType._
+
+  def create(account: Account): F[Account] =
     session.use { session =>
       for {
-        sql <- session.prepare(createUserSql)
+        sql <- session.prepare(createAccountSql)
         _ <- sql
-          .execute(user)
+          .execute(account)
           .recoverWith {
             case SqlState.ForeignKeyViolation(e) if e.constraintName.contains("account_assigned_office_id_fkey") =>
-              OfficeNotFound(user.assignedOfficeId.get).raiseError
+              OfficeNotFound(account.assignedOfficeId.get).raiseError
             case SqlState.UniqueViolation(e) if e.constraintName.contains("account_email_key") =>
-              DuplicateAccountEmail(user.email).raiseError
+              DuplicateAccountEmail(account.email).raiseError
           }
-      } yield user
+      } yield account
     }
 
-  private lazy val createUserSql: Command[PostgresUserAccount] =
+  private lazy val createAccountSql: Command[Account] =
     sql"""
       INSERT INTO account
-      VALUES      (${PostgresUserAccount.encoder})
+      VALUES      ($accountEncoder)
     """.command
 
-  def readUser(userId: UUID): F[PostgresUserAccount] =
+  def read(accountId: UUID): F[Account] =
     session.use { session =>
       for {
-        sql <- session.prepare(readUserSql)
-        user <- OptionT(sql.option(userId)).getOrRaise(AccountNotFound(userId))
-      } yield user
+        sql <- session.prepare(readAccountSql)
+        account <- OptionT(sql.option(accountId)).getOrRaise(AccountNotFound(accountId))
+      } yield account
     }
 
-  private lazy val readUserSql: Query[UUID, PostgresUserAccount] =
+  private lazy val readAccountSql: Query[UUID, Account] =
     sql"""
       SELECT *
       FROM   account
-      WHERE  id = $uuid AND
-             type = 'User'
-    """.query(PostgresUserAccount.decoder)
+      WHERE  id = $uuid
+    """.query(accountDecoder)
 
-  def updateUserAssignedOffice(userId: UUID, officeId: Option[UUID]): F[PostgresUserAccount] =
+  def updateAssignedOffice(accountId: UUID, officeId: Option[UUID]): F[Account] =
     session.use { session =>
       for {
-        sql <- session.prepare(updateUserAssignedOfficeSql)
+        sql <- session.prepare(updateAssignedOfficeSql)
         _ <- sql
-          .execute(officeId *: userId *: EmptyTuple)
+          .execute(officeId *: accountId *: EmptyTuple)
           .ensureOr {
-            case Completion.Update(0) => AccountNotFound(userId)
-            case completion           => new RuntimeException(s"Expected 1 updated user, but got: $completion")
+            case Completion.Update(0) => AccountNotFound(accountId)
+            case completion           => new RuntimeException(s"Expected 1 updated account, but got: $completion")
           }(_ == Completion.Update(1))
           .recoverWith {
             case SqlState.ForeignKeyViolation(e) if e.constraintName.contains("account_assigned_office_id_fkey") =>
               OfficeNotFound(officeId.get).raiseError
           }
-        user <- readUser(userId)
-      } yield user
+        account <- read(accountId)
+      } yield account
     }
 
-  private lazy val updateUserAssignedOfficeSql: Command[Option[UUID] *: UUID *: EmptyTuple] =
+  private lazy val updateAssignedOfficeSql: Command[Option[UUID] *: UUID *: EmptyTuple] =
     sql"""
       UPDATE account
       SET    assigned_office_id = ${uuid.opt}
       WHERE id = $uuid
     """.command
 
-  def createOfficeManager(officeManager: PostgresOfficeManagerAccount): F[PostgresOfficeManagerAccount] =
+  // TODO: Add tests
+  def updateManagedOffices(accountId: UUID, managedOfficeIds: List[UUID]): F[Account] =
     session.use { session =>
       for {
-        sql <- session.prepare(createOfficeManagerSql)
+        sql <- session.prepare(updateManagedOfficesSql)
         _ <- sql
-          .execute(officeManager)
-          .recoverWith {
-            case SqlState.UniqueViolation(e) if e.constraintName.contains("account_email_key") =>
-              DuplicateAccountEmail(officeManager.email).raiseError
-          }
-      } yield officeManager
-    }
-
-  private lazy val createOfficeManagerSql: Command[PostgresOfficeManagerAccount] =
-    sql"""
-      INSERT INTO account
-      VALUES      (${PostgresOfficeManagerAccount.encoder})
-    """.command
-
-  def readOfficeManager(officeManagerId: UUID): F[PostgresOfficeManagerAccount] =
-    session.use { session =>
-      for {
-        sql <- session.prepare(readOfficeManagerSql)
-        user <- OptionT(sql.option(officeManagerId)).getOrRaise(AccountNotFound(officeManagerId))
-      } yield user
-    }
-
-  private lazy val readOfficeManagerSql: Query[UUID, PostgresOfficeManagerAccount] =
-    sql"""
-      SELECT *
-      FROM   account
-      WHERE  id = $uuid AND
-             type = 'OfficeManager'
-    """.query(PostgresOfficeManagerAccount.decoder)
-
-  def createSuperAdmin(superAdmin: PostgresSuperAdminAccount): F[PostgresSuperAdminAccount] =
-    session.use { session =>
-      for {
-        sql <- session.prepare(createSuperAdminSql)
-        _ <- sql
-          .execute(superAdmin)
-          .recoverWith {
-            case SqlState.UniqueViolation(e) if e.constraintName.contains("account_email_key") =>
-              DuplicateAccountEmail(superAdmin.email).raiseError
-          }
-      } yield superAdmin
-    }
-
-  private lazy val createSuperAdminSql: Command[PostgresSuperAdminAccount] =
-    sql"""
-      INSERT INTO account
-      VALUES      (${PostgresSuperAdminAccount.encoder})
-    """.command
-
-  def readSuperAdmin(superAdminId: UUID): F[PostgresSuperAdminAccount] =
-    session.use { session =>
-      for {
-        sql <- session.prepare(readSuperAdminSql)
-        user <- OptionT(sql.option(superAdminId)).getOrRaise(AccountNotFound(superAdminId))
-      } yield user
-    }
-
-  private lazy val readSuperAdminSql: Query[UUID, PostgresSuperAdminAccount] =
-    sql"""
-      SELECT *
-      FROM   account
-      WHERE  id = $uuid AND
-             type = 'SuperAdmin'
-    """.query(PostgresSuperAdminAccount.decoder)
-
-  def updateRoles(accountId: UUID, roles: NonEmptyList[Role]): F[PostgresAccount] = {
-    val (_, newType, readAccount) = roles
-      .map {
-        case SuperAdmin    => (0, "SuperAdmin", readSuperAdmin _)
-        case OfficeManager => (1, "OfficeManager", readOfficeManager _)
-        case User          => (2, "User", readUser _)
-      }
-      .sortBy {
-        case (roleOrder, _, _) => roleOrder
-      }
-      .head
-
-    session.use { session =>
-      for {
-        sql <- session.prepare(updateRolesSql)
-        _ <- sql
-          .execute(newType *: accountId *: EmptyTuple)
+          .execute(managedOfficeIds *: accountId *: EmptyTuple)
           .ensureOr {
             case Completion.Update(0) => AccountNotFound(accountId)
             case completion           => new RuntimeException(s"Expected 1 updated account, but got: $completion")
           }(_ == Completion.Update(1))
-        account <- readAccount(accountId)
+        // TODO: Add a constraint on the managed_office_ids column to ensure that the office_id exists and recover here with proper error
+        account <- read(accountId)
+      } yield account
+    }
+
+  private lazy val updateManagedOfficesSql: Command[List[UUID] *: UUID *: EmptyTuple] =
+    sql"""
+      UPDATE account
+      SET    managed_office_ids = ${_uuid}
+      WHERE id = $uuid
+    """.command
+
+  def updateRole(accountId: UUID, role: Role): F[Account] = {
+    session.use { session =>
+      for {
+        sql <- session.prepare(updateRoleSql)
+        _ <- sql
+          .execute(accountTypeFromDomain(role) *: accountId *: EmptyTuple)
+          .ensureOr {
+            case Completion.Update(0) => AccountNotFound(accountId)
+            case completion           => new RuntimeException(s"Expected 1 updated account, but got: $completion")
+          }(_ == Completion.Update(1))
+        account <- read(accountId)
       } yield account
     }
   }
 
-  private lazy val updateRolesSql: Command[String *: UUID *: EmptyTuple] =
+  private lazy val updateRoleSql: Command[PostgresAccountType *: UUID *: EmptyTuple] =
     sql"""
       UPDATE account
-      SET    type = $varchar
+      SET    type = $accountTypeCodec
       WHERE id = $uuid
     """.command
 
@@ -219,4 +164,110 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
       FROM   account
       WHERE id = $uuid
     """.query(varchar)
+}
+
+object PostgresAccountRepository {
+
+  sealed abstract class PostgresAccountType(val value: String) extends StringEnumEntry
+
+  object PostgresAccountType extends StringEnum[PostgresAccountType] {
+
+    case object User extends PostgresAccountType("User")
+    case object OfficeManager extends PostgresAccountType("OfficeManager")
+    case object SuperAdmin extends PostgresAccountType("SuperAdmin")
+
+    override val values: IndexedSeq[PostgresAccountType] = findValues
+
+    lazy val accountTypeCodec: Codec[PostgresAccountType] =
+      varchar.imap[PostgresAccountType](PostgresAccountType.withValue)(_.value)
+  }
+
+  lazy val accountEncoder: Encoder[Account] =
+    (
+      uuid *: // id
+        varchar *: // first_name
+        varchar *: // last_name
+        varchar *: // email
+        bool *: // is_archived
+        PostgresAccountType.accountTypeCodec *: // type
+        uuid.opt *: // assigned_office_id
+        _uuid // managed_office_ids
+    ).contramap { account =>
+      account.id *:
+        account.email *:
+        account.firstName *:
+        account.lastName *:
+        account.isArchived *:
+        accountTypeFromDomain(account.role) *:
+        account.assignedOfficeId *:
+        managedOfficeIdsFromDomain(account) *:
+        EmptyTuple
+    }
+
+  private def accountTypeFromDomain(role: Role): PostgresAccountType =
+    role match {
+      case Role.User          => PostgresAccountType.User
+      case Role.OfficeManager => PostgresAccountType.OfficeManager
+      case Role.SuperAdmin    => PostgresAccountType.SuperAdmin
+    }
+
+  private def managedOfficeIdsFromDomain(account: Account) =
+    account match {
+      case officeManager: OfficeManagerAccount => officeManager.managedOfficeIds
+      case _                                   => Nil
+    }
+
+  @nowarn("msg=match may not be exhaustive")
+  lazy val accountDecoder: Decoder[Account] =
+    (
+      uuid *: // id
+        varchar *: // first_name
+        varchar *: // last_name
+        varchar *: // email
+        bool *: // is_archived
+        PostgresAccountType.accountTypeCodec *: // type
+        uuid.opt *: // assigned_office_id
+        _uuid // managed_office_ids
+    ).map {
+      case id *: email *: firstName *: lastName *: isArchived *: accountType *: assignedOfficeId *: managedOfficeIds *: EmptyTuple =>
+        accountType match {
+          case PostgresAccountType.User =>
+            UserAccount(
+              id = id,
+              firstName = firstName,
+              lastName = lastName,
+              email = email,
+              isArchived = isArchived,
+              assignedOfficeId = assignedOfficeId
+            )
+          case PostgresAccountType.OfficeManager =>
+            OfficeManagerAccount(
+              id = id,
+              firstName = firstName,
+              lastName = lastName,
+              email = email,
+              isArchived = isArchived,
+              managedOfficeIds = managedOfficeIds
+            )
+          case PostgresAccountType.SuperAdmin =>
+            SuperAdminAccount(
+              id = id,
+              firstName = firstName,
+              lastName = lastName,
+              email = email,
+              isArchived = isArchived,
+              assignedOfficeId = assignedOfficeId,
+              managedOfficeIds = managedOfficeIds
+            )
+        }
+    }
+
+  private lazy val _uuid: Codec[List[UUID]] =
+    Codec
+      .array[UUID](
+        u => u.toString,
+        s => Either.catchOnly[IllegalArgumentException](UUID.fromString(s)).leftMap(_.getMessage),
+        Type._uuid
+      )
+      .imap(_.flattenTo(List))(Arr(_: _*))
 }

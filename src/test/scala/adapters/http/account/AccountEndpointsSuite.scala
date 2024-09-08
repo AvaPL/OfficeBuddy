@@ -47,7 +47,7 @@ object AccountEndpointsSuite
       email = userToCreate.email,
       assignedOfficeId = userToCreate.assignedOfficeId
     )
-    val accountService = whenF(mock[AccountService[IO]].createUser(any)) thenReturn user
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenReturn user
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
@@ -81,7 +81,7 @@ object AccountEndpointsSuite
     for {
       response <- response
     } yield {
-      verify(accountService, never).createUser(any)
+      verify(accountService, never).create(any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
@@ -92,7 +92,7 @@ object AccountEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val accountService = whenF(mock[AccountService[IO]].createUser(any)) thenFailWith OfficeNotFound(anyOfficeId)
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenFailWith OfficeNotFound(anyOfficeId)
 
     val response = sendRequest(accountService) {
       basicRequest
@@ -111,7 +111,7 @@ object AccountEndpointsSuite
       | THEN 409 Conflict is returned
       |""".stripMargin
   ) {
-    val accountService = whenF(mock[AccountService[IO]].createUser(any)) thenFailWith DuplicateAccountEmail(anyEmail)
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenFailWith DuplicateAccountEmail(anyEmail)
 
     val response = sendRequest(accountService) {
       basicRequest
@@ -132,7 +132,7 @@ object AccountEndpointsSuite
   ) {
     val userId = anyAccountId
     val user = anyUserAccount.copy(id = userId)
-    val accountService = whenF(mock[AccountService[IO]].readUser(any)) thenReturn user
+    val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn user
 
     val response = sendRequest(accountService, role = User) {
       basicRequest.get(uri"http://test.com/account/user/$userId")
@@ -153,7 +153,7 @@ object AccountEndpointsSuite
       |""".stripMargin
   ) {
     val userId = anyAccountId
-    val accountService = whenF(mock[AccountService[IO]].readUser(any)) thenFailWith AccountNotFound(userId)
+    val accountService = whenF(mock[AccountService[IO]].read(any)) thenFailWith AccountNotFound(userId)
 
     val response = sendRequest(accountService) {
       basicRequest.get(uri"http://test.com/account/user/$userId")
@@ -174,7 +174,7 @@ object AccountEndpointsSuite
     val officeId = anyOfficeId
     val user = anyUserAccount.copy(id = userId, assignedOfficeId = Some(officeId))
     val accountService =
-      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenReturn user
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$officeId")
@@ -205,7 +205,7 @@ object AccountEndpointsSuite
     for {
       response <- response
     } yield {
-      verify(accountService, never).updateUserAssignedOffice(any, any)
+      verify(accountService, never).updateAssignedOffice(any, any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
@@ -218,7 +218,7 @@ object AccountEndpointsSuite
   ) {
     val officeId = anyOfficeId
     val accountService =
-      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenFailWith OfficeNotFound(officeId)
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith OfficeNotFound(officeId)
 
     val response = sendRequest(accountService) {
       basicRequest.put(uri"http://test.com/account/user/$anyAccountId/assigned-office-id/$officeId")
@@ -237,7 +237,7 @@ object AccountEndpointsSuite
   ) {
     val userId = anyAccountId
     val accountService =
-      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
 
     val response = sendRequest(accountService) {
       basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$anyOfficeId")
@@ -257,7 +257,7 @@ object AccountEndpointsSuite
     val userId = anyAccountId
     val user = anyUserAccount.copy(id = userId, assignedOfficeId = None)
     val accountService =
-      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenReturn user
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
@@ -287,7 +287,7 @@ object AccountEndpointsSuite
     for {
       response <- response
     } yield {
-      verify(accountService, never).updateUserAssignedOffice(any, any)
+      verify(accountService, never).updateAssignedOffice(any, any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
@@ -300,7 +300,7 @@ object AccountEndpointsSuite
   ) {
     val userId = anyAccountId
     val accountService =
-      whenF(mock[AccountService[IO]].updateUserAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
 
     val response = sendRequest(accountService) {
       basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
@@ -456,7 +456,7 @@ object AccountEndpointsSuite
     val managedOfficeIds = List(anyOfficeId)
     val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId, managedOfficeIds = managedOfficeIds)
     val accountService =
-      whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenReturn officeManager
+      whenF(mock[AccountService[IO]].updateManagedOffices(any, any)) thenReturn officeManager
 
     val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
@@ -490,7 +490,7 @@ object AccountEndpointsSuite
     for {
       response <- response
     } yield {
-      verify(accountService, never).updateOfficeManagerManagedOffices(any, any)
+      verify(accountService, never).updateManagedOffices(any, any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
@@ -503,7 +503,7 @@ object AccountEndpointsSuite
   ) {
     val officeManagerId = anyAccountId
     val accountService =
-      whenF(mock[AccountService[IO]].updateOfficeManagerManagedOffices(any, any)) thenFailWith
+      whenF(mock[AccountService[IO]].updateManagedOffices(any, any)) thenFailWith
         AccountNotFound(officeManagerId)
 
     val response = sendRequest(accountService) {

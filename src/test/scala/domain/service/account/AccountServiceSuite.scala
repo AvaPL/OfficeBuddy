@@ -29,7 +29,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
       | THEN a valid user is created via accountRepository
       |""".stripMargin
   ) {
-    val userToCreate = anyCreateUserAccount
+    val userToCreate = anyCreateAccount
 
     val userId = anyAccountId
     implicit val fuuid: FUUID[IO] = whenF(mock[FUUID[IO]].randomUUID()) thenReturn userId
@@ -39,7 +39,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      createdUser <- accountService.createUser(userToCreate)
+      createdUser <- accountService.create(userToCreate)
     } yield {
       verify(accountRepository, only).createUser(eqTo(user))
       expect(createdUser == user)
@@ -52,14 +52,14 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
       | THEN the result should contain the failure
       |""".stripMargin
   ) {
-    val userToCreate = anyCreateUserAccount
+    val userToCreate = anyCreateAccount
 
     val duplicateAccountEmail = DuplicateAccountEmail(userToCreate.email)
     val accountRepository = whenF(mock[AccountRepository[IO]].createUser(any)) thenFailWith duplicateAccountEmail
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      result <- accountService.createUser(userToCreate).attempt
+      result <- accountService.create(userToCreate).attempt
     } yield matches(result) {
       case Left(throwable) => expect(throwable == duplicateAccountEmail)
     }
@@ -79,7 +79,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      readUser <- accountService.readUser(userId)
+      readUser <- accountService.read(userId)
     } yield {
       verify(accountRepository, only).readUser(eqTo(userId))
       expect(readUser == user)
@@ -99,7 +99,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      result <- accountService.readUser(userId).attempt
+      result <- accountService.read(userId).attempt
     } yield matches(result) {
       case Left(throwable) => expect(throwable == accountNotFound)
     }
@@ -119,7 +119,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      _ <- accountService.updateUserAssignedOffice(userId, officeId.some)
+      _ <- accountService.updateAssignedOffice(userId, officeId.some)
     } yield {
       verify(accountRepository, only).updateUserAssignedOffice(eqTo(userId), eqTo(officeId.some))
       success
@@ -141,7 +141,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      result <- accountService.updateUserAssignedOffice(userId, officeId.some).attempt
+      result <- accountService.updateAssignedOffice(userId, officeId.some).attempt
     } yield matches(result) {
       case Left(throwable) => expect(throwable == accountNotFound)
     }
@@ -244,7 +244,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      _ <- accountService.updateOfficeManagerManagedOffices(officeManagerId, officeIds)
+      _ <- accountService.updateManagedOffices(officeManagerId, officeIds)
     } yield {
       verify(accountRepository, only).updateOfficeManagerManagedOffices(eqTo(officeManagerId), eqTo(officeIds))
       success
@@ -266,7 +266,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     val accountService = new AccountService[IO](accountRepository)
 
     for {
-      result <- accountService.updateOfficeManagerManagedOffices(officeManagerId, officeIds).attempt
+      result <- accountService.updateManagedOffices(officeManagerId, officeIds).attempt
     } yield matches(result) {
       case Left(throwable) => expect(throwable == accountNotFound)
     }
@@ -450,7 +450,7 @@ object AccountServiceSuite extends SimpleIOSuite with MockitoSugar with Argument
     assignedOfficeId = Some(anyOfficeId)
   )
 
-  private lazy val anyCreateUserAccount = CreateUserAccount(
+  private lazy val anyCreateAccount = CreateUserAccount(
     firstName = "Test",
     lastName = "User",
     email = "test.user@localhost",

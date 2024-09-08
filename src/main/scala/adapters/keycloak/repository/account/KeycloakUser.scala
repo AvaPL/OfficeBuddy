@@ -2,16 +2,12 @@ package io.github.avapl
 package adapters.keycloak.repository.account
 
 import adapters.keycloak.repository.account.KeycloakAttribute.AccountId
-import adapters.keycloak.repository.account.KeycloakAttribute.ManagedOfficeIds
 import adapters.keycloak.repository.account.KeycloakAttributeKey.AccountIdKey
-import adapters.keycloak.repository.account.KeycloakAttributeKey.ManagedOfficeIdsKey
 import adapters.keycloak.repository.account.KeycloakRole.OfficeManager
 import adapters.keycloak.repository.account.KeycloakRole.SuperAdmin
-import adapters.keycloak.repository.account.KeycloakRole.User
-import cats.implicits._
+import domain.model.account.Account
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
-import domain.model.account.UserAccount
 import java.util.UUID
 import org.keycloak.representations.idm.UserRepresentation
 import scala.jdk.CollectionConverters._
@@ -40,14 +36,14 @@ case class KeycloakUser(
 
 object KeycloakUser {
 
-  def fromUserAccount(userAccount: UserAccount): KeycloakUser =
+  def fromDomainAccount(account: Account): KeycloakUser =
     KeycloakUser(
-      email = userAccount.email,
-      firstName = userAccount.firstName,
-      lastName = userAccount.lastName,
-      roles = List(User),
+      email = account.email,
+      firstName = account.firstName,
+      lastName = account.lastName,
+      roles = List(KeycloakRole.fromDomain(account.role)),
       attributes = List(
-        AccountId(userAccount.id)
+        AccountId(account.id)
       )
     )
 
@@ -58,8 +54,7 @@ object KeycloakUser {
       lastName = officeManagerAccount.lastName,
       roles = List(OfficeManager),
       attributes = List(
-        AccountId(officeManagerAccount.id),
-        ManagedOfficeIds(officeManagerAccount.managedOfficeIds)
+        AccountId(officeManagerAccount.id)
       )
     )
 
@@ -99,8 +94,7 @@ object KeycloakUser {
       .flatMap {
         case (key, values) =>
           KeycloakAttributeKey.withValueOpt(key).flatMap {
-            case AccountIdKey        => values.headOption.map(UUID.fromString).map(AccountId)
-            case ManagedOfficeIdsKey => ManagedOfficeIds(values.map(UUID.fromString)).some
+            case AccountIdKey => values.headOption.map(UUID.fromString).map(AccountId)
           }
       }
       .toList
