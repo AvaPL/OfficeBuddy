@@ -47,28 +47,6 @@ object KeycloakUser {
       )
     )
 
-  def fromOfficeManagerAccount(officeManagerAccount: OfficeManagerAccount): KeycloakUser =
-    KeycloakUser(
-      email = officeManagerAccount.email,
-      firstName = officeManagerAccount.firstName,
-      lastName = officeManagerAccount.lastName,
-      roles = List(OfficeManager),
-      attributes = List(
-        AccountId(officeManagerAccount.id)
-      )
-    )
-
-  def fromSuperAdminAccount(superAdminAccount: SuperAdminAccount): KeycloakUser =
-    KeycloakUser(
-      email = superAdminAccount.email,
-      firstName = superAdminAccount.firstName,
-      lastName = superAdminAccount.lastName,
-      roles = List(SuperAdmin),
-      attributes = List(
-        AccountId(superAdminAccount.id)
-      )
-    )
-
   def fromUserRepresentation(userRepresentation: UserRepresentation): KeycloakUser = {
     val roles = parseRoles(userRepresentation)
     val attributes = parseAttributes(userRepresentation)
