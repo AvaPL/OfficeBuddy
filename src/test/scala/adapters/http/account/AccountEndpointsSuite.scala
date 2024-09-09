@@ -1,7 +1,6 @@
 package io.github.avapl
 package adapters.http.account
 
-import adapters.auth.model.PublicKey
 import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
 import domain.model.account.OfficeManagerAccount
@@ -34,7 +33,7 @@ object AccountEndpointsSuite
   with SecuredApiEndpointFixture {
 
   test(
-    """GIVEN create user endpoint
+    """GIVEN create account endpoint
       | WHEN a user is POSTed and created by an office manager
       | THEN 201 Created and the created user is returned
       |""".stripMargin
@@ -51,7 +50,7 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
-        .post(uri"http://test.com/account/user")
+        .post(uri"http://test.com/account")
         .body(userToCreate)
     }
 
@@ -59,260 +58,12 @@ object AccountEndpointsSuite
       response <- response
     } yield expect.all(
       response.code == StatusCode.Created,
-      bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
+      bodyJson(response) == ApiAccount.fromDomain(user).asJson
     )
   }
 
   test(
-    """GIVEN create user endpoint
-      | WHEN there is an attempt to create a user by another user
-      | THEN 403 Forbidden is returned
-      |""".stripMargin
-  ) {
-    val userToCreate = anyApiCreateUserAccount
-    val accountService = mock[AccountService[IO]]
-
-    val response = sendRequest(accountService, role = User) {
-      basicRequest
-        .post(uri"http://test.com/account/user")
-        .body(userToCreate)
-    }
-
-    for {
-      response <- response
-    } yield {
-      verify(accountService, never).create(any)
-      expect(response.code == StatusCode.Forbidden)
-    }
-  }
-
-  test(
-    """GIVEN create user endpoint
-      | WHEN creating the user fails with OfficeNotFound error
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val accountService = whenF(mock[AccountService[IO]].create(any)) thenFailWith OfficeNotFound(anyOfficeId)
-
-    val response = sendRequest(accountService) {
-      basicRequest
-        .post(uri"http://test.com/account/user")
-        .body(anyApiCreateUserAccount)
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN create user endpoint
-      | WHEN creating the user fails with DuplicateAccountEmail error
-      | THEN 409 Conflict is returned
-      |""".stripMargin
-  ) {
-    val accountService = whenF(mock[AccountService[IO]].create(any)) thenFailWith DuplicateAccountEmail(anyEmail)
-
-    val response = sendRequest(accountService) {
-      basicRequest
-        .post(uri"http://test.com/account/user")
-        .body(anyApiCreateUserAccount)
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.Conflict)
-  }
-
-  test(
-    """GIVEN read user endpoint
-      | WHEN an existing user is read by another user
-      | THEN 200 OK and the read user is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val user = anyUserAccount.copy(id = userId)
-    val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn user
-
-    val response = sendRequest(accountService, role = User) {
-      basicRequest.get(uri"http://test.com/account/user/$userId")
-    }
-
-    for {
-      response <- response
-    } yield expect.all(
-      response.code == StatusCode.Ok,
-      bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
-    )
-  }
-
-  test(
-    """GIVEN read user endpoint
-      | WHEN the user is not found (AccountNotFound error)
-      | THEN 404 NotFound is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val accountService = whenF(mock[AccountService[IO]].read(any)) thenFailWith AccountNotFound(userId)
-
-    val response = sendRequest(accountService) {
-      basicRequest.get(uri"http://test.com/account/user/$userId")
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.NotFound)
-  }
-
-  test(
-    """GIVEN assign office to user endpoint
-      | WHEN the office is assigned by an office manager to a user
-      | THEN 200 OK and the updated user is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val officeId = anyOfficeId
-    val user = anyUserAccount.copy(id = userId, assignedOfficeId = Some(officeId))
-    val accountService =
-      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
-
-    val response = sendRequest(accountService, role = OfficeManager) {
-      basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$officeId")
-    }
-
-    for {
-      response <- response
-    } yield expect.all(
-      response.code == StatusCode.Ok,
-      bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
-    )
-  }
-
-  test(
-    """GIVEN assign office to user endpoint
-      | WHEN there is an attempt to assign the office by a user
-      | THEN 403 Forbidden is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val officeId = anyOfficeId
-    val accountService = mock[AccountService[IO]]
-
-    val response = sendRequest(accountService, role = User) {
-      basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$officeId")
-    }
-
-    for {
-      response <- response
-    } yield {
-      verify(accountService, never).updateAssignedOffice(any, any)
-      expect(response.code == StatusCode.Forbidden)
-    }
-  }
-
-  test(
-    """GIVEN assign office to user endpoint
-      | WHEN assigning the office fails with OfficeNotFound error
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeId = anyOfficeId
-    val accountService =
-      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith OfficeNotFound(officeId)
-
-    val response = sendRequest(accountService) {
-      basicRequest.put(uri"http://test.com/account/user/$anyAccountId/assigned-office-id/$officeId")
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN assign office to user endpoint
-      | WHEN assigning the office fails with AccountNotFound error
-      | THEN 404 NotFound is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val accountService =
-      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
-
-    val response = sendRequest(accountService) {
-      basicRequest.put(uri"http://test.com/account/user/$userId/assigned-office-id/$anyOfficeId")
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.NotFound)
-  }
-
-  test(
-    """GIVEN unassign user office endpoint
-      | WHEN the office is successfully unassigned by an office manager
-      | THEN 200 OK and the updated user is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val user = anyUserAccount.copy(id = userId, assignedOfficeId = None)
-    val accountService =
-      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
-
-    val response = sendRequest(accountService, role = OfficeManager) {
-      basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
-    }
-
-    for {
-      response <- response
-    } yield expect.all(
-      response.code == StatusCode.Ok,
-      bodyJson(response) == ApiUserAccount.fromDomain(user).asJson
-    )
-  }
-
-  test(
-    """GIVEN unassign user office endpoint
-      | WHEN there is an attempt to unassign the office by a user
-      | THEN 403 Forbidden is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val accountService = mock[AccountService[IO]]
-
-    val response = sendRequest(accountService, role = User) {
-      basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
-    }
-
-    for {
-      response <- response
-    } yield {
-      verify(accountService, never).updateAssignedOffice(any, any)
-      expect(response.code == StatusCode.Forbidden)
-    }
-  }
-
-  test(
-    """GIVEN unassign user office endpoint
-      | WHEN unassigning the office fails with AccountNotFound error
-      | THEN 404 NotFound is returned
-      |""".stripMargin
-  ) {
-    val userId = anyAccountId
-    val accountService =
-      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
-
-    val response = sendRequest(accountService) {
-      basicRequest.delete(uri"http://test.com/account/user/$userId/assigned-office-id")
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.NotFound)
-  }
-
-  test(
-    """GIVEN create office manager endpoint
+    """GIVEN create account endpoint
       | WHEN a office manager is POSTed and created by a super admin
       | THEN 201 Created and the created office manager is returned
       |""".stripMargin
@@ -325,11 +76,11 @@ object AccountEndpointsSuite
       email = officeManagerToCreate.email,
       managedOfficeIds = officeManagerToCreate.managedOfficeIds
     )
-    val accountService = whenF(mock[AccountService[IO]].createOfficeManager(any)) thenReturn officeManager
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenReturn officeManager
 
     val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
-        .post(uri"http://test.com/account/office-manager")
+        .post(uri"http://test.com/account")
         .body(officeManagerToCreate)
     }
 
@@ -337,12 +88,64 @@ object AccountEndpointsSuite
       response <- response
     } yield expect.all(
       response.code == StatusCode.Created,
-      bodyJson(response) == ApiOfficeManagerAccount.fromDomain(officeManager).asJson
+      bodyJson(response) == ApiAccount.fromDomain(officeManager).asJson
     )
   }
 
   test(
-    """GIVEN create office manager endpoint
+    """GIVEN create account endpoint
+      | WHEN a super admin is POSTed and created by another super admin
+      | THEN 201 Created and the created super admin is returned
+      |""".stripMargin
+  ) {
+    val superAdminToCreate = anyApiCreateSuperAdminAccount
+    val superAdmin = SuperAdminAccount(
+      id = anyAccountId,
+      firstName = superAdminToCreate.firstName,
+      lastName = superAdminToCreate.lastName,
+      email = superAdminToCreate.email
+    )
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenReturn superAdmin
+
+    val response = sendRequest(accountService, role = SuperAdmin) {
+      basicRequest
+        .post(uri"http://test.com/account")
+        .body(superAdminToCreate)
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Created,
+      bodyJson(response) == ApiAccount.fromDomain(superAdmin).asJson
+    )
+  }
+
+  test(
+    """GIVEN create account endpoint
+      | WHEN there is an attempt to create a user by another user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    val userToCreate = anyApiCreateUserAccount
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest
+        .post(uri"http://test.com/account")
+        .body(userToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).create(any)
+      expect(response.code == StatusCode.Forbidden)
+    }
+  }
+
+  test(
+    """GIVEN create account endpoint
       | WHEN there is an attempt to create an office manager by another office manager
       | THEN 403 Forbidden is returned
       |""".stripMargin
@@ -352,31 +155,72 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
-        .post(uri"http://test.com/account/office-manager")
+        .post(uri"http://test.com/account")
         .body(officeManagerToCreate)
     }
 
     for {
       response <- response
     } yield {
-      verify(accountService, never).createOfficeManager(any)
+      verify(accountService, never).create(any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
 
   test(
-    """GIVEN create office manager endpoint
-      | WHEN creating the office manager fails with DuplicateAccountEmail error
-      | THEN 409 Conflict is returned
+    """GIVEN create account endpoint
+      | WHEN there is an attempt to create a super admin by an office manager
+      | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val accountService =
-      whenF(mock[AccountService[IO]].createOfficeManager(any)) thenFailWith DuplicateAccountEmail(anyEmail)
+    val superAdminToCreate = anyApiCreateSuperAdminAccount
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest
+        .post(uri"http://test.com/account")
+        .body(superAdminToCreate)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).create(any)
+      expect(response.code == StatusCode.Forbidden)
+    }
+  }
+
+  test(
+    """GIVEN create account endpoint
+      | WHEN creating the user fails with OfficeNotFound error
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenFailWith OfficeNotFound(anyOfficeId)
 
     val response = sendRequest(accountService) {
       basicRequest
-        .post(uri"http://test.com/account/office-manager")
-        .body(anyApiCreateOfficeManagerAccount)
+        .post(uri"http://test.com/account")
+        .body(anyApiCreateUserAccount)
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN create account endpoint
+      | WHEN creating the user fails with DuplicateAccountEmail error
+      | THEN 409 Conflict is returned
+      |""".stripMargin
+  ) {
+    val accountService = whenF(mock[AccountService[IO]].create(any)) thenFailWith DuplicateAccountEmail(anyEmail)
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .post(uri"http://test.com/account")
+        .body(anyApiCreateUserAccount)
     }
 
     for {
@@ -385,60 +229,82 @@ object AccountEndpointsSuite
   }
 
   test(
-    """GIVEN read office manager endpoint
-      | WHEN an existing office manager is read by an office manager
-      | THEN 200 OK and the read office manager is returned
+    """GIVEN read account endpoint
+      | WHEN an existing user is read by another user
+      | THEN 200 OK and the read user is returned
       |""".stripMargin
   ) {
-    val officeManagerId = anyAccountId
-    val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId)
-    val accountService = whenF(mock[AccountService[IO]].readOfficeManager(any)) thenReturn officeManager
+    val userId = anyAccountId
+    val user = anyUserAccount.copy(id = userId)
+    val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn user
 
-    val response = sendRequest(accountService, role = OfficeManager) {
-      basicRequest.get(uri"http://test.com/account/office-manager/$officeManagerId")
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.get(uri"http://test.com/account/$userId")
     }
 
     for {
       response <- response
     } yield expect.all(
       response.code == StatusCode.Ok,
-      bodyJson(response) == ApiOfficeManagerAccount.fromDomain(officeManager).asJson
+      bodyJson(response) == ApiAccount.fromDomain(user).asJson
     )
   }
 
   test(
-    """GIVEN read office manager endpoint
-      | WHEN there is an attempt to read the office manager by a user
-      | THEN 403 Forbidden is returned
+    """GIVEN read account endpoint
+      | WHEN an existing office manager is read by a user
+      | THEN 200 OK and the read office manager is returned
       |""".stripMargin
   ) {
     val officeManagerId = anyAccountId
+    val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId)
     val accountService = mock[AccountService[IO]]
 
     val response = sendRequest(accountService, role = User) {
-      basicRequest.get(uri"http://test.com/account/office-manager/$officeManagerId")
+      basicRequest.get(uri"http://test.com/account/$officeManagerId")
     }
 
     for {
       response <- response
-    } yield {
-      verify(accountService, never).readOfficeManager(any)
-      expect(response.code == StatusCode.Forbidden)
-    }
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiAccount.fromDomain(officeManager).asJson
+    )
   }
 
   test(
-    """GIVEN read office manager endpoint
-      | WHEN the office manager is not found (AccountNotFound error)
+    """GIVEN read account endpoint
+      | WHEN an existing super admin is read by a user
+      | THEN 200 OK and the read super admin is returned
+      |""".stripMargin
+  ) {
+    val superAdminId = anyAccountId
+    val superAdmin = anySuperAdminAccount.copy(id = superAdminId)
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.get(uri"http://test.com/account/$superAdminId")
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiAccount.fromDomain(superAdmin).asJson
+    )
+  }
+
+  test(
+    """GIVEN read account endpoint
+      | WHEN the account is not found (AccountNotFound error)
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val officeManagerId = anyAccountId
-    val accountService =
-      whenF(mock[AccountService[IO]].readOfficeManager(any)) thenFailWith AccountNotFound(officeManagerId)
+    val accountId = anyAccountId
+    val accountService = whenF(mock[AccountService[IO]].read(any)) thenFailWith AccountNotFound(accountId)
 
     val response = sendRequest(accountService) {
-      basicRequest.get(uri"http://test.com/account/office-manager/$officeManagerId")
+      basicRequest.get(uri"http://test.com/account/$accountId")
     }
 
     for {
@@ -447,8 +313,155 @@ object AccountEndpointsSuite
   }
 
   test(
-    """GIVEN update office manager managed offices endpoint
-      | WHEN the offices are successfully assigned by a super admin
+    """GIVEN assign office endpoint
+      | WHEN the office is assigned by an office manager to a user
+      | THEN 200 OK and the updated user is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val officeId = anyOfficeId
+    val user = anyUserAccount.copy(id = userId, assignedOfficeId = Some(officeId))
+    val accountService =
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.put(uri"http://test.com/account/$userId/assigned-office-id/$officeId")
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiAccount.fromDomain(user).asJson
+    )
+  }
+
+  test(
+    """GIVEN assign office endpoint
+      | WHEN there is an attempt to assign the office by a user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val officeId = anyOfficeId
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.put(uri"http://test.com/account/$userId/assigned-office-id/$officeId")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).updateAssignedOffice(any, any)
+      expect(response.code == StatusCode.Forbidden)
+    }
+  }
+
+  test(
+    """GIVEN assign office endpoint
+      | WHEN assigning the office fails with OfficeNotFound error
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith OfficeNotFound(officeId)
+
+    val response = sendRequest(accountService) {
+      basicRequest.put(uri"http://test.com/account/$anyAccountId/assigned-office-id/$officeId")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN assign office endpoint
+      | WHEN assigning the office fails with AccountNotFound error
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
+
+    val response = sendRequest(accountService) {
+      basicRequest.put(uri"http://test.com/account/$userId/assigned-office-id/$anyOfficeId")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
+    """GIVEN unassign office endpoint
+      | WHEN the office is successfully unassigned by an office manager
+      | THEN 200 OK and the updated user is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val user = anyUserAccount.copy(id = userId, assignedOfficeId = None)
+    val accountService =
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
+
+    val response = sendRequest(accountService, role = OfficeManager) {
+      basicRequest.delete(uri"http://test.com/account/$userId/assigned-office-id")
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiAccount.fromDomain(user).asJson
+    )
+  }
+
+  test(
+    """GIVEN unassign office endpoint
+      | WHEN there is an attempt to unassign the office by a user
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val accountService = mock[AccountService[IO]]
+
+    val response = sendRequest(accountService, role = User) {
+      basicRequest.delete(uri"http://test.com/account/$userId/assigned-office-id")
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(accountService, never).updateAssignedOffice(any, any)
+      expect(response.code == StatusCode.Forbidden)
+    }
+  }
+
+  test(
+    """GIVEN unassign office endpoint
+      | WHEN unassigning the office fails with AccountNotFound error
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val userId = anyAccountId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
+
+    val response = sendRequest(accountService) {
+      basicRequest.delete(uri"http://test.com/account/$userId/assigned-office-id")
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
+    """GIVEN update managed offices endpoint
+      | WHEN the offices are successfully assigned by a super admin to an office manager
       | THEN 200 OK and the updated office manager is returned
       |""".stripMargin
   ) {
@@ -460,7 +473,7 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
-        .put(uri"http://test.com/account/office-manager/$officeManagerId/managed-office-ids")
+        .put(uri"http://test.com/account/$officeManagerId/managed-office-ids")
         .body(managedOfficeIds)
     }
 
@@ -468,12 +481,12 @@ object AccountEndpointsSuite
       response <- response
     } yield expect.all(
       response.code == StatusCode.Ok,
-      bodyJson(response) == ApiOfficeManagerAccount.fromDomain(officeManager).asJson
+      bodyJson(response) == ApiAccount.fromDomain(officeManager).asJson
     )
   }
 
   test(
-    """GIVEN update office manager managed offices endpoint
+    """GIVEN update managed offices endpoint
       | WHEN there is an attempt to assign the offices by an office manager
       | THEN 403 Forbidden is returned
       |""".stripMargin
@@ -483,7 +496,7 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
-        .put(uri"http://test.com/account/office-manager/$anyAccountId/managed-office-ids")
+        .put(uri"http://test.com/account/$anyAccountId/managed-office-ids")
         .body(managedOfficeIds)
     }
 
@@ -496,7 +509,7 @@ object AccountEndpointsSuite
   }
 
   test(
-    """GIVEN update office manager managed offices endpoint
+    """GIVEN update managed offices endpoint
       | WHEN assigning the offices fails with AccountNotFound error
       | THEN 404 NotFound is returned
       |""".stripMargin
@@ -508,7 +521,7 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService) {
       basicRequest
-        .put(uri"http://test.com/account/office-manager/$officeManagerId/managed-office-ids")
+        .put(uri"http://test.com/account/$officeManagerId/managed-office-ids")
         .body(List(anyOfficeId))
     }
 
@@ -518,153 +531,18 @@ object AccountEndpointsSuite
   }
 
   test(
-    """GIVEN create super admin endpoint
-      | WHEN a super admin is POSTed and created by another super admin
-      | THEN 201 Created and the created super admin is returned
-      |""".stripMargin
-  ) {
-    val superAdminToCreate = anyApiCreateSuperAdminAccount
-    val superAdmin = SuperAdminAccount(
-      id = anyAccountId,
-      firstName = superAdminToCreate.firstName,
-      lastName = superAdminToCreate.lastName,
-      email = superAdminToCreate.email
-    )
-    val accountService = whenF(mock[AccountService[IO]].createSuperAdmin(any)) thenReturn superAdmin
-
-    val response = sendRequest(accountService, role = SuperAdmin) {
-      basicRequest
-        .post(uri"http://test.com/account/super-admin")
-        .body(superAdminToCreate)
-    }
-
-    for {
-      response <- response
-    } yield expect.all(
-      response.code == StatusCode.Created,
-      bodyJson(response) == ApiSuperAdminAccount.fromDomain(superAdmin).asJson
-    )
-  }
-
-  test(
-    """GIVEN create super admin endpoint
-      | WHEN there is an attempt to create a super admin by an office manager
-      | THEN 403 Forbidden is returned
-      |""".stripMargin
-  ) {
-    val superAdminToCreate = anyApiCreateSuperAdminAccount
-    val accountService = mock[AccountService[IO]]
-
-    val response = sendRequest(accountService, role = OfficeManager) {
-      basicRequest
-        .post(uri"http://test.com/account/super-admin")
-        .body(superAdminToCreate)
-    }
-
-    for {
-      response <- response
-    } yield {
-      verify(accountService, never).createSuperAdmin(any)
-      expect(response.code == StatusCode.Forbidden)
-    }
-  }
-
-  test(
-    """GIVEN create super admin endpoint
-      | WHEN creating the super admin fails with DuplicateAccountEmail error
-      | THEN 409 Conflict is returned
-      |""".stripMargin
-  ) {
-    val accountService =
-      whenF(mock[AccountService[IO]].createSuperAdmin(any)) thenFailWith DuplicateAccountEmail(anyEmail)
-
-    val response = sendRequest(accountService) {
-      basicRequest
-        .post(uri"http://test.com/account/super-admin")
-        .body(anyApiCreateSuperAdminAccount)
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.Conflict)
-  }
-
-  test(
-    """GIVEN read super admin endpoint
-      | WHEN an existing super admin is read by a super admin
-      | THEN 200 OK and the read super admin is returned
-      |""".stripMargin
-  ) {
-    val superAdminId = anyAccountId
-    val superAdmin = anySuperAdminAccount.copy(id = superAdminId)
-    val accountService = whenF(mock[AccountService[IO]].readSuperAdmin(any)) thenReturn superAdmin
-
-    val response = sendRequest(accountService, role = SuperAdmin) {
-      basicRequest.get(uri"http://test.com/account/super-admin/$superAdminId")
-    }
-
-    for {
-      response <- response
-    } yield expect.all(
-      response.code == StatusCode.Ok,
-      bodyJson(response) == ApiSuperAdminAccount.fromDomain(superAdmin).asJson
-    )
-  }
-
-  test(
-    """GIVEN read super admin endpoint
-      | WHEN there is an attempt to read the super admin by an office manager
-      | THEN 403 Forbidden is returned
-      |""".stripMargin
-  ) {
-    val superAdminId = anyAccountId
-    val accountService = mock[AccountService[IO]]
-
-    val response = sendRequest(accountService, role = OfficeManager) {
-      basicRequest.get(uri"http://test.com/account/super-admin/$superAdminId")
-    }
-
-    for {
-      response <- response
-    } yield {
-      verify(accountService, never).readSuperAdmin(any)
-      expect(response.code == StatusCode.Forbidden)
-    }
-  }
-
-  test(
-    """GIVEN read super admin endpoint
-      | WHEN the super admin is not found (AccountNotFound error)
-      | THEN 404 NotFound is returned
-      |""".stripMargin
-  ) {
-    val superAdminId = anyAccountId
-    val accountService =
-      whenF(mock[AccountService[IO]].readSuperAdmin(any)) thenFailWith AccountNotFound(superAdminId)
-
-    val response = sendRequest(accountService) {
-      basicRequest.get(uri"http://test.com/account/super-admin/$superAdminId")
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.NotFound)
-  }
-
-  test(
-    """GIVEN update roles endpoint
-      | WHEN the roles are successfully updated by a super admin
+    """GIVEN update role endpoint
+      | WHEN the role is successfully updated by a super admin
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
     val accountId = anyAccountId
     val accountService =
-      whenF(mock[AccountService[IO]].updateRoles(any, any)) thenReturn anyUserAccount
+      whenF(mock[AccountService[IO]].updateRole(any, any)) thenReturn anyUserAccount
 
     val response = sendRequest(accountService, role = SuperAdmin) {
       basicRequest
-        .put(uri"http://test.com/account/$accountId/roles")
-        .body(anyApiAccountRoles)
+        .put(uri"http://test.com/account/$accountId/role/${anyApiAccountRole.entryName}")
     }
 
     for {
@@ -673,8 +551,8 @@ object AccountEndpointsSuite
   }
 
   test(
-    """GIVEN update roles endpoint
-      | WHEN there is an attempt to update the roles by an office manager
+    """GIVEN update role endpoint
+      | WHEN there is an attempt to update the role by an office manager
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
@@ -682,53 +560,30 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
-        .put(uri"http://test.com/account/$anyAccountId/roles")
-        .body(anyApiAccountRoles)
+        .put(uri"http://test.com/account/$anyAccountId/role/${anyApiAccountRole.entryName}")
     }
 
     for {
       response <- response
     } yield {
-      verify(accountService, never).updateRoles(any, any)
+      verify(accountService, never).updateRole(any, any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
 
   test(
-    """GIVEN update roles endpoint
-      | WHEN an empty list of roles is supplied
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val accountId = anyAccountId
-    val accountService =
-      whenF(mock[AccountService[IO]].updateRoles(any, any)) thenReturn anyUserAccount
-
-    val response = sendRequest(accountService) {
-      basicRequest
-        .put(uri"http://test.com/account/$accountId/roles")
-        .body(List.empty[ApiRole])
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN update roles endpoint
+    """GIVEN update role endpoint
       | WHEN the account is not found (AccountNotFound error)
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
     val accountId = anyAccountId
     val accountService =
-      whenF(mock[AccountService[IO]].updateRoles(any, any)) thenFailWith AccountNotFound(accountId)
+      whenF(mock[AccountService[IO]].updateRole(any, any)) thenFailWith AccountNotFound(accountId)
 
     val response = sendRequest(accountService) {
       basicRequest
-        .put(uri"http://test.com/account/$accountId/roles")
-        .body(anyApiAccountRoles)
+        .put(uri"http://test.com/account/$accountId/role/${anyApiAccountRole.entryName}")
     }
 
     for {
@@ -744,8 +599,7 @@ object AccountEndpointsSuite
   ) {
     val accountId = anyAccountId
     val accountService = mock[AccountService[IO]]
-    whenF(accountService.readSuperAdmin(any)) thenFailWith AccountNotFound(accountId)
-    whenF(accountService.readOfficeManager(any)) thenFailWith AccountNotFound(accountId)
+    whenF(accountService.read(any)) thenReturn anyUserAccount
     whenF(accountService.archive(any)) thenReturn ()
 
     val response = sendRequest(accountService, role = OfficeManager) {
@@ -785,8 +639,7 @@ object AccountEndpointsSuite
   ) {
     val officeManagerAccountId = anyAccountId
     val accountService = mock[AccountService[IO]]
-    whenF(accountService.readSuperAdmin(officeManagerAccountId)) thenFailWith AccountNotFound(officeManagerAccountId)
-    whenF(accountService.readOfficeManager(officeManagerAccountId)) thenReturn anyOfficeManagerAccount
+    whenF(accountService.read(officeManagerAccountId)) thenReturn anyOfficeManagerAccount
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/account/$officeManagerAccountId")
@@ -808,8 +661,7 @@ object AccountEndpointsSuite
   ) {
     val superAdminAccountId = anyAccountId
     val accountService = mock[AccountService[IO]]
-    whenF(accountService.readSuperAdmin(superAdminAccountId)) thenReturn anySuperAdminAccount
-    whenF(accountService.readOfficeManager(superAdminAccountId)) thenFailWith AccountNotFound(superAdminAccountId)
+    whenF(accountService.read(superAdminAccountId)) thenReturn anySuperAdminAccount
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.delete(uri"http://test.com/account/$superAdminAccountId")
@@ -841,11 +693,13 @@ object AccountEndpointsSuite
     assignedOfficeId = Some(anyOfficeId)
   )
 
-  private lazy val anyApiCreateUserAccount = ApiCreateUserAccount(
+  private lazy val anyApiCreateUserAccount = ApiCreateAccount(
+    role = ApiRole.User,
     firstName = "John",
     lastName = "Doe",
     email = anyEmail,
-    assignedOfficeId = Some(anyOfficeId)
+    assignedOfficeId = Some(anyOfficeId),
+    managedOfficeIds = Nil
   )
 
   private lazy val anyOfficeManagerAccount = OfficeManagerAccount(
@@ -859,10 +713,12 @@ object AccountEndpointsSuite
     )
   )
 
-  private lazy val anyApiCreateOfficeManagerAccount = ApiCreateOfficeManagerAccount(
+  private lazy val anyApiCreateOfficeManagerAccount = ApiCreateAccount(
+    role = ApiRole.OfficeManager,
     firstName = "John",
     lastName = "Doe",
     email = "john.doe@example.com",
+    assignedOfficeId = Some(anyOfficeId),
     managedOfficeIds = List(
       UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
       UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
@@ -876,10 +732,13 @@ object AccountEndpointsSuite
     email = "john.doe@example.com"
   )
 
-  private lazy val anyApiCreateSuperAdminAccount = ApiCreateSuperAdminAccount(
+  private lazy val anyApiCreateSuperAdminAccount = ApiCreateAccount(
+    role = ApiRole.SuperAdmin,
     firstName = "John",
     lastName = "Doe",
-    email = "john.doe@example.com"
+    email = "john.doe@example.com",
+    assignedOfficeId = None,
+    managedOfficeIds = Nil
   )
 
   private lazy val anyAccountId: UUID = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
@@ -888,5 +747,5 @@ object AccountEndpointsSuite
 
   private lazy val anyOfficeId: UUID = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed")
 
-  private lazy val anyApiAccountRoles = List[ApiRole](ApiRole.OfficeManager)
+  private lazy val anyApiAccountRole = ApiRole.OfficeManager
 }
