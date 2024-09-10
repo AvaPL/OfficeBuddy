@@ -33,7 +33,7 @@ object KeycloakUserSuite extends SimpleIOSuite {
       isEnabled = true
     )
 
-    val keycloakUser = KeycloakUser.fromUserAccount(userAccount)
+    val keycloakUser = KeycloakUser.fromDomainAccount(userAccount)
 
     expect(keycloakUser == expectedKeycloakUser)
   }
@@ -49,6 +49,7 @@ object KeycloakUserSuite extends SimpleIOSuite {
       firstName = "Test",
       lastName = "User",
       email = "test.office.manager@localhost",
+      assignedOfficeId = Some(anyOfficeId),
       managedOfficeIds = List(anyOfficeId)
     )
     val expectedKeycloakUser = KeycloakUser(
@@ -57,13 +58,12 @@ object KeycloakUserSuite extends SimpleIOSuite {
       lastName = officeManagerAccount.lastName,
       roles = List(KeycloakRole.OfficeManager),
       attributes = List(
-        KeycloakAttribute.AccountId(officeManagerAccount.id),
-        KeycloakAttribute.ManagedOfficeIds(officeManagerAccount.managedOfficeIds)
+        KeycloakAttribute.AccountId(officeManagerAccount.id)
       ),
       isEnabled = true
     )
 
-    val keycloakUser = KeycloakUser.fromOfficeManagerAccount(officeManagerAccount)
+    val keycloakUser = KeycloakUser.fromDomainAccount(officeManagerAccount)
 
     expect(keycloakUser == expectedKeycloakUser)
   }
@@ -78,7 +78,9 @@ object KeycloakUserSuite extends SimpleIOSuite {
       id = anyAccountId,
       firstName = "Test",
       lastName = "User",
-      email = "test.super.admin@localhost"
+      email = "test.super.admin@localhost",
+      assignedOfficeId = Some(anyOfficeId),
+      managedOfficeIds = List(anyOfficeId)
     )
     val expectedKeycloakUser = KeycloakUser(
       email = superAdminAccount.email,
@@ -91,7 +93,7 @@ object KeycloakUserSuite extends SimpleIOSuite {
       isEnabled = true
     )
 
-    val keycloakUser = KeycloakUser.fromSuperAdminAccount(superAdminAccount)
+    val keycloakUser = KeycloakUser.fromDomainAccount(superAdminAccount)
 
     expect(keycloakUser == expectedKeycloakUser)
   }
@@ -108,8 +110,7 @@ object KeycloakUserSuite extends SimpleIOSuite {
       lastName = "User",
       roles = List(KeycloakRole.OfficeManager),
       attributes = List(
-        KeycloakAttribute.AccountId(anyAccountId),
-        KeycloakAttribute.ManagedOfficeIds(List(anyOfficeId))
+        KeycloakAttribute.AccountId(anyAccountId)
       )
     )
 

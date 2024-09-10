@@ -138,12 +138,10 @@ object KeycloakPostgresAccountRepositorySuite
     val assignedOfficeId = Some(anyOfficeId)
 
     val expectedUpdatedAccount = anyUserAccount.copy(id = accountId, assignedOfficeId = assignedOfficeId)
-    val keycloakUser = KeycloakUser.fromDomainAccount(expectedUpdatedAccount)
 
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
     whenF(postgresAccountRepository.updateAssignedOffice(any, any)) thenReturn expectedUpdatedAccount
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
-    whenF(keycloakUserRepository.findUserByEmail(any)) thenReturn keycloakUser
     val keycloakPostgresAccountRepository =
       new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
 
@@ -151,7 +149,6 @@ object KeycloakPostgresAccountRepositorySuite
       updatedUser <- keycloakPostgresAccountRepository.updateAssignedOffice(accountId, assignedOfficeId)
     } yield {
       verify(postgresAccountRepository, only).updateAssignedOffice(eqTo(accountId), eqTo(assignedOfficeId))
-      verify(keycloakUserRepository, only).findUserByEmail(eqTo(expectedUpdatedAccount.email))
       expect(updatedUser == expectedUpdatedAccount)
     }
   }
@@ -159,7 +156,7 @@ object KeycloakPostgresAccountRepositorySuite
   test(
     """GIVEN an office manager ID and a list of managed office IDs
       | WHEN updateManagedOffices is called
-      | THEN the managed offices should be updated in Postges
+      | THEN the managed offices should be updated in Postgres
       |""".stripMargin
   ) {
     val officeManagerId = anyAccountId
@@ -169,19 +166,17 @@ object KeycloakPostgresAccountRepositorySuite
     )
 
     val expectedOfficeManager = anyOfficeManagerAccount.copy(id = officeManagerId, managedOfficeIds = managedOfficeIds)
-    val keycloakUser = KeycloakUser.fromDomainAccount(expectedOfficeManager)
 
     val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
-    whenF(postgresAccountRepository.read(any)) thenReturn expectedOfficeManager
+    whenF(postgresAccountRepository.updateManagedOffices(any, any)) thenReturn expectedOfficeManager
     val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
-    whenF(keycloakUserRepository.getUserAttributes(any)) thenReturn keycloakUser.attributes
     val keycloakPostgresAccountRepository =
       new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
 
     for {
       updatedOfficeManager <- keycloakPostgresAccountRepository.updateManagedOffices(officeManagerId, managedOfficeIds)
     } yield {
-      verify(postgresAccountRepository, only).read(eqTo(officeManagerId))
+      verify(postgresAccountRepository).updateManagedOffices(eqTo(officeManagerId), eqTo(managedOfficeIds))
       expect(updatedOfficeManager == expectedOfficeManager)
     }
   }

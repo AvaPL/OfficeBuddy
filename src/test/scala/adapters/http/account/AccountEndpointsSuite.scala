@@ -258,7 +258,7 @@ object AccountEndpointsSuite
   ) {
     val officeManagerId = anyAccountId
     val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId)
-    val accountService = mock[AccountService[IO]]
+    val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn officeManager
 
     val response = sendRequest(accountService, role = User) {
       basicRequest.get(uri"http://test.com/account/$officeManagerId")
@@ -280,7 +280,7 @@ object AccountEndpointsSuite
   ) {
     val superAdminId = anyAccountId
     val superAdmin = anySuperAdminAccount.copy(id = superAdminId)
-    val accountService = mock[AccountService[IO]]
+    val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn superAdmin
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest.get(uri"http://test.com/account/$superAdminId")

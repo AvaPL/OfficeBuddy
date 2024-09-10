@@ -8,6 +8,7 @@ import adapters.http.SecuredApiEndpoint
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
+import domain.model.account.CreateAccount
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.SuperAdmin
@@ -40,7 +41,6 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       archiveAccountEndpoint ::
       Nil
 
-  // TODO: Office managers and super admins should be creatable only by super admins
   private lazy val createAccountEndpoint =
     securedEndpoint(requiredRole = OfficeManager).post
       .summary("Create an account")
@@ -66,11 +66,23 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
             .description("Account with the given email already exists")
         )
       )
-      .serverLogic(_ => createAccount)
+      .serverLogic(accessToken => createAccount(requesterRoles = accessToken.roles))
 
-  private def createAccount(apiCreateAccount: ApiCreateAccount) =
+  private def createAccount(
+    requesterRoles: List[Role]
+  )(apiCreateAccount: ApiCreateAccount): F[Either[ApiError, ApiAccount]] = {
+    val domainCreateAccount = apiCreateAccount.toDomain
+    val hasPermission = domainCreateAccount.role match {
+      case User                       => requesterRoles.exists(_.hasAccess(OfficeManager))
+      case OfficeManager | SuperAdmin => requesterRoles.exists(_.hasAccess(SuperAdmin))
+    }
+    if (hasPermission) createAccount(domainCreateAccount)
+    else ApiError.Forbidden.asLeft.pure[F].widen
+  }
+
+  private def createAccount(createAccount: CreateAccount): F[Either[ApiError, ApiAccount]] =
     accountService
-      .create(apiCreateAccount.toDomain)
+      .create(createAccount)
       .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {

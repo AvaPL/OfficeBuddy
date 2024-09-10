@@ -37,6 +37,7 @@ class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
   override def updateAssignedOffice(accountId: UUID, officeId: Option[UUID]): F[Account] =
     postgresAccountRepository.updateAssignedOffice(accountId, officeId)
 
+  // TODO: Allow updating managed offices only for office managers and super admins
   override def updateManagedOffices(
     accountId: UUID,
     managedOfficeIds: List[UUID]
