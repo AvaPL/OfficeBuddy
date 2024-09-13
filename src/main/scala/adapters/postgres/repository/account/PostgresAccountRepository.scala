@@ -1,6 +1,7 @@
 package io.github.avapl
 package adapters.postgres.repository.account
 
+import adapters.postgres.repository._uuid
 import cats.data.OptionT
 import cats.effect.kernel.MonadCancelThrow
 import cats.effect.kernel.Resource
@@ -11,13 +12,12 @@ import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import enumeratum.values.StringEnum
 import enumeratum.values.StringEnumEntry
+import io.scalaland.chimney.dsl._
 import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
 import skunk.codec.all._
-import skunk.data.Arr
 import skunk.data.Completion
-import skunk.data.Type
 import skunk.implicits._
 
 class PostgresAccountRepository[F[_]: MonadCancelThrow](
@@ -116,7 +116,7 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
       for {
         sql <- session.prepare(updateRoleSql)
         _ <- sql
-          .execute(accountTypeFromDomain(role) *: accountId *: EmptyTuple)
+          .execute(PostgresAccountType.fromDomain(role) *: accountId *: EmptyTuple)
           .ensureOr {
             case Completion.Update(0) => AccountNotFound(accountId)
             case completion           => new RuntimeException(s"Expected 1 updated account, but got: $completion")
@@ -168,7 +168,9 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
 
 object PostgresAccountRepository {
 
-  sealed abstract class PostgresAccountType(val value: String) extends StringEnumEntry
+  sealed abstract class PostgresAccountType(val value: String) extends StringEnumEntry {
+    lazy val toDomain: Role = this.transformInto[Role]
+  }
 
   object PostgresAccountType extends StringEnum[PostgresAccountType] {
 
@@ -180,6 +182,9 @@ object PostgresAccountRepository {
 
     lazy val accountTypeCodec: Codec[PostgresAccountType] =
       varchar.imap[PostgresAccountType](PostgresAccountType.withValue)(_.value)
+
+    def fromDomain(role: Role): PostgresAccountType =
+      role.transformInto[PostgresAccountType]
   }
 
   lazy val accountEncoder: Encoder[Account] =
@@ -198,17 +203,10 @@ object PostgresAccountRepository {
         account.firstName *:
         account.lastName *:
         account.isArchived *:
-        accountTypeFromDomain(account.role) *:
+        PostgresAccountType.fromDomain(account.role) *:
         account.assignedOfficeId *:
         managedOfficeIdsFromDomain(account) *:
         EmptyTuple
-    }
-
-  private def accountTypeFromDomain(role: Role): PostgresAccountType =
-    role match {
-      case Role.User          => PostgresAccountType.User
-      case Role.OfficeManager => PostgresAccountType.OfficeManager
-      case Role.SuperAdmin    => PostgresAccountType.SuperAdmin
     }
 
   private def managedOfficeIdsFromDomain(account: Account) =
@@ -261,13 +259,4 @@ object PostgresAccountRepository {
             )
         }
     }
-
-  private lazy val _uuid: Codec[List[UUID]] =
-    Codec
-      .array[UUID](
-        u => u.toString,
-        s => Either.catchOnly[IllegalArgumentException](UUID.fromString(s)).leftMap(_.getMessage),
-        Type._uuid
-      )
-      .imap(_.flattenTo(List))(Arr(_: _*))
 }

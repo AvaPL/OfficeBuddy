@@ -5,6 +5,7 @@ import adapters.auth.model.PublicKey
 import adapters.http.fixture.SecuredApiEndpointFixture
 import adapters.http.office.model._
 import adapters.http.office.model.view.ApiOfficeListView
+
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -17,8 +18,11 @@ import domain.model.office.Office
 import domain.model.office.view._
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
+
 import io.circe.parser._
 import io.circe.syntax._
+import io.github.avapl.domain.model.view.Pagination
+
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar

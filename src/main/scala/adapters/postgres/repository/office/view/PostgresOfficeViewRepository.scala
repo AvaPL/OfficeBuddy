@@ -8,8 +8,8 @@ import cats.syntax.all._
 import domain.model.office.view.AddressView
 import domain.model.office.view.OfficeListView
 import domain.model.office.view.OfficeView
-import domain.model.office.view.Pagination
 import domain.repository.office.view.OfficeViewRepository
+import domain.model.view.Pagination
 import scala.annotation.nowarn
 import skunk._
 import skunk.Query
@@ -20,6 +20,8 @@ import skunk.implicits._
 class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
   session: Resource[F, Session[F]]
 ) extends OfficeViewRepository[F] {
+
+  import PostgresOfficeViewRepository._
 
   override def listOffices(limit: Int, offset: Int): F[OfficeListView] =
     session.use { session =>
@@ -36,6 +38,9 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
         )
       }
     }
+}
+
+object PostgresOfficeViewRepository {
 
   // TODO: Populate counter values
   private lazy val listOfficesSql: Query[Int *: Int *: EmptyTuple, OfficeView] =
