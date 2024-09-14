@@ -1,9 +1,9 @@
 package io.github.avapl
-package adapters.http.office.model.view
+package adapters.http.account.model.view
 
 import adapters.http.model.view.ApiPagination
 import derevo.derive
-import domain.model.office.view.OfficeListView
+import domain.model.account.view.AccountListView
 import io.scalaland.chimney.dsl._
 import sttp.tapir.Schema.annotations.encodedName
 import util.derevo.circe.circeDecoder
@@ -11,14 +11,14 @@ import util.derevo.circe.circeEncoder
 import util.derevo.tapir.tapirSchema
 
 @derive(circeEncoder, circeDecoder, tapirSchema)
-@encodedName("OfficeListView")
-case class ApiOfficeListView(
-  offices: List[ApiOfficeView],
+@encodedName("AccountListView")
+case class ApiAccountListView(
+  accounts: List[ApiAccountView],
   pagination: ApiPagination
 )
 
-object ApiOfficeListView {
+object ApiAccountListView {
 
-  def fromDomain(officeListView: OfficeListView): ApiOfficeListView =
-    officeListView.transformInto[ApiOfficeListView]
+  def fromDomain(accountListView: AccountListView): ApiAccountListView =
+    accountListView.transformInto[ApiAccountListView]
 }

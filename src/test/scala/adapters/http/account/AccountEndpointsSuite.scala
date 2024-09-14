@@ -1,6 +1,8 @@
 package io.github.avapl
 package adapters.http.account
 
+import adapters.auth.model.PublicKey
+import adapters.http.account.model.view.ApiAccountListView
 import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
 import domain.model.account.OfficeManagerAccount
@@ -10,9 +12,13 @@ import domain.model.account.Role.SuperAdmin
 import domain.model.account.Role.User
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
+import domain.model.account.view.AccountListView
+import domain.model.account.view.AccountView
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
+import domain.model.view.Pagination
+import domain.repository.account.view.AccountViewRepository
 import domain.service.account.AccountService
 import io.circe.parser._
 import io.circe.syntax._
@@ -675,12 +681,248 @@ object AccountEndpointsSuite
     }
   }
 
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called with filters, limit and offset
+      | THEN 200 OK and the list of accounts is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val accountListView = AccountListView(
+      accounts = List(
+        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Adam", lastName = "Doe"),
+        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Jane", lastName = "Doe")
+      ),
+      pagination = Pagination(
+        limit = 10,
+        offset = 0,
+        hasMoreResults = false
+      )
+    )
+    whenF(accountViewRepository.listAccounts(any, any, any, any, any)) thenReturn accountListView
+
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "text_search_query" -> "doe",
+            "office_id" -> anyOfficeId.toString,
+            "roles" -> List(ApiRole.User, ApiRole.OfficeManager).map(_.entryName).mkString(","),
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiAccountListView.fromDomain(accountListView).asJson
+    )
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called with no filters, limit and offset
+      | THEN 200 OK and the list of accounts is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val accountListView = AccountListView(
+      accounts = List(
+        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Adam", lastName = "Doe"),
+        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Jane", lastName = "Doe")
+      ),
+      pagination = Pagination(
+        limit = 10,
+        offset = 0,
+        hasMoreResults = false
+      )
+    )
+    whenF(accountViewRepository.listAccounts(any, any, any, any, any)) thenReturn accountListView
+
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiAccountListView.fromDomain(accountListView).asJson
+    )
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN office_id is not a valid UUID
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "office_id" -> "not a UUID",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN roles contains an invalid role
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "roles" -> s"${ApiRole.User},InvalidRole",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called with limit less than 1
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "limit" -> "0",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called with negative offset
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "-1"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called with limit that is not a number
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "limit" -> "notANumber",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called with offset that is not a number
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "notANumber"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
   private def sendRequest(accountService: AccountService[IO], role: Role = SuperAdmin)(
     request: Request[Either[String, String], Any]
-  ) =
+  ) = {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
     sendSecuredApiEndpointRequest(request, role) { claimsExtractorService =>
-      new AccountEndpoints[IO](accountService, publicKeyRepository, claimsExtractorService).endpoints
+      new AccountEndpoints[IO](
+        accountService,
+        accountViewRepository,
+        publicKeyRepository,
+        claimsExtractorService
+      ).endpoints
     }
+  }
+
+  private def sendViewRequest(
+    accountViewRepository: AccountViewRepository[IO]
+  )(
+    request: Request[Either[String, String], Any]
+  ): IO[Response[Either[PublicKey, PublicKey]]] = {
+    val accountService = mock[AccountService[IO]]
+    sendSecuredApiEndpointRequest(request, role = User) { rolesExtractorService =>
+      new AccountEndpoints[IO](
+        accountService,
+        accountViewRepository,
+        publicKeyRepository,
+        rolesExtractorService
+      ).endpoints
+    }
+  }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get
@@ -707,10 +949,7 @@ object AccountEndpointsSuite
     firstName = "John",
     lastName = "Doe",
     email = "john.doe@example.com",
-    managedOfficeIds = List(
-      UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
-      UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
-    )
+    managedOfficeIds = anyManagedOfficeIds
   )
 
   private lazy val anyApiCreateOfficeManagerAccount = ApiCreateAccount(
@@ -719,10 +958,7 @@ object AccountEndpointsSuite
     lastName = "Doe",
     email = "john.doe@example.com",
     assignedOfficeId = Some(anyOfficeId),
-    managedOfficeIds = List(
-      UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
-      UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
-    )
+    managedOfficeIds = anyManagedOfficeIds
   )
 
   private lazy val anySuperAdminAccount = SuperAdminAccount(
@@ -741,11 +977,26 @@ object AccountEndpointsSuite
     managedOfficeIds = Nil
   )
 
-  private lazy val anyAccountId: UUID = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
+  private lazy val anyAccountId = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
 
   private lazy val anyEmail = "john.doe@example.com"
 
-  private lazy val anyOfficeId: UUID = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed")
+  private lazy val anyOfficeId = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed")
+
+  private lazy val anyManagedOfficeIds = List(
+    UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
+    UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
+  )
 
   private lazy val anyApiAccountRole = ApiRole.OfficeManager
+
+  private lazy val anyAccountView = AccountView(
+    id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
+    firstName = "Test",
+    lastName = "OfficeManager",
+    email = "test.office.manager@postgres.localhost",
+    role = Role.OfficeManager,
+    assignedOfficeId = Some(anyOfficeId),
+    managedOfficeIds = List(anyOfficeId)
+  )
 }

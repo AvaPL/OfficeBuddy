@@ -7,6 +7,7 @@ import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
 import adapters.http.office.model._
 import adapters.http.office.model.view._
+
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -16,6 +17,9 @@ import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
+
+import io.github.avapl.adapters.http.model.view.ApiPagination
+
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._

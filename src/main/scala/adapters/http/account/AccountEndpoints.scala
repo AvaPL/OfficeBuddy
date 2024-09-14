@@ -17,14 +17,21 @@ import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
+import io.github.avapl.adapters.http.account.model.view.ApiAccountListView
+import io.github.avapl.adapters.http.account.model.view.ApiAccountView
+import io.github.avapl.adapters.http.model.view.ApiPagination
+import io.github.avapl.domain.repository.account.view.AccountViewRepository
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
+import sttp.tapir.model.CommaSeparated
+import sttp.tapir.model.Delimited
 import sttp.tapir.server.ServerEndpoint
 
 class AccountEndpoints[F[_]: Clock: MonadThrow](
   accountService: AccountService[F],
+  accountViewRepository: AccountViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val rolesExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F] {
@@ -39,6 +46,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       updateManagedOfficesEndpoint ::
       updateRoleEndpoint ::
       archiveAccountEndpoint ::
+      accountListViewEndpoint ::
       Nil
 
   private lazy val createAccountEndpoint =
@@ -276,6 +284,66 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         else ApiError.Forbidden.asLeft.pure[F]
     } yield result
 
+  private lazy val accountListViewEndpoint =
+    securedEndpoint(requiredRole = User)
+      .summary("Accounts list view")
+      .description(
+        """List of accounts to be displayed in the UI.
+          |
+          |Required role: user
+          |""".stripMargin
+      )
+      .in("view" / "list")
+      .in(
+        query[Option[String]]("text_search_query")
+          .description("Substring to search for in the account's first name, last name, or email (case-insensitive)")
+          .example(Some(textSearchQueryExample))
+      )
+      .in(
+        query[Option[UUID]]("office_id")
+          .description("Assigned office ID or managed office ID")
+          .example(Some(officeIdExample))
+      )
+      .in(
+        query[Option[CommaSeparated[ApiRole]]]("roles")
+          .description("List of allowed roles")
+          .example(Some(rolesExample))
+      )
+      .in(
+        query[Int]("limit")
+          .description("Maximum number of results to return (pagination)")
+          .validate(Validator.min(1))
+          .example(10)
+      )
+      .in(
+        query[Int]("offset")
+          .description("Number of results to skip (pagination)")
+          .validate(Validator.min(0))
+          .example(0)
+      )
+      .out(
+        jsonBody[ApiAccountListView]
+          .description("List of accounts")
+          .example(apiAccountListViewExample)
+      )
+      .serverLogic(_ => (accountListView _).tupled)
+
+  private def accountListView(
+    textSearchQuery: Option[String],
+    officeId: Option[UUID],
+    apiRoles: Option[CommaSeparated[ApiRole]],
+    limit: Int,
+    offset: Int
+  ) = {
+    val domainRoles = apiRoles.collect {
+      case Delimited(apiRoles) if apiRoles.nonEmpty => apiRoles.map(_.toDomain)
+    }
+    accountViewRepository
+      .listAccounts(textSearchQuery, officeId, domainRoles, limit, offset)
+      .map(ApiAccountListView.fromDomain)
+      .map(_.asRight[ApiError])
+  }
+
   private lazy val apiOfficeManagerAccountExample = ApiOfficeManagerAccount(
     id = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40"),
     firstName = "John",
@@ -298,5 +366,46 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
   private lazy val managedOfficeIdsExample = List(
     UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
     UUID.fromString("305bfad9-9354-4d7f-93ef-c1bab1f8dd7b")
+  )
+
+  private lazy val textSearchQueryExample = "john doe"
+  private lazy val officeIdExample = UUID.fromString("451aec8c-d7ec-4ff9-a091-cc6c944aefb1")
+  private lazy val rolesExample: CommaSeparated[ApiRole] = Delimited(List(ApiRole.User, ApiRole.OfficeManager))
+
+  private lazy val apiAccountListViewExample = ApiAccountListView(
+    accounts = List(
+      ApiAccountView(
+        id = UUID.fromString("8b7a9bdd-b729-4427-83c3-6eaee3c97171"),
+        firstName = "Test",
+        lastName = "User",
+        email = "test.user@postgres.localhost",
+        role = ApiRole.User,
+        assignedOfficeId = Some(officeIdExample),
+        managedOfficeIds = Nil
+      ),
+      ApiAccountView(
+        id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
+        firstName = "Test",
+        lastName = "OfficeManager",
+        email = "test.office.manager@postgres.localhost",
+        role = ApiRole.OfficeManager,
+        assignedOfficeId = Some(officeIdExample),
+        managedOfficeIds = managedOfficeIdsExample
+      ),
+      ApiAccountView(
+        id = UUID.fromString("78aef5b8-e7e7-4880-a4d7-3535eaa00c6a"),
+        firstName = "Test",
+        lastName = "SuperAdmin",
+        email = "test.super.admin@postgres.localhost",
+        role = ApiRole.SuperAdmin,
+        assignedOfficeId = Some(officeIdExample),
+        managedOfficeIds = managedOfficeIdsExample
+      )
+    ),
+    pagination = ApiPagination(
+      limit = 3,
+      offset = 0,
+      hasMoreResults = true
+    )
   )
 }

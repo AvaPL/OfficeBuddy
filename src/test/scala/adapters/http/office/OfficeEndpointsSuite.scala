@@ -5,7 +5,6 @@ import adapters.auth.model.PublicKey
 import adapters.http.fixture.SecuredApiEndpointFixture
 import adapters.http.office.model._
 import adapters.http.office.model.view.ApiOfficeListView
-
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -18,11 +17,9 @@ import domain.model.office.Office
 import domain.model.office.view._
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
-
 import io.circe.parser._
 import io.circe.syntax._
 import io.github.avapl.domain.model.view.Pagination
-
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
@@ -298,7 +295,7 @@ object OfficeEndpointsSuite
     )
     whenF(officeViewRepository.listOffices(any, any)) thenReturn officeListView
 
-    val response = sendViewRequest(officeViewRepository, role = User) {
+    val response = sendViewRequest(officeViewRepository) {
       basicRequest.get(
         uri"http://test.com/office/view/list"
           .withParams(
@@ -323,7 +320,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository, role = User) {
+    val response = sendViewRequest(officeViewRepository) {
       basicRequest.get(
         uri"http://test.com/office/view/list"
           .withParams(
@@ -345,7 +342,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository, role = User) {
+    val response = sendViewRequest(officeViewRepository) {
       basicRequest.get(
         uri"http://test.com/office/view/list"
           .withParams(
@@ -367,7 +364,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository, role = User) {
+    val response = sendViewRequest(officeViewRepository) {
       basicRequest.get(
         uri"http://test.com/office/view/list"
           .withParams(
@@ -389,7 +386,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository, role = User) {
+    val response = sendViewRequest(officeViewRepository) {
       basicRequest.get(
         uri"http://test.com/office/view/list"
           .withParams(
@@ -416,20 +413,19 @@ object OfficeEndpointsSuite
     }
   }
 
+  private def bodyJson(response: Response[Either[String, String]]) =
+    response.body.flatMap(parse).toOption.get
+
   private def sendViewRequest(
-    officeViewRepository: OfficeViewRepository[IO],
-    role: Role = SuperAdmin
+    officeViewRepository: OfficeViewRepository[IO]
   )(
     request: Request[Either[String, String], Any]
   ): IO[Response[Either[PublicKey, PublicKey]]] = {
     val officeService = mock[OfficeService[IO]]
-    sendSecuredApiEndpointRequest(request, role) { rolesExtractorService =>
+    sendSecuredApiEndpointRequest(request, role = User) { rolesExtractorService =>
       new OfficeEndpoints[IO](officeService, officeViewRepository, publicKeyRepository, rolesExtractorService).endpoints
     }
   }
-
-  private def bodyJson(response: Response[Either[String, String]]) =
-    response.body.flatMap(parse).toOption.get
 
   private lazy val anyOffice = Office(
     id = anyOfficeId,
