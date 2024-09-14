@@ -3,13 +3,13 @@ package adapters.postgres.repository.reservation
 
 import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.account.PostgresAccountRepository
-import adapters.postgres.repository.account.PostgresUserAccount
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all._
 import com.softwaremill.quicklens._
+import domain.model.account.UserAccount
 import domain.model.desk.Desk
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.reservation.OverlappingReservations
@@ -303,10 +303,11 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     accountRepository.create(user)
   }
 
-  private def anyUser(userId: UUID) = PostgresUserAccount(
+  private def anyUser(userId: UUID) = UserAccount(
     id = userId,
+    firstName = "Test",
+    lastName = "User",
     email = "test.user@postgres.localhost",
-    isArchived = false,
     assignedOfficeId = Some(officeId1)
   )
 

@@ -16,6 +16,9 @@ import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
+import io.github.avapl.domain.model.account.OfficeManagerAccount
+import io.github.avapl.domain.model.account.SuperAdminAccount
+import io.github.avapl.domain.model.account.UserAccount
 import java.util.UUID
 import skunk.Command
 import skunk.Session
@@ -37,7 +40,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """GIVEN a user account to create
-      | WHEN createUser is called
+      | WHEN create is called
       | THEN the user should be inserted into Postgres
       |""".stripMargin
   ) { accountRepository =>
@@ -50,123 +53,6 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
-    """GIVEN a user account with non-existent office ID assigned
-      | WHEN createUser is called
-      | THEN the call should fail with OfficeNotFound
-      |""".stripMargin
-  ) { accountRepository =>
-    val officeId = UUID.fromString("5980c269-9c59-41f0-aef6-f09834493c41")
-    val user = anyUserAccount.copy(assignedOfficeId = Some(officeId))
-
-    for {
-      result <- accountRepository.create(user).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val officeNotFound = OfficeNotFound(officeId)
-        expect(throwable == officeNotFound)
-    }
-  }
-
-  beforeTest(
-    """GIVEN an existing user account and a new user account with the same email
-      | WHEN createUser is called
-      | THEN the call should fail with DuplicateAccountEmail
-      |""".stripMargin
-  ) { accountRepository =>
-    val user = anyUserAccount
-    val userWithTheSameEmail = user.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
-
-    for {
-      _ <- accountRepository.create(user)
-      result <- accountRepository.create(userWithTheSameEmail).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val duplicateAccountEmail = DuplicateAccountEmail(user.email)
-        expect(throwable == duplicateAccountEmail)
-    }
-  }
-
-  beforeTest(
-    """GIVEN a non-existent user ID
-      | WHEN readUser is called
-      | THEN the call should fail with AccountNotFound
-      |""".stripMargin
-  ) { accountRepository =>
-    val userId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
-
-    for {
-      result <- accountRepository.read(userId).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val accountNotFound = AccountNotFound(userId)
-        expect(throwable == accountNotFound)
-    }
-  }
-
-  beforeTest(
-    """GIVEN a user without assigned office
-      | WHEN updateUserAssignedOffice is called with an office ID
-      | THEN the office should be assigned to the user
-      |""".stripMargin
-  ) { accountRepository =>
-    val user = anyUserAccount.copy(assignedOfficeId = None)
-    val newOfficeId = officeId1
-
-    for {
-      _ <- accountRepository.create(user)
-      _ <- accountRepository.updateAssignedOffice(user.id, Some(newOfficeId))
-      readUser <- accountRepository.read(user.id)
-    } yield expect(readUser.assignedOfficeId.contains(newOfficeId))
-  }
-
-  beforeTest(
-    """GIVEN a user with assigned office
-      | WHEN updateUserAssignedOffice is called with a different office ID
-      | THEN the assigned office should be updated
-      |""".stripMargin
-  ) { accountRepository =>
-    val user = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
-    val newOfficeId = officeId2
-
-    for {
-      _ <- accountRepository.create(user)
-      _ <- accountRepository.updateAssignedOffice(user.id, Some(newOfficeId))
-      readUser <- accountRepository.read(user.id)
-    } yield expect(readUser.assignedOfficeId.contains(newOfficeId))
-  }
-
-  beforeTest(
-    """GIVEN a user with assigned office
-      | WHEN updateUserAssignedOffice is called with None
-      | THEN the assigned office should be removed
-      |""".stripMargin
-  ) { accountRepository =>
-    val user = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
-
-    for {
-      _ <- accountRepository.create(user)
-      _ <- accountRepository.updateAssignedOffice(user.id, None)
-      readUser <- accountRepository.read(user.id)
-    } yield expect(readUser.assignedOfficeId.isEmpty)
-  }
-
-  beforeTest(
-    """WHEN updateUserAssignedOffice is called with non-existent user ID
-      |THEN the call should fail with AccountNotFound
-      |""".stripMargin
-  ) { accountRepository =>
-    val userId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
-
-    for {
-      result <- accountRepository.updateAssignedOffice(userId, Some(officeId1)).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val accountNotFound = AccountNotFound(userId)
-        expect(throwable == accountNotFound)
-    }
-  }
-
-  beforeTest(
     """GIVEN an office manager account to create
       | WHEN createOfficeManager is called
       | THEN the office manager should be inserted into Postgres
@@ -175,100 +61,145 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val officeManager = anyOfficeManagerAccount
 
     for {
-      _ <- accountRepository.createOfficeManager(officeManager)
-      readOfficeManager <- accountRepository.readOfficeManager(officeManager.id)
+      _ <- accountRepository.create(officeManager)
+      readOfficeManager <- accountRepository.read(officeManager.id)
     } yield expect(readOfficeManager == officeManager)
   }
 
   beforeTest(
-    """GIVEN an existing office manager account and a new office manager account with the same email
-      | WHEN createOfficeManager is called
-      | THEN the call should fail with DuplicateAccountEmail
-      |""".stripMargin
-  ) { accountRepository =>
-    val officeManager = anyOfficeManagerAccount
-    val officeManagerWithTheSameEmail = officeManager.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
-
-    for {
-      _ <- accountRepository.createOfficeManager(officeManager)
-      result <- accountRepository.createOfficeManager(officeManagerWithTheSameEmail).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val duplicateAccountEmail = DuplicateAccountEmail(officeManager.email)
-        expect(throwable == duplicateAccountEmail)
-    }
-  }
-
-  beforeTest(
-    """GIVEN a non-existent office manager ID
-      | WHEN readOfficeManager is called
-      | THEN the call should fail with AccountNotFound
-      |""".stripMargin
-  ) { accountRepository =>
-    val officeManagerId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
-
-    for {
-      result <- accountRepository.readOfficeManager(officeManagerId).attempt
-    } yield matches(result) {
-      case Left(throwable) =>
-        val accountNotFound = AccountNotFound(officeManagerId)
-        expect(throwable == accountNotFound)
-    }
-  }
-
-  beforeTest(
     """GIVEN a super admin account to create
-      | WHEN createSuperAdmin is called
+      | WHEN create is called
       | THEN the super admin should be inserted into Postgres
       |""".stripMargin
   ) { accountRepository =>
     val superAdmin = anySuperAdminAccount
 
     for {
-      _ <- accountRepository.createSuperAdmin(superAdmin)
-      readSuperAdmin <- accountRepository.readSuperAdmin(superAdmin.id)
+      _ <- accountRepository.create(superAdmin)
+      readSuperAdmin <- accountRepository.read(superAdmin.id)
     } yield expect(readSuperAdmin == superAdmin)
   }
 
   beforeTest(
-    """GIVEN an existing super admin account and a new super admin account with the same email
-      | WHEN createSuperAdmin is called
+    """GIVEN an account with non-existent office ID assigned
+      | WHEN create is called
+      | THEN the call should fail with OfficeNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val officeId = UUID.fromString("5980c269-9c59-41f0-aef6-f09834493c41")
+    val account = anyUserAccount.copy(assignedOfficeId = Some(officeId))
+
+    for {
+      result <- accountRepository.create(account).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val officeNotFound = OfficeNotFound(officeId)
+        expect(throwable == officeNotFound)
+    }
+  }
+
+  beforeTest(
+    """GIVEN an existing account and a new account with the same email
+      | WHEN create is called
       | THEN the call should fail with DuplicateAccountEmail
       |""".stripMargin
   ) { accountRepository =>
-    val superAdmin = anySuperAdminAccount
-    val superAdminWithTheSameEmail = superAdmin.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
+    val account = anyUserAccount
+    val accountWithTheSameEmail = account.copy(id = UUID.fromString("ef3dcba5-b693-4c5e-a5b7-6a9ef384ed67"))
 
     for {
-      _ <- accountRepository.createSuperAdmin(superAdmin)
-      result <- accountRepository.createSuperAdmin(superAdminWithTheSameEmail).attempt
+      _ <- accountRepository.create(account)
+      result <- accountRepository.create(accountWithTheSameEmail).attempt
     } yield matches(result) {
       case Left(throwable) =>
-        val duplicateAccountEmail = DuplicateAccountEmail(superAdmin.email)
+        val duplicateAccountEmail = DuplicateAccountEmail(account.email)
         expect(throwable == duplicateAccountEmail)
     }
   }
 
   beforeTest(
-    """GIVEN a non-existent super admin ID
-      | WHEN readSuperAdmin is called
+    """GIVEN a non-existent account ID
+      | WHEN read is called
       | THEN the call should fail with AccountNotFound
       |""".stripMargin
   ) { accountRepository =>
-    val superAdminId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
+    val accountId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
 
     for {
-      result <- accountRepository.readSuperAdmin(superAdminId).attempt
+      result <- accountRepository.read(accountId).attempt
     } yield matches(result) {
       case Left(throwable) =>
-        val accountNotFound = AccountNotFound(superAdminId)
+        val accountNotFound = AccountNotFound(accountId)
+        expect(throwable == accountNotFound)
+    }
+  }
+
+  beforeTest(
+    """GIVEN an account without assigned office
+      | WHEN updateAssignedOffice is called with an office ID
+      | THEN the office should be assigned to the account
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyUserAccount.copy(assignedOfficeId = None)
+    val newOfficeId = officeId1
+
+    for {
+      _ <- accountRepository.create(account)
+      _ <- accountRepository.updateAssignedOffice(account.id, Some(newOfficeId))
+      readAccount <- accountRepository.read(account.id)
+    } yield expect(readAccount.assignedOfficeId.contains(newOfficeId))
+  }
+
+  beforeTest(
+    """GIVEN an account with assigned office
+      | WHEN updateAssignedOffice is called with a different office ID
+      | THEN the assigned office should be updated
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
+    val newOfficeId = officeId2
+
+    for {
+      _ <- accountRepository.create(account)
+      _ <- accountRepository.updateAssignedOffice(account.id, Some(newOfficeId))
+      readAccount <- accountRepository.read(account.id)
+    } yield expect(readAccount.assignedOfficeId.contains(newOfficeId))
+  }
+
+  beforeTest(
+    """GIVEN an account with assigned office
+      | WHEN updateAssignedOffice is called with None
+      | THEN the assigned office should be removed
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyUserAccount.copy(assignedOfficeId = Some(officeId1))
+
+    for {
+      _ <- accountRepository.create(account)
+      _ <- accountRepository.updateAssignedOffice(account.id, None)
+      readAccount <- accountRepository.read(account.id)
+    } yield expect(readAccount.assignedOfficeId.isEmpty)
+  }
+
+  beforeTest(
+    """WHEN updateAssignedOffice is called with non-existent account ID
+      |THEN the call should fail with AccountNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val accountId = UUID.fromString("850bac54-0251-4cdf-ab8d-ef457fa57622")
+
+    for {
+      result <- accountRepository.updateAssignedOffice(accountId, Some(officeId1)).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(accountId)
         expect(throwable == accountNotFound)
     }
   }
 
   beforeTest(
     """GIVEN a user account
-      | WHEN updateRoles is called with OfficeManager role
+      | WHEN updateRole is called with OfficeManager role
       | THEN the user should be promoted to an office manager
       |""".stripMargin
   ) { accountRepository =>
@@ -276,12 +207,14 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- accountRepository.create(user)
-      officeManager <- accountRepository.updateRoles(user.id, NonEmptyList.one(OfficeManager))
+      officeManager <- accountRepository.updateRole(user.id, OfficeManager)
     } yield {
-      val expectedOfficeManager = PostgresOfficeManagerAccount(
+      val expectedOfficeManager = OfficeManagerAccount(
         id = user.id,
+        firstName = user.firstName,
+        lastName = user.lastName,
         email = user.email,
-        isArchived = user.isArchived
+        assignedOfficeId = user.assignedOfficeId
       )
       expect(officeManager == expectedOfficeManager)
     }
@@ -289,21 +222,22 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """GIVEN an office manager account
-      | WHEN updateRoles is called with User role
+      | WHEN updateRole is called with User role
       | THEN the office manager should be demoted to a user
       |""".stripMargin
   ) { accountRepository =>
     val officeManager = anyOfficeManagerAccount
 
     for {
-      _ <- accountRepository.createOfficeManager(officeManager)
-      user <- accountRepository.updateRoles(officeManager.id, NonEmptyList.one(User))
+      _ <- accountRepository.create(officeManager)
+      user <- accountRepository.updateRole(officeManager.id, User)
     } yield {
-      val expectedUser = PostgresUserAccount(
+      val expectedUser = UserAccount(
         id = officeManager.id,
+        firstName = officeManager.firstName,
+        lastName = officeManager.lastName,
         email = officeManager.email,
-        isArchived = officeManager.isArchived,
-        assignedOfficeId = None
+        assignedOfficeId = officeManager.assignedOfficeId
       )
       expect(user == expectedUser)
     }
@@ -311,7 +245,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """GIVEN a user account
-      | WHEN updateRoles is called with OfficeManager and SuperAdmin roles
+      | WHEN updateRole is called with SuperAdmin role
       | THEN the user should be promoted to a super admin
       |""".stripMargin
   ) { accountRepository =>
@@ -319,12 +253,14 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- accountRepository.create(user)
-      superAdmin <- accountRepository.updateRoles(user.id, NonEmptyList.of(OfficeManager, SuperAdmin))
+      superAdmin <- accountRepository.updateRole(user.id, SuperAdmin)
     } yield {
-      val expectedSuperAdmin = PostgresSuperAdminAccount(
+      val expectedSuperAdmin = SuperAdminAccount(
         id = user.id,
+        firstName = user.firstName,
+        lastName = user.lastName,
         email = user.email,
-        isArchived = user.isArchived
+        assignedOfficeId = user.assignedOfficeId
       )
       expect(superAdmin == expectedSuperAdmin)
     }
@@ -332,20 +268,23 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """GIVEN a super admin account
-      | WHEN updateRoles is called with User and OfficeManager roles
+      | WHEN updateRole is called OfficeManager role
       | THEN the super admin should be demoted to an office manager
       |""".stripMargin
   ) { accountRepository =>
-    val superAdmin = anyUserAccount
+    val superAdmin = anySuperAdminAccount
 
     for {
       _ <- accountRepository.create(superAdmin)
-      officeManager <- accountRepository.updateRoles(superAdmin.id, NonEmptyList.of(User, OfficeManager))
+      officeManager <- accountRepository.updateRole(superAdmin.id, OfficeManager)
     } yield {
-      val expectedOfficeManager = PostgresOfficeManagerAccount(
+      val expectedOfficeManager = OfficeManagerAccount(
         id = superAdmin.id,
+        firstName = superAdmin.firstName,
+        lastName = superAdmin.lastName,
         email = superAdmin.email,
-        isArchived = superAdmin.isArchived
+        assignedOfficeId = superAdmin.assignedOfficeId,
+        managedOfficeIds = superAdmin.managedOfficeIds
       )
       expect(officeManager == expectedOfficeManager)
     }
@@ -353,7 +292,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """GIVEN a user account
-      | WHEN updateRoles is called with User role
+      | WHEN updateRole is called with User role
       | THEN the call should not fail (no-op)
       |""".stripMargin
   ) { accountRepository =>
@@ -361,20 +300,20 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- accountRepository.create(user)
-      updatedUser <- accountRepository.updateRoles(user.id, NonEmptyList.one(User))
+      updatedUser <- accountRepository.updateRole(user.id, User)
     } yield expect(updatedUser == user)
   }
 
   beforeTest(
     """GIVEN a non-existent account ID
-      | WHEN updateRoles is called
+      | WHEN updateRole is called
       | THEN the call should fail with AccountNotFound
       |""".stripMargin
   ) { accountRepository =>
     val accountId = UUID.fromString("1ee19aea-51ec-4d51-93d5-f2d3da1c40ac")
 
     for {
-      result <- accountRepository.updateRoles(accountId, NonEmptyList.one(User)).attempt
+      result <- accountRepository.updateRole(accountId, User).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val accountNotFound = AccountNotFound(accountId)
@@ -484,24 +423,29 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
   private lazy val officeId2 = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
 
-  private lazy val anyUserAccount = PostgresUserAccount(
+  private lazy val anyUserAccount = UserAccount(
     id = UUID.fromString("8b7a9bdd-b729-4427-83c3-6eaee3c97171"),
+    firstName = "Test",
+    lastName = "User",
     email = "test.user@postgres.localhost",
-    isArchived = false,
     assignedOfficeId = Some(officeId1)
   )
 
-  private lazy val anyOfficeManagerAccount = PostgresOfficeManagerAccount(
+  private lazy val anyOfficeManagerAccount = OfficeManagerAccount(
     id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
+    firstName = "Test",
+    lastName = "OfficeManager",
     email = "test.office.manager@postgres.localhost",
-    isArchived = false
+    assignedOfficeId = Some(officeId1),
+    managedOfficeIds = List(officeId1, officeId2)
   )
 
-  private lazy val anySuperAdminAccount = PostgresSuperAdminAccount(
+  private lazy val anySuperAdminAccount = SuperAdminAccount(
     id = UUID.fromString("78aef5b8-e7e7-4880-a4d7-3535eaa00c6a"),
+    firstName = "Test",
+    lastName = "SuperAdmin",
     email = "test.super.admin@postgres.localhost",
-    isArchived = false
+    assignedOfficeId = Some(officeId1),
+    managedOfficeIds = List(officeId1, officeId2)
   )
-
-  private lazy val anyAccountId = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
 }

@@ -199,9 +199,9 @@ object PostgresAccountRepository {
         _uuid // managed_office_ids
     ).contramap { account =>
       account.id *:
-        account.email *:
         account.firstName *:
         account.lastName *:
+        account.email *:
         account.isArchived *:
         PostgresAccountType.fromDomain(account.role) *:
         account.assignedOfficeId *:
@@ -211,6 +211,7 @@ object PostgresAccountRepository {
 
   private def managedOfficeIdsFromDomain(account: Account) =
     account match {
+      case superAdmin: SuperAdminAccount       => superAdmin.managedOfficeIds
       case officeManager: OfficeManagerAccount => officeManager.managedOfficeIds
       case _                                   => Nil
     }
@@ -227,7 +228,7 @@ object PostgresAccountRepository {
         uuid.opt *: // assigned_office_id
         _uuid // managed_office_ids
     ).map {
-      case id *: email *: firstName *: lastName *: isArchived *: accountType *: assignedOfficeId *: managedOfficeIds *: EmptyTuple =>
+      case id *: firstName *: lastName *: email *: isArchived *: accountType *: assignedOfficeId *: managedOfficeIds *: EmptyTuple =>
         accountType match {
           case PostgresAccountType.User =>
             UserAccount(
@@ -245,6 +246,7 @@ object PostgresAccountRepository {
               lastName = lastName,
               email = email,
               isArchived = isArchived,
+              assignedOfficeId = assignedOfficeId,
               managedOfficeIds = managedOfficeIds
             )
           case PostgresAccountType.SuperAdmin =>
