@@ -29,8 +29,9 @@ export class CreateOfficeDialogComponent {
 
   async onSubmit() {
     try {
-      const response = await this.officeService.createOffice(this.formToCreateOffice());
-      this.snackbar.open(`${this.form.value.name} created`);
+      let createOffice = this.formToCreateOffice();
+      const response = await this.officeService.createOffice(createOffice);
+      this.snackbar.open(`${createOffice.name} created`);
       this.dialogRef.close(response);
     } catch (error) {
       this.snackbar.open(`Unexpected error occurred when creating ${this.form.value.name}`, undefined, {panelClass: ['mat-warn']});

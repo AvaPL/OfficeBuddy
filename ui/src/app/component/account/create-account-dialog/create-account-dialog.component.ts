@@ -1,19 +1,12 @@
 import {Component, inject} from '@angular/core';
-import {MatButton} from "@angular/material/button";
-import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle
-} from "@angular/material/dialog";
-import {MatDivider} from "@angular/material/divider";
-import {MatError, MatFormField, MatLabel} from "@angular/material/form-field";
-import {MatInput} from "@angular/material/input";
-import {NgIf} from "@angular/common";
-import {FormBuilder, ReactiveFormsModule} from "@angular/forms";
-import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
+import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
+import {FormBuilder} from "@angular/forms";
+import {AccountRoleCompanion} from "../model/account-role.enum";
 import {AccountFilterDialogData} from "../account-filter-dialog/account-filter-dialog.component";
+import {AccountService} from "../../../service/account.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {CreateAccount} from "../../../service/model/account/create-account.model";
+import {AccountRole} from '../../../service/model/account/account-role.enum';
 
 export interface CreateAccountDialogData {
   offices: { id: string, name: string }[]
@@ -36,9 +29,30 @@ export class CreateAccountDialogComponent {
     assignedOfficeId: [null],
     managedOfficesIds: [[]]
   });
+  readonly accountService = inject(AccountService);
+  readonly snackbar = inject(MatSnackBar);
 
-  onSubmit() {
-    this.dialogRef.close(this.form.value);
+  async onSubmit() {
+    try {
+      let createAccount = this.formToCreateAccount();
+      const response = await this.accountService.createAccount(createAccount);
+      this.snackbar.open(`${createAccount.firstName} ${createAccount.lastName} account created`);
+      this.dialogRef.close(response);
+    } catch (error) {
+      this.snackbar.open(`Unexpected error occurred when creating ${this.form.value.firstName} ${this.form.value.lastName} account`, undefined, {panelClass: ['mat-warn']});
+      console.error(`Error creating ${this.form.value.firstName} ${this.form.value.lastName} account:`, error);
+    }
+  }
+
+  formToCreateAccount(): CreateAccount {
+    return {
+      firstName: this.form.value.firstName!,
+      lastName: this.form.value.lastName!,
+      email: this.form.value.email!,
+      role: this.form.value.role!,
+      assignedOfficeId: this.form.value.assignedOfficeId || undefined,
+      managedOfficeIds: this.form.value.managedOfficesIds || undefined
+    };
   }
 
   onCancel() {
@@ -46,6 +60,6 @@ export class CreateAccountDialogComponent {
   }
 
   protected readonly AccountRole = AccountRole;
-  protected readonly Object = Object;
   protected readonly AccountRoleCompanion = AccountRoleCompanion;
+  protected readonly Object = Object;
 }
