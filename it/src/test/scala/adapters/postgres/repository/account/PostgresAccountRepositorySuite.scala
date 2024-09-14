@@ -3,22 +3,21 @@ package adapters.postgres.repository.account
 
 import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.office.PostgresOfficeRepository
-import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.Resource
 import cats.instances.all._
 import cats.syntax.all._
+import domain.model.account.OfficeManagerAccount
 import domain.model.account.Role.OfficeManager
 import domain.model.account.Role.SuperAdmin
 import domain.model.account.Role.User
+import domain.model.account.SuperAdminAccount
+import domain.model.account.UserAccount
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
-import io.github.avapl.domain.model.account.OfficeManagerAccount
-import io.github.avapl.domain.model.account.SuperAdminAccount
-import io.github.avapl.domain.model.account.UserAccount
 import java.util.UUID
 import skunk.Command
 import skunk.Session
@@ -420,7 +419,6 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   )
 
   private lazy val officeId1 = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
-
   private lazy val officeId2 = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
 
   private lazy val anyUserAccount = UserAccount(

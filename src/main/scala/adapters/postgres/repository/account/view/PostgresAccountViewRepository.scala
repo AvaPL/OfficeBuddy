@@ -21,7 +21,6 @@ import skunk.data.Arr
 import skunk.data.Type
 import skunk.implicits._
 
-// TODO: Add integration tests
 class PostgresAccountViewRepository[F[_]: Concurrent: MonadCancelThrow](
   session: Resource[F, Session[F]]
 ) extends AccountViewRepository[F] {
@@ -36,11 +35,11 @@ class PostgresAccountViewRepository[F[_]: Concurrent: MonadCancelThrow](
     offset: Int
   ): F[AccountListView] = {
     val accountTypes = roles.map(_.map(PostgresAccountType.fromDomain))
-    val appliedFragment = listAccountsSql(textSearchQuery, officeId, accountTypes, limit, offset)
+    val chunkSize = limit + 1 // Take one more element to determine if there are more elements to fetch
+    val appliedFragment = listAccountsSql(textSearchQuery, officeId, accountTypes, chunkSize, offset)
     session.use { session =>
       for {
         sql <- session.prepare(appliedFragment.fragment.query(accountViewDecoder))
-        chunkSize = limit + 1 // Take one more element to determine if there are more elements to fetch
         accountsViews <- sql.stream(appliedFragment.argument, chunkSize).compile.toList
       } yield {
         val hasMoreResults = accountsViews.size > limit
@@ -71,27 +70,26 @@ object PostgresAccountViewRepository {
 
     val textSearchFilter = sql"""
       AND (
-        first_name ILIKE '%$varchar%'
-        OR last_name ILIKE '%$varchar%'
-        OR email ILIKE '%$varchar%'
+        (first_name || ' ' || last_name) ILIKE $varchar
+        OR email ILIKE $varchar
       )
     """
     val officeIdFilter = sql"""
       AND (
         assigned_office_id = $uuid
-        OR managed_office_ids @> $uuid
+        OR $uuid = ANY(managed_office_ids)
       )
     """
-    val rolesFilter = sql"AND type IN (${_accountTypeCodec})"
+    val rolesFilter = sql"AND type = ANY(${_accountTypeCodec})"
 
     val appliedFilters = List(
-      textSearchQuery.map(q => textSearchFilter(q, q, q)),
+      textSearchQuery.map(q => s"%$q%").map(q => textSearchFilter(q, q)),
       officeId.map(id => officeIdFilter(id, id)),
       accountTypes.map(rolesFilter)
     ).flatten.fold(AppliedFragment.empty)(_ |+| _)
 
     val orderByLimitOffset = sql"""
-      ORDER BY first_name, last_name
+      ORDER BY first_name, last_name, email
       LIMIT    $int4
       OFFSET   $int4
     """

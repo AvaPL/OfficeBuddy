@@ -14,7 +14,7 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object PostgresOfficeViewRepositoryTest extends IOSuite with PostgresFixture {
+object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
 
   private def beforeTest(
     name: TestName

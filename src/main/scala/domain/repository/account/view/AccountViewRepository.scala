@@ -16,9 +16,9 @@ trait AccountViewRepository[F[_]] {
    *   list of allowed roles
    */
   def listAccounts(
-    textSearchQuery: Option[String],
-    officeId: Option[UUID],
-    roles: Option[List[Role]],
+    textSearchQuery: Option[String] = None,
+    officeId: Option[UUID] = None,
+    roles: Option[List[Role]] = None,
     limit: Int,
     offset: Int
   ): F[AccountListView]
