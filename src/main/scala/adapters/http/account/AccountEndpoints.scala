@@ -376,27 +376,27 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
     accounts = List(
       ApiAccountView(
         id = UUID.fromString("8b7a9bdd-b729-4427-83c3-6eaee3c97171"),
-        firstName = "Test",
-        lastName = "User",
-        email = "test.user@postgres.localhost",
+        firstName = "John",
+        lastName = "Doe",
+        email = "john.doe@example.com",
         role = ApiRole.User,
         assignedOfficeId = Some(officeIdExample),
         managedOfficeIds = Nil
       ),
       ApiAccountView(
         id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
-        firstName = "Test",
-        lastName = "OfficeManager",
-        email = "test.office.manager@postgres.localhost",
+        firstName = "Jane",
+        lastName = "Doe",
+        email = "jane.doe@example.com",
         role = ApiRole.OfficeManager,
         assignedOfficeId = Some(officeIdExample),
         managedOfficeIds = managedOfficeIdsExample
       ),
       ApiAccountView(
         id = UUID.fromString("78aef5b8-e7e7-4880-a4d7-3535eaa00c6a"),
-        firstName = "Test",
-        lastName = "SuperAdmin",
-        email = "test.super.admin@postgres.localhost",
+        firstName = "Alice",
+        lastName = "Smith",
+        email = "alice.smith@example.com",
         role = ApiRole.SuperAdmin,
         assignedOfficeId = Some(officeIdExample),
         managedOfficeIds = managedOfficeIdsExample
