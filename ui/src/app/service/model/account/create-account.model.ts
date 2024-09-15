@@ -5,6 +5,6 @@ export interface CreateAccount {
   firstName: string,
   lastName: string,
   email: string,
-  assignedOfficeId: string | undefined,
-  managedOfficeIds: string[] | undefined,
+  assignedOfficeId: string | null,
+  managedOfficeIds: string[] | null,
 }

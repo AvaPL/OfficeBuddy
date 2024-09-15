@@ -10,14 +10,15 @@
   <input type="search"
          placeholder="Search..."
          matInput
-         [formControl]="searchControl">
+         [formControl]="searchControl"
+  >
 </mat-form-field>
-<div class="account-cards">
-  <mat-card *ngFor="let account of searchFilteredAccounts | async" appearance="raised">
+<div class="account-cards" #accountCards>
+  <mat-card *ngFor="let account of accounts" appearance="raised">
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>
-          <span class="account-name">{{ account.name }}</span>
+          <span class="account-name">{{ account.firstName }} {{ account.lastName }}</span>
           <span class="mat-body account-role"
                 [style.background-color]="roleChipBackgroundColor(account.role)">{{ AccountRoleCompanion.displayName(account.role) }}</span>
         </mat-card-title>
@@ -25,12 +26,12 @@
           <mat-icon matListItemIcon>email</mat-icon>
           <span>{{ account.email }}</span>
         </mat-card-subtitle>
-        <mat-card-subtitle class="account-subtitle-line"
+        <mat-card-subtitle *ngIf="account.assignedOffice" class="account-subtitle-line"
                            matTooltip="Assigned office">
           <mat-icon matListItemIcon>domain</mat-icon>
-          <span matListItemLine>{{ account.assignedOffice.name }}</span>
+          <span matListItemLine>{{ account.assignedOffice?.name }}</span>
         </mat-card-subtitle>
-        <mat-card-subtitle *ngIf="account.managedOffices.length > 0"
+        <mat-card-subtitle *ngIf="account.managedOffices && account.managedOffices.length > 0"
                            class="account-subtitle-line"
                            matTooltip="Managed offices">
           <mat-icon matListItemIcon>person</mat-icon>
@@ -40,11 +41,11 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="changeRole(account.id, account.name, account.role)">
+          <button mat-menu-item (click)="changeRole(account.id, account.firstName, account.lastName, account.role)">
             <mat-icon>admin_panel_settings</mat-icon>
             <span>Change role</span>
           </button>
-          <button mat-menu-item (click)="deleteAccount(account.id, account.name, account.email)">
+          <button mat-menu-item (click)="deleteAccount(account.id, account.firstName, account.lastName, account.email)">
             <mat-icon>highlight_remove</mat-icon>
             <span>Delete account</span>
           </button>
@@ -54,9 +55,9 @@
   </mat-card>
 </div>
 <mat-paginator
-  [length]="paginatorLength"
-  [pageSize]="pageSize"
-  [pageIndex]="pageIndex | async"
+  [length]="pagination.offset + pagination.limit + (pagination.hasMoreResults ? 1 : 0)"
+  [pageSize]="pagination.limit"
+  [pageIndex]="pagination.offset / pagination.limit"
   (page)="handlePageEvent($event)"
   hidePageSize>
 </mat-paginator>

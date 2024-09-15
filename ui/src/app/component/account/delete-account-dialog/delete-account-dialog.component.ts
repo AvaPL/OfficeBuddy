@@ -2,7 +2,8 @@ import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 
 export interface DeleteAccountDialogData {
-  userName: string;
+  firstName: string;
+  lastName: string;
   email: string;
 }
 

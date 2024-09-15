@@ -39,7 +39,7 @@ export class CreateAccountDialogComponent {
       this.snackbar.open(`${createAccount.firstName} ${createAccount.lastName} account created`);
       this.dialogRef.close(response);
     } catch (error) {
-      this.snackbar.open(`Unexpected error occurred when creating ${this.form.value.firstName} ${this.form.value.lastName} account`, undefined, {panelClass: ['mat-warn']});
+      this.snackbar.open(`Unexpected error occurred when creating ${this.form.value.firstName} ${this.form.value.lastName} account`, undefined, {panelClass: ['error-snackbar']});
       console.error(`Error creating ${this.form.value.firstName} ${this.form.value.lastName} account:`, error);
     }
   }
@@ -50,8 +50,8 @@ export class CreateAccountDialogComponent {
       lastName: this.form.value.lastName!,
       email: this.form.value.email!,
       role: this.form.value.role!,
-      assignedOfficeId: this.form.value.assignedOfficeId || undefined,
-      managedOfficeIds: this.form.value.managedOfficesIds || undefined
+      assignedOfficeId: this.form.value.assignedOfficeId || null,
+      managedOfficeIds: this.form.value.managedOfficesIds || null
     };
   }
 

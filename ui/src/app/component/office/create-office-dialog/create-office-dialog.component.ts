@@ -34,7 +34,7 @@ export class CreateOfficeDialogComponent {
       this.snackbar.open(`${createOffice.name} created`);
       this.dialogRef.close(response);
     } catch (error) {
-      this.snackbar.open(`Unexpected error occurred when creating ${this.form.value.name}`, undefined, {panelClass: ['mat-warn']});
+      this.snackbar.open(`Unexpected error occurred when creating ${this.form.value.name}`, undefined, {panelClass: ['error-snackbar']});
       console.error(`Error creating office ${this.form.value.name}:`, error);
     }
   }

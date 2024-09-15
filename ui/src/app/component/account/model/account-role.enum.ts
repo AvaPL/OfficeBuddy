@@ -1,3 +1,4 @@
+// TODO: Remove in favor of service/model/account/account-role.enum.ts
 export enum AccountRole {
   SUPER_ADMIN = "SuperAdmin",
   OFFICE_MANAGER = "OfficeManager",

@@ -125,7 +125,7 @@ object PostgresAccountViewRepository {
         assignedOfficeDecoder *: // assigned_offices
         managedOfficesDecoder // managed_offices
     ).map {
-      case id *: email *: firstName *: lastName *: _ *: accountType *: assignedOffice *: managedOffices *: EmptyTuple =>
+      case id *: firstName *: lastName *: email *: _ *: accountType *: assignedOffice *: managedOffices *: EmptyTuple =>
         AccountView(
           id = id,
           firstName = firstName,

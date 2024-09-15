@@ -17,7 +17,8 @@ import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
 
 export interface ChangeAccountRoleDialogData {
   accountId: string
-  userName: string
+  firstName: string
+  lastName: string
   currentRole: AccountRole
 }
 
