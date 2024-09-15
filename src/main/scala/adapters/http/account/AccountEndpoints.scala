@@ -19,6 +19,7 @@ import domain.model.error.office.OfficeNotFound
 import domain.service.account.AccountService
 import io.github.avapl.adapters.http.account.model.view.ApiAccountListView
 import io.github.avapl.adapters.http.account.model.view.ApiAccountView
+import io.github.avapl.adapters.http.account.model.view.ApiOfficeView
 import io.github.avapl.adapters.http.model.view.ApiPagination
 import io.github.avapl.domain.repository.account.view.AccountViewRepository
 import java.util.UUID
@@ -380,8 +381,8 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         lastName = "Doe",
         email = "john.doe@example.com",
         role = ApiRole.User,
-        assignedOfficeId = Some(officeIdExample),
-        managedOfficeIds = Nil
+        assignedOffice = Some(officeViewExample),
+        managedOffices = Nil
       ),
       ApiAccountView(
         id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
@@ -389,8 +390,8 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         lastName = "Doe",
         email = "jane.doe@example.com",
         role = ApiRole.OfficeManager,
-        assignedOfficeId = Some(officeIdExample),
-        managedOfficeIds = managedOfficeIdsExample
+        assignedOffice = Some(officeViewExample),
+        managedOffices = List(officeViewExample)
       ),
       ApiAccountView(
         id = UUID.fromString("78aef5b8-e7e7-4880-a4d7-3535eaa00c6a"),
@@ -398,8 +399,8 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
         lastName = "Smith",
         email = "alice.smith@example.com",
         role = ApiRole.SuperAdmin,
-        assignedOfficeId = Some(officeIdExample),
-        managedOfficeIds = managedOfficeIdsExample
+        assignedOffice = Some(officeViewExample),
+        managedOffices = List(officeViewExample)
       )
     ),
     pagination = ApiPagination(
@@ -407,5 +408,10 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       offset = 0,
       hasMoreResults = true
     )
+  )
+
+  private lazy val officeViewExample = ApiOfficeView(
+    id = UUID.fromString("d69ba684-40b5-4ef8-b8ef-b0558c90c5d0"),
+    name = "Wroclaw Office"
   )
 }

@@ -14,6 +14,7 @@ import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
 import domain.model.account.view.AccountListView
 import domain.model.account.view.AccountView
+import domain.model.account.view.OfficeView
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
@@ -996,7 +997,12 @@ object AccountEndpointsSuite
     lastName = "OfficeManager",
     email = "test.office.manager@postgres.localhost",
     role = Role.OfficeManager,
-    assignedOfficeId = Some(anyOfficeId),
-    managedOfficeIds = List(anyOfficeId)
+    assignedOffice = Some(anyOfficeView),
+    managedOffices = List(anyOfficeView)
+  )
+
+  private lazy val anyOfficeView = OfficeView(
+    id = UUID.fromString("214e1fc1-4095-479e-b71f-6888146bbeed"),
+    name = "Test Office"
   )
 }

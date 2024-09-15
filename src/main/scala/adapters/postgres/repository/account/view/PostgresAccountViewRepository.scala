@@ -1,7 +1,6 @@
 package io.github.avapl
 package adapters.postgres.repository.account.view
 
-import adapters.postgres.repository._uuid
 import adapters.postgres.repository.account.PostgresAccountRepository.PostgresAccountType
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.MonadCancelThrow
@@ -10,6 +9,7 @@ import cats.syntax.all._
 import domain.model.account.Role
 import domain.model.account.view.AccountListView
 import domain.model.account.view.AccountView
+import domain.model.account.view.OfficeView
 import domain.model.view.Pagination
 import domain.repository.account.view.AccountViewRepository
 import java.util.UUID
@@ -63,9 +63,16 @@ object PostgresAccountViewRepository {
     offset: Int
   ): AppliedFragment = {
     val select = sql"""
-      SELECT   *
+      SELECT   account.id, first_name, last_name, email, is_archived, type, assigned_office, managed_offices
       FROM     account
-      WHERE    is_archived = 'no'
+      LEFT JOIN (
+        SELECT account.id, ARRAY_AGG((ao.id, ao.name)) AS assigned_office, ARRAY_AGG((mo.id, mo.name)) AS managed_offices
+        FROM   account
+        LEFT JOIN office ao ON assigned_office_id = ao.id
+        LEFT JOIN office mo ON mo.id = ANY(managed_office_ids)
+        GROUP BY account.id
+      ) AS office ON account.id = office.id
+      WHERE is_archived = 'no'
     """
 
     val textSearchFilter = sql"""
@@ -115,18 +122,44 @@ object PostgresAccountViewRepository {
         varchar *: // email
         bool *: // is_archived
         PostgresAccountType.accountTypeCodec *: // type
-        uuid.opt *: // assigned_office_id
-        _uuid // managed_office_ids
+        assignedOfficeDecoder *: // assigned_offices
+        managedOfficesDecoder // managed_offices
     ).map {
-      case id *: email *: firstName *: lastName *: _ *: accountType *: assignedOfficeId *: managedOfficeIds *: EmptyTuple =>
+      case id *: email *: firstName *: lastName *: _ *: accountType *: assignedOffice *: managedOffices *: EmptyTuple =>
         AccountView(
           id = id,
           firstName = firstName,
           lastName = lastName,
           email = email,
           role = accountType.toDomain,
-          assignedOfficeId = assignedOfficeId,
-          managedOfficeIds = managedOfficeIds
+          assignedOffice = assignedOffice,
+          managedOffices = managedOffices
         )
     }
+
+  private lazy val assignedOfficeDecoder: Decoder[Option[OfficeView]] =
+    _officeViewDecoder.map(_.headOption)
+
+  private lazy val managedOfficesDecoder: Decoder[List[OfficeView]] =
+    _officeViewDecoder
+
+  private lazy val _officeViewDecoder = {
+    val officeViewRegex = "\\((?<id>.*?),(?<name>.*)\\)".r
+    Codec
+      .array[Option[OfficeView]](
+        encode = _ => ???,
+        {
+          case "(,)" => None.asRight
+          case officeViewRegex(id, name) =>
+            Either
+              .catchOnly[IllegalArgumentException](UUID.fromString(id))
+              .leftMap(_.getMessage)
+              .map(OfficeView(_, name).some)
+          case s => s"Invalid office view format: $s".asLeft
+        },
+        Type._record
+      )
+      .asDecoder
+      .map(_.flattenTo(List).flatten)
+  }
 }

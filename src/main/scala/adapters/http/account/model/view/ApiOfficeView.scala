@@ -1,7 +1,6 @@
 package io.github.avapl
 package adapters.http.account.model.view
 
-import adapters.http.account.ApiRole
 import derevo.derive
 import java.util.UUID
 import sttp.tapir.Schema.annotations.encodedName
@@ -10,13 +9,8 @@ import util.derevo.circe.circeEncoder
 import util.derevo.tapir.tapirSchema
 
 @derive(circeEncoder, circeDecoder, tapirSchema)
-@encodedName("AccountView")
-case class ApiAccountView(
+@encodedName("OfficeView")
+case class ApiOfficeView(
   id: UUID,
-  firstName: String,
-  lastName: String,
-  email: String,
-  role: ApiRole,
-  assignedOffice: Option[ApiOfficeView],
-  managedOffices: List[ApiOfficeView]
+  name: String
 )

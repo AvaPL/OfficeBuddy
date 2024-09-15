@@ -10,6 +10,6 @@ case class AccountView(
   lastName: String,
   email: String,
   role: Role,
-  assignedOfficeId: Option[UUID],
-  managedOfficeIds: List[UUID]
+  assignedOffice: Option[OfficeView],
+  managedOffices: List[OfficeView]
 )

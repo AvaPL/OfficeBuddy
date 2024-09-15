@@ -14,6 +14,7 @@ import domain.model.office.Address
 import domain.model.office.Office
 import io.github.avapl.domain.model.account.Role.OfficeManager
 import io.github.avapl.domain.model.account.Role.User
+import io.github.avapl.domain.model.account.view.OfficeView
 import java.util.UUID
 import skunk._
 import skunk.implicits._
@@ -33,6 +34,30 @@ object PostgresAccountViewRepositorySuite extends IOSuite with PostgresFixture {
         insertOffices(session) >>
         run(postgresAccountRepository, postgresAccountViewRepository)
     }
+
+  beforeTest(
+    """GIVEN 1 account in the database with assigned office and managed offices
+      | WHEN listAccounts is called
+      | THEN the result view contains the account with assigned office and managed offices
+      |""".stripMargin
+  ) { (accountRepository, accountViewRepository) =>
+    val account = anyOfficeManagerAccount.copy(
+      assignedOfficeId = Some(officeId1),
+      managedOfficeIds = List(officeId1, officeId2)
+    )
+
+    for {
+      _ <- accountRepository.create(account)
+      accountListView <- accountViewRepository.listAccounts(limit = 10, offset = 0)
+    } yield expect.all(
+      accountListView.accounts.map(_.id) == List(account.id),
+      accountListView.accounts.head.assignedOffice.contains(OfficeView(officeId1, officeName1)),
+      accountListView.accounts.head.managedOffices == List(
+        OfficeView(officeId1, officeName1),
+        OfficeView(officeId2, officeName2)
+      )
+    )
+  }
 
   beforeTest(
     """
@@ -356,8 +381,8 @@ object PostgresAccountViewRepositorySuite extends IOSuite with PostgresFixture {
 
   private def insertOffices(session: Resource[IO, Session[IO]]) = {
     val officeRepository = new PostgresOfficeRepository[IO](session)
-    val office1 = anyOffice(officeId1, "office1")
-    val office2 = anyOffice(officeId2, "office2")
+    val office1 = anyOffice(officeId1, officeName1)
+    val office2 = anyOffice(officeId2, officeName2)
     List(office1, office2).parTraverse_(officeRepository.create)
   }
 
@@ -375,7 +400,9 @@ object PostgresAccountViewRepositorySuite extends IOSuite with PostgresFixture {
   )
 
   private lazy val officeId1 = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
+  private lazy val officeName1 = "office1"
   private lazy val officeId2 = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
+  private lazy val officeName2 = "office2"
 
   private lazy val anyUserAccount = UserAccount(
     id = UUID.fromString("8b7a9bdd-b729-4427-83c3-6eaee3c97171"),
