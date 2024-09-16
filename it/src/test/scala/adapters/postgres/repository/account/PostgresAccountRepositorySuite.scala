@@ -222,7 +222,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   beforeTest(
     """GIVEN an office manager account
       | WHEN updateRole is called with User role
-      | THEN the office manager should be demoted to a user and the managed offices removed
+      | THEN the office manager should be demoted to a user
       |""".stripMargin
   ) { accountRepository =>
     val officeManager = anyOfficeManagerAccount
@@ -239,6 +239,32 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
         assignedOfficeId = officeManager.assignedOfficeId
       )
       expect(user == expectedUser)
+    }
+  }
+
+  beforeTest(
+    """GIVEN an office manager account
+      | WHEN updateRole is called with User role and then again with OfficeManager role
+      | THEN the resulting account should have managed offices removed because of being demoted to a user previously
+      |""".stripMargin
+  ) { accountRepository =>
+
+    val officeManager = anyOfficeManagerAccount
+
+    for {
+      _ <- accountRepository.create(officeManager)
+      user <- accountRepository.updateRole(officeManager.id, User)
+      officeManager <- accountRepository.updateRole(user.id, OfficeManager)
+    } yield {
+      val expectedOfficeManager = OfficeManagerAccount(
+        id = officeManager.id,
+        firstName = officeManager.firstName,
+        lastName = officeManager.lastName,
+        email = officeManager.email,
+        assignedOfficeId = officeManager.assignedOfficeId,
+        managedOfficeIds = Nil
+      )
+      expect(officeManager == expectedOfficeManager)
     }
   }
 
