@@ -47,4 +47,14 @@ export class AccountService {
 
     return firstValueFrom(this.http.post<Account>(this.baseUrl, account, {headers}));
   }
+
+  async archiveAccount(accountId: string): Promise<void> {
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${accountId}`, {headers}));
+  }
 }

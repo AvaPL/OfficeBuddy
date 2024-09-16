@@ -27,7 +27,7 @@ export class DeleteOfficeDialogComponent {
       this.dialogRef.close(true);
     } catch (error) {
       this.snackbar.open(`Unexpected error occurred when deleting ${this.data.officeName}`, undefined, {panelClass: ['error-snackbar']});
-      console.error('Error deleting office:', error);
+      console.error(`Error deleting office ${this.data.officeName} [id: ${this.data.officeId}]:`, error);
     }
   }
 

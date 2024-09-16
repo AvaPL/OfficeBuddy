@@ -1,4 +1,4 @@
-export interface OfficeIdName {
+export interface OfficeCompact {
   id: string;
   name: string;
 }

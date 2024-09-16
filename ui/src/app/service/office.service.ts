@@ -6,7 +6,7 @@ import {OfficeListView} from "./model/office/office-view.model";
 import {CreateOffice} from "./model/office/create-office.model";
 import {UpdateOffice} from "./model/office/update-office.model";
 import {Office} from "./model/office/office.model";
-import {OfficeIdName} from "./model/office/office-id-name.model";
+import {OfficeCompact} from "./model/office/office-id-name.model";
 
 @Injectable({
   providedIn: 'root'
@@ -28,7 +28,7 @@ export class OfficeService {
     return firstValueFrom(this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=${limit}&offset=${offset}`, {headers}));
   }
 
-  async getOfficeIdNameArray(): Promise<OfficeIdName[]> {
+  async getCompactOffices(): Promise<OfficeCompact[]> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ export class OfficeService {
     });
 
     // TODO: Introduce a dedicated endpoint that'll return only the id and name of the offices
-    // return firstValueFrom(this.http.get<OfficeIdName[]>(`${this.baseUrl}/view/id-name`, {headers}));
+    // return firstValueFrom(this.http.get<OfficeCompact[]>(`${this.baseUrl}/view/compact`, {headers}));
 
     const officeListView = await firstValueFrom(
       this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=1000&offset=0`, {headers})
@@ -44,7 +44,7 @@ export class OfficeService {
     return this.officeListViewToIdNameArray(officeListView);
   }
 
-  officeListViewToIdNameArray(officeListView: OfficeListView): OfficeIdName[] {
+  officeListViewToIdNameArray(officeListView: OfficeListView): OfficeCompact[] {
     return officeListView.offices.map(office => {
       return {
         id: office.id,

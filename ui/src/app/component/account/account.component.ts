@@ -11,7 +11,7 @@ import {CreateAccountDialogComponent} from "./create-account-dialog/create-accou
 import {AccountView, OfficeView} from "../../service/model/account/account-view.model";
 import {Pagination} from "../../service/model/pagination/pagination.model";
 import {AccountService} from "../../service/account.service";
-import {OfficeIdName} from "../../service/model/office/office-id-name.model";
+import {OfficeCompact} from "../../service/model/office/office-id-name.model";
 import {OfficeService} from "../../service/office.service";
 
 @Component({
@@ -28,10 +28,10 @@ export class AccountComponent implements OnInit {
   readonly changeAccountRoleDialog = inject(MatDialog);
   readonly deleteAccountDialog = inject(MatDialog);
 
-  offices: OfficeIdName[] = []
+  offices: OfficeCompact[] = []
   accounts: AccountView[] = []
 
-  selectedOffice: OfficeIdName | null = null
+  selectedOffice: OfficeCompact | null = null
   selectedRoles: AccountRole[] = Object.values(AccountRole)
 
   pagination: Pagination = {
@@ -54,7 +54,7 @@ export class AccountComponent implements OnInit {
   }
 
   async fetchOffices() {
-    this.offices = await this.officeService.getOfficeIdNameArray();
+    this.offices = await this.officeService.getCompactOffices();
   }
 
   async fetchAccounts(limit: number, offset: number) {
@@ -144,13 +144,18 @@ export class AccountComponent implements OnInit {
   }
 
   deleteAccount(accountId: string, firstName: string, lastName: string, email: string) {
-    const dialogRef = this.deleteAccountDialog.open(DeleteAccountDialogComponent, {data: {firstName, lastName, email}});
+    const dialogRef = this.deleteAccountDialog.open(DeleteAccountDialogComponent, {
+      data: {
+        accountId,
+        firstName,
+        lastName,
+        email
+      }
+    });
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Deleted account ${accountId}`);
-      } else {
-        console.log(`Cancelled deleting account ${accountId}`);
+        this.fetchAccounts(this.pagination.limit, 0)
       }
     });
   }
