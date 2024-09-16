@@ -112,11 +112,12 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
     """.command
 
   def updateRole(accountId: UUID, role: Role): F[Account] = {
+    val appliedFragment = updateRoleSql(accountId, role)
     session.use { session =>
       for {
-        sql <- session.prepare(updateRoleSql)
+        sql <- session.prepare(appliedFragment.fragment.command)
         _ <- sql
-          .execute(PostgresAccountType.fromDomain(role) *: accountId *: EmptyTuple)
+          .execute(appliedFragment.argument)
           .ensureOr {
             case Completion.Update(0) => AccountNotFound(accountId)
             case completion           => new RuntimeException(s"Expected 1 updated account, but got: $completion")
@@ -126,12 +127,20 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
     }
   }
 
-  private lazy val updateRoleSql: Command[PostgresAccountType *: UUID *: EmptyTuple] =
-    sql"""
+  private def updateRoleSql(accountId: UUID, role: Role): AppliedFragment = {
+    val update = sql"""
       UPDATE account
       SET    type = $accountTypeCodec
-      WHERE id = $uuid
-    """.command
+    """
+
+    val removeManagedOfficeIds =
+      if (role == Role.User) sql", managed_office_ids = '{}' ".apply(Void)
+      else AppliedFragment.empty
+
+    val whereId = sql"WHERE id = $uuid"
+
+    update(PostgresAccountType.fromDomain(role)) |+| removeManagedOfficeIds |+| whereId(accountId)
+  }
 
   def archive(accountId: UUID): F[Unit] =
     session.use { session =>

@@ -222,7 +222,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   beforeTest(
     """GIVEN an office manager account
       | WHEN updateRole is called with User role
-      | THEN the office manager should be demoted to a user
+      | THEN the office manager should be demoted to a user and the managed offices removed
       |""".stripMargin
   ) { accountRepository =>
     val officeManager = anyOfficeManagerAccount

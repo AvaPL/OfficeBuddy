@@ -133,7 +133,7 @@ object PostgresAccountViewRepository {
           email = email,
           role = accountType.toDomain,
           assignedOffice = assignedOffice,
-          managedOffices = managedOffices // TODO: Filter out for Users
+          managedOffices = managedOffices
         )
     }
 
