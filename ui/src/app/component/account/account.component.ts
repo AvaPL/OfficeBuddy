@@ -136,9 +136,7 @@ export class AccountComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        console.log(`Changed role for account ${accountId} to ${result.selectedRole}`);
-      } else {
-        console.log(`Cancelled changing role for account ${accountId}`);
+        this.fetchAccounts(this.pagination.limit, 0)
       }
     });
   }

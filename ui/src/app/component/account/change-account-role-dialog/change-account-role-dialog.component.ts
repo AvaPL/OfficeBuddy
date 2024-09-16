@@ -1,19 +1,8 @@
 import {Component, inject} from '@angular/core';
-import {MatButton} from "@angular/material/button";
-import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle
-} from "@angular/material/dialog";
-import {MatFormField, MatLabel} from "@angular/material/form-field";
-import {MatOption} from "@angular/material/core";
-import {MatSelect} from "@angular/material/select";
-import {
-  DeskFilterDialogData
-} from "../../desk/view/desk-reservation-view/desk-filter-dialog/desk-filter-dialog.component";
+import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
+import {AccountService} from "../../../service/account.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 export interface ChangeAccountRoleDialogData {
   accountId: string
@@ -31,17 +20,25 @@ export class ChangeAccountRoleDialogComponent {
 
   readonly dialogRef = inject(MatDialogRef<ChangeAccountRoleDialogComponent>);
   readonly data = inject<ChangeAccountRoleDialogData>(MAT_DIALOG_DATA);
+  readonly accountService = inject(AccountService);
+  readonly snackbar = inject(MatSnackBar);
 
   selectedRole = this.data.currentRole
 
-  onConfirm() {
-    this.dialogRef.close({
-      selectedRole: this.selectedRole
-    });
+  async onConfirm() {
+    try {
+      await this.accountService.updateRole(this.data.accountId, this.selectedRole);
+      const displayRole = AccountRoleCompanion.displayName(this.selectedRole);
+      this.snackbar.open(`${this.data.firstName} ${this.data.lastName}'s role updated to ${displayRole}`);
+      this.dialogRef.close({selectedRole: this.selectedRole});
+    } catch (error) {
+      this.snackbar.open(`Unexpected error occurred when updating ${this.data.firstName} ${this.data.lastName} role`, undefined, {panelClass: ['error-snackbar']});
+      console.error(`Error updating ${this.data.firstName} ${this.data.lastName} account role [id: ${this.data.accountId}]:`, error);
+    }
   }
 
   onCancel() {
-    this.dialogRef.close();
+    this.dialogRef.close(false);
   }
 
   protected readonly Object = Object;

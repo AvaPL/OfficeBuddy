@@ -48,6 +48,16 @@ export class AccountService {
     return firstValueFrom(this.http.post<Account>(this.baseUrl, account, {headers}));
   }
 
+  async updateRole(accountId: string, role: AccountRole): Promise<void> {
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${accountId}/role/${role}`, {}, {headers}));
+  }
+
   async archiveAccount(accountId: string): Promise<void> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
