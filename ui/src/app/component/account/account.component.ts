@@ -11,6 +11,8 @@ import {CreateAccountDialogComponent} from "./create-account-dialog/create-accou
 import {AccountView, OfficeView} from "../../service/model/account/account-view.model";
 import {Pagination} from "../../service/model/pagination/pagination.model";
 import {AccountService} from "../../service/account.service";
+import {OfficeIdName} from "../../service/model/office/office-id-name.model";
+import {OfficeService} from "../../service/office.service";
 
 @Component({
   selector: 'app-account',
@@ -26,23 +28,10 @@ export class AccountComponent implements OnInit {
   readonly changeAccountRoleDialog = inject(MatDialog);
   readonly deleteAccountDialog = inject(MatDialog);
 
-  offices = [
-    {
-      id: "339dc14c-c22c-4114-9227-114c447bdac3",
-      name: "Wroclaw Office",
-    },
-    {
-      id: "4ca02ab8-11f1-40a1-a1e2-01cccdb000c5",
-      name: "Krakow Office",
-    },
-    {
-      id: "90ef9700-e8a8-4c55-a119-5f0743e2b2c5",
-      name: "Warsaw Office",
-    }
-  ]
+  offices: OfficeIdName[] = []
   accounts: AccountView[] = []
 
-  selectedOffice: { id: string, name: string } | null = null
+  selectedOffice: OfficeIdName | null = null
   selectedRoles: AccountRole[] = Object.values(AccountRole)
 
   pagination: Pagination = {
@@ -53,14 +42,19 @@ export class AccountComponent implements OnInit {
 
   searchControl = new FormControl('');
 
-  constructor(private accountService: AccountService) {
+  constructor(private officeService: OfficeService, private accountService: AccountService) {
   }
 
   ngOnInit() {
+    this.fetchOffices()
     this.fetchAccounts(this.pagination.limit, this.pagination.offset);
     this.searchControl.valueChanges.subscribe(() => {
       this.fetchAccounts(this.pagination.limit, 0);
     });
+  }
+
+  async fetchOffices() {
+    this.offices = await this.officeService.getOfficeIdNameArray();
   }
 
   async fetchAccounts(limit: number, offset: number) {
