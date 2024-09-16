@@ -28,15 +28,15 @@ export class AccountComponent implements OnInit {
 
   offices = [
     {
-      id: "1",
+      id: "339dc14c-c22c-4114-9227-114c447bdac3",
       name: "Wroclaw Office",
     },
     {
-      id: "2",
+      id: "4ca02ab8-11f1-40a1-a1e2-01cccdb000c5",
       name: "Krakow Office",
     },
     {
-      id: "3",
+      id: "90ef9700-e8a8-4c55-a119-5f0743e2b2c5",
       name: "Warsaw Office",
     }
   ]
@@ -51,42 +51,30 @@ export class AccountComponent implements OnInit {
     hasMoreResults: false
   };
 
-  // TODO: Remove commented out code, add filters
   searchControl = new FormControl('');
-  // pageIndex = new BehaviorSubject<number>(0);
-  // searchFilteredAccounts = combineLatest([
-  //   this.searchControl.valueChanges.pipe(startWith('')),
-  //   this.pageIndex
-  // ]).pipe(
-  //   map(([searchValue, pageIndex]) => this.filterAccounts(searchValue || '', pageIndex))
-  // );
 
   constructor(private accountService: AccountService) {
   }
 
   ngOnInit() {
-    // this.searchControl.valueChanges.subscribe(() => {
-    //   this.pageIndex.next(0);
-    // });
     this.fetchAccounts(this.pagination.limit, this.pagination.offset);
+    this.searchControl.valueChanges.subscribe(() => {
+      this.fetchAccounts(this.pagination.limit, 0);
+    });
   }
 
   async fetchAccounts(limit: number, offset: number) {
-    let response = await this.accountService.getAccountListView(limit, offset);
+    let response = await this.accountService.getAccountListView(
+      this.searchControl.value,
+      this.selectedOffice?.id || null,
+      this.selectedRoles,
+      limit,
+      offset
+    );
     this.accounts = response.accounts;
     this.pagination = response.pagination;
     this.accountCards.nativeElement.scrollIntoView(true);
   }
-
-  // private filterAccounts(value: string, pageIndex: number) {
-  //   const filterValue = value.toLowerCase();
-  //
-  //   const searchFilteredAccounts = this.accounts.filter(account =>
-  //     account.name.toLowerCase().includes(filterValue) ||
-  //     account.email.toLowerCase().includes(filterValue)
-  //   );
-  //   return this.paginateAccounts(searchFilteredAccounts, pageIndex)
-  // }
 
   roleChipBackgroundColor(role: string) {
     switch (role) {
@@ -127,9 +115,9 @@ export class AccountComponent implements OnInit {
   }
 
   handleFilter(selectedOfficeId: string | null, selectedRoles: AccountRole[]) {
-    console.log(`Filtering by officeId: ${selectedOfficeId}, roles: ${selectedRoles}`);
     this.selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || null
     this.selectedRoles = selectedRoles
+    this.fetchAccounts(this.pagination.limit, 0)
   }
 
   createAccount() {

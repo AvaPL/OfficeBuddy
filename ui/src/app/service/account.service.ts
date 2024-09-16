@@ -5,6 +5,7 @@ import {CreateAccount} from "./model/account/create-account.model";
 import {firstValueFrom} from "rxjs";
 import {Account} from "./model/account/account.model";
 import {AccountListView} from "./model/account/account-view.model";
+import {AccountRole} from "./model/account/account-role.enum";
 
 @Injectable({
   providedIn: 'root'
@@ -16,15 +17,25 @@ export class AccountService {
 
   private baseUrl = '/api/internal/account';
 
-  // TODO: Add filters
-  async getAccountListView(limit: number, offset: number): Promise<AccountListView> {
+  async getAccountListView(
+    textSearchQuery: string | null,
+    officeId: string | null,
+    roles: AccountRole[] | null,
+    limit: number,
+    offset: number
+  ): Promise<AccountListView> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     });
 
-    return firstValueFrom(this.http.get<AccountListView>(`${this.baseUrl}/view/list?limit=${limit}&offset=${offset}`, {headers}));
+    let url = `${this.baseUrl}/view/list?limit=${limit}&offset=${offset}`;
+    if (textSearchQuery) url += `&text_search_query=${textSearchQuery}`;
+    if (officeId) url += `&office_id=${officeId}`;
+    if (roles) url += `&roles=${roles.join(',')}`;
+
+    return firstValueFrom(this.http.get<AccountListView>(url, {headers}));
   }
 
   async createAccount(account: CreateAccount): Promise<Account> {
