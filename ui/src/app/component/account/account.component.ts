@@ -2,7 +2,6 @@ import {Component, ElementRef, inject, OnInit, ViewChild} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {AccountRole, AccountRoleCompanion} from "./model/account-role.enum";
 import {FormControl} from "@angular/forms";
-import {BehaviorSubject, combineLatest, map, startWith} from "rxjs";
 import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-account-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
 import {AccountFilterDialogComponent} from "./account-filter-dialog/account-filter-dialog.component";
@@ -11,7 +10,7 @@ import {CreateAccountDialogComponent} from "./create-account-dialog/create-accou
 import {AccountView, OfficeView} from "../../service/model/account/account-view.model";
 import {Pagination} from "../../service/model/pagination/pagination.model";
 import {AccountService} from "../../service/account.service";
-import {OfficeCompact} from "../../service/model/office/office-id-name.model";
+import {OfficeCompact} from "../../service/model/office/office-compact.model";
 import {OfficeService} from "../../service/office.service";
 
 @Component({

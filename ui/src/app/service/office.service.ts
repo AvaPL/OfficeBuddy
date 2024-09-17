@@ -6,7 +6,7 @@ import {OfficeListView} from "./model/office/office-view.model";
 import {CreateOffice} from "./model/office/create-office.model";
 import {UpdateOffice} from "./model/office/update-office.model";
 import {Office} from "./model/office/office.model";
-import {OfficeCompact} from "./model/office/office-id-name.model";
+import {OfficeCompact} from "./model/office/office-compact.model";
 
 @Injectable({
   providedIn: 'root'
@@ -41,10 +41,10 @@ export class OfficeService {
     const officeListView = await firstValueFrom(
       this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=1000&offset=0`, {headers})
     );
-    return this.officeListViewToIdNameArray(officeListView);
+    return this.officeListViewToCompactOffices(officeListView);
   }
 
-  officeListViewToIdNameArray(officeListView: OfficeListView): OfficeCompact[] {
+  officeListViewToCompactOffices(officeListView: OfficeListView): OfficeCompact[] {
     return officeListView.offices.map(office => {
       return {
         id: office.id,

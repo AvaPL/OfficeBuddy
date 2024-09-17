@@ -50,15 +50,7 @@ export class OfficeComponent implements OnInit {
   }
 
   assignUser(officeId: string, officeName: string) {
-    const dialogRef = this.assignUserDialog.open(AssignUserDialogComponent, {data: {officeId, officeName}});
-
-    dialogRef.afterClosed().subscribe(assignedUser => {
-      if (assignedUser) {
-        console.log(`Assigning ${assignedUser} to office ${officeId}`);
-      } else {
-        console.log(`Assigning user to office cancelled`);
-      }
-    });
+    this.assignUserDialog.open(AssignUserDialogComponent, {data: {officeId, officeName}});
   }
 
   editManagers(officeId: string, officeName: string, officeManagers: OfficeManagerView[]) {

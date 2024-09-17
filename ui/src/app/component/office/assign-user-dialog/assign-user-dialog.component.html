@@ -7,9 +7,11 @@
            matInput
            [formControl]="accountControl"
            [matAutocomplete]="auto">
-    <mat-autocomplete #auto="matAutocomplete">
-      @for (account of filteredAccounts | async; track account) {
-        <mat-option [value]="account">{{ account }}</mat-option>
+    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayAccount">
+      @for (account of accounts; track account.id) {
+        <mat-option [value]="account">
+          {{ displayAccount(account) }}
+        </mat-option>
       }
     </mat-autocomplete>
   </mat-form-field>
