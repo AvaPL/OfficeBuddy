@@ -36,7 +36,7 @@ export class AssignUserDialogComponent implements OnInit {
   async filterAccounts(value: string | null) {
     if (value && value.length >= 2) {
       const filterValue = value.toLowerCase();
-      this.accounts = await this.accountService.getCompactAccounts(filterValue);
+      this.accounts = await this.accountService.getCompactAccounts(filterValue, null);
     } else {
       this.accounts = [];
     }

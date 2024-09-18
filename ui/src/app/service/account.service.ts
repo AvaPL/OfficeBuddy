@@ -40,7 +40,8 @@ export class AccountService {
   }
 
   async getCompactAccounts(
-    textSearchQuery: string | null
+    textSearchQuery: string | null,
+    roles: AccountRole[] | null
   ): Promise<AccountCompact[]> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
@@ -53,6 +54,7 @@ export class AccountService {
 
     let url = `${this.baseUrl}/view/list?limit=1000&offset=0`;
     if (textSearchQuery) url += `&text_search_query=${textSearchQuery}`;
+    if (roles) url += `&roles=${roles.join(',')}`;
 
     const accountListView = await firstValueFrom(this.http.get<AccountListView>(url, {headers}));
     return this.accountListViewToCompactAccounts(accountListView);

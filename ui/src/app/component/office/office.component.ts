@@ -57,7 +57,14 @@ export class OfficeComponent implements OnInit {
     const dialogRef = this.editManagersDialog.open(EditManagersDialogComponent, {
       data: {
         officeName: officeName,
-        currentManagers: officeManagers.map(manager => `${manager.firstName} ${manager.lastName} (${manager.email})`)
+        currentManagers: officeManagers.map(manager => {
+          return {
+            id: manager.id,
+            firstName: manager.firstName,
+            lastName: manager.lastName,
+            email: manager.email
+          }
+        })
       }
     });
 
