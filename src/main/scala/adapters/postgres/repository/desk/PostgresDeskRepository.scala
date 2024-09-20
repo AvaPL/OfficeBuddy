@@ -138,7 +138,8 @@ object PostgresDeskRepository {
         bool *: // is_standing
         int2 *: // monitors_count
         bool *: // has_phone
-        uuid // office_id
+        uuid *: // office_id
+        bool // is_archived
     ).contramap { desk =>
       desk.id *:
         desk.name *:
@@ -148,6 +149,7 @@ object PostgresDeskRepository {
         desk.monitorsCount *:
         desk.hasPhone *:
         desk.officeId *:
+        desk.isArchived *:
         EmptyTuple
     }
 

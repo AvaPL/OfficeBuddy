@@ -1,7 +1,6 @@
 import {Component, ElementRef, inject, OnInit, signal, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {COMMA, ENTER} from "@angular/cdk/keycodes";
-import {MatChipInputEvent} from "@angular/material/chips";
 import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
 import {FormControl} from "@angular/forms";
 import {AccountCompact} from "../../../service/model/account/account-compact.model";
@@ -57,12 +56,6 @@ export class EditManagersDialogComponent implements OnInit {
     return account ? `${account.firstName} ${account.lastName} (${account.email})` : '';
   }
 
-  add(event: MatChipInputEvent): void {
-    const accountId = (event.value || '').trim();
-    this.addUnique(accountId)
-    this.resetManagerInput();
-  }
-
   private addUnique(accountId: string) {
     const managerToAdd = this.managers.find(manager => manager.id === accountId)
     if (managerToAdd)
@@ -92,6 +85,7 @@ export class EditManagersDialogComponent implements OnInit {
   async onAssign() {
     try {
       // TODO: Implement managers assignment on the backend
+      // TODO: Consider removing assigned managers from account model and adding a many-to-many table instead
       // await this.officeService.assignManagers(this.data.officeId, this.assignedManagers());
       this.snackbar.open(`Managers assigned to ${this.data.officeName}`);
       this.dialogRef.close(true);

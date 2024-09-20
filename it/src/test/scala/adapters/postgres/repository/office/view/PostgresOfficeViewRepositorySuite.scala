@@ -1,8 +1,8 @@
 package io.github.avapl
-package adapters.postgres.repository.office
+package adapters.postgres.repository.office.view
 
 import adapters.postgres.fixture.PostgresFixture
-import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
+import adapters.postgres.repository.office.PostgresOfficeRepository
 import cats.effect.IO
 import cats.effect.Resource
 import domain.model.office.Address
