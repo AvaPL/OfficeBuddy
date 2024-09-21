@@ -11,15 +11,14 @@ import domain.model.error.desk.DeskNotFound
 import domain.model.error.desk.DuplicateDeskNameForOffice
 import domain.model.error.office.OfficeNotFound
 import domain.repository.desk.DeskRepository
-
 import java.util.UUID
+import scala.annotation.nowarn
 import skunk._
 import skunk.codec.all._
 import skunk.data.Arr
 import skunk.data.Completion
+import skunk.exception.PostgresErrorException
 import skunk.implicits._
-
-import scala.annotation.nowarn
 
 class PostgresDeskRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
@@ -37,7 +36,7 @@ class PostgresDeskRepository[F[_]: MonadCancelThrow](
             case SqlState.ForeignKeyViolation(e) if e.constraintName.contains("desk_office_id_fkey") =>
               OfficeNotFound(desk.officeId).raiseError
             case SqlState.UniqueViolation(e) if e.constraintName.contains("desk_name_office_id_key") =>
-              DuplicateDeskNameForOffice(desk.name, desk.officeId).raiseError
+              DuplicateDeskNameForOffice(desk.name.some, desk.officeId.some).raiseError
           }
       } yield desk
     }
@@ -64,50 +63,78 @@ class PostgresDeskRepository[F[_]: MonadCancelThrow](
     """.query(deskDecoder)
 
   override def update(deskId: UUID, updateDesk: UpdateDesk): F[Desk] =
-    session.use { session =>
-      for {
-        sql <- session.prepare(updateSql)
-        _ <- sql
-          .execute(deskId *: updateDesk *: EmptyTuple)
-          .ensureOr {
-            case Completion.Update(0) => DeskNotFound(deskId)
-            case completion           => new RuntimeException(s"Expected 1 updated desk, but got: $completion")
-          }(_ == Completion.Update(1))
-          .recoverWith {
-            case SqlState.ForeignKeyViolation(e) if e.constraintName.contains("desk_office_id_fkey") =>
-              OfficeNotFound(updateDesk.officeId).raiseError
-            case SqlState.UniqueViolation(e) if e.constraintName.contains("desk_name_office_id_key") =>
-              DuplicateDeskNameForOffice(updateDesk.name, updateDesk.officeId).raiseError
-          }
-        desk <- read(deskId)
-      } yield desk
+    for {
+      _ <- updateOptionally(deskId, updateDesk)
+      desk <- read(deskId)
+    } yield desk
+
+  private def updateOptionally(deskId: UUID, updateDesk: UpdateDesk) =
+    updateSql(deskId, updateDesk) match {
+      case Some(appliedFragment) =>
+        session.use { session =>
+          for {
+            sql <- session.prepare(appliedFragment.fragment.command)
+            _ <- sql
+              .execute(appliedFragment.argument)
+              .ensureOr {
+                case Completion.Update(0) => DeskNotFound(deskId)
+                case completion           => new RuntimeException(s"Expected 1 updated desk, but got: $completion")
+              }(_ == Completion.Update(1))
+              .recoverWith {
+                case SqlState.ForeignKeyViolation(e) if e.constraintName.contains("desk_office_id_fkey") =>
+                  OfficeNotFound(updateDesk.officeId.get).raiseError
+                case SqlState.UniqueViolation(e) if e.constraintName.contains("desk_name_office_id_key") =>
+                  val (name, officeId) = extractNameAndOfficeId(updateDesk.name, updateDesk.officeId, e)
+                  DuplicateDeskNameForOffice(name, officeId).raiseError
+              }
+          } yield ()
+        }
+      case None => // Nothing to update
+        ().pure[F]
     }
 
-  @nowarn("msg=match may not be exhaustive")
-  private lazy val updateSql: Command[UUID *: UpdateDesk *: EmptyTuple] =
-    sql"""
-      UPDATE desk   
-      SET    name = $varchar,
-             is_available = $bool,
-             notes = ${_varchar},
-             is_standing = $bool,
-             monitors_count = $int2,
-             has_phone = $bool,
-             office_id = $uuid
-      WHERE id = $uuid
-    """.command
-      .contramap {
-        case deskId *: updateDesk *: EmptyTuple =>
-          updateDesk.name *:
-            updateDesk.isAvailable *:
-            Arr(updateDesk.notes: _*) *:
-            updateDesk.isStanding *:
-            updateDesk.monitorsCount *:
-            updateDesk.hasPhone *:
-            updateDesk.officeId *:
-            deskId *:
-            EmptyTuple
-      }
+  private def updateSql(deskId: UUID, update: UpdateDesk): Option[AppliedFragment] = {
+    val setName = sql"name = $varchar"
+    val setIsAvailable = sql"is_available = $bool"
+    val setNotes = sql"notes = ${_varchar}"
+    val setIsStanding = sql"is_standing = $bool"
+    val setMonitorsCount = sql"monitors_count = $int2"
+    val setHasPhone = sql"has_phone = $bool"
+    val setOfficeId = sql"office_id = $uuid"
+
+    val appliedSets = List(
+      update.name.map(setName),
+      update.isAvailable.map(setIsAvailable),
+      update.notes.map(Arr(_: _*)).map(setNotes),
+      update.isStanding.map(setIsStanding),
+      update.monitorsCount.map(setMonitorsCount),
+      update.hasPhone.map(setHasPhone),
+      update.officeId.map(setOfficeId)
+    ).flatten
+
+    Option.when(appliedSets.nonEmpty) {
+      appliedSets.foldSmash(sql"UPDATE desk SET ".apply(Void), void", ", sql" WHERE id = $uuid".apply(deskId))
+    }
+  }
+
+  private def extractNameAndOfficeId(
+    updateName: Option[String],
+    updateOfficeId: Option[UUID],
+    exception: PostgresErrorException
+  ): (Option[String], Option[UUID]) = {
+    val (exceptionDetailName, exceptionDetailOfficeId) = exception.detail match {
+      case Some(nameOfficeIdViolationDetailRegex(name, officeIdString)) =>
+        val officeId = Either
+          .catchOnly[IllegalArgumentException](UUID.fromString(officeIdString))
+          .toOption
+        (Some(name), officeId)
+      case _ => (None, None)
+    }
+    (updateName.orElse(exceptionDetailName), updateOfficeId.orElse(exceptionDetailOfficeId))
+  }
+
+  private lazy val nameOfficeIdViolationDetailRegex =
+    """Key \(name, office_id\)=\((?<nameValue>.+), (?<officeIdValue>.+?)\) already exists\.""".r
 
   override def archive(deskId: UUID): F[Unit] =
     session.use { session =>

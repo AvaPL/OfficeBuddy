@@ -4,6 +4,7 @@ package adapters.http.desk
 import adapters.http.desk.view.ApiDeskListView
 import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
+import cats.syntax.all._
 import domain.model.account.Role
 import domain.model.account.Role.SuperAdmin
 import domain.model.account.Role.User
@@ -117,7 +118,8 @@ object DeskEndpointsSuite
       |""".stripMargin
   ) {
     val deskService =
-      whenF(mock[DeskService[IO]].createDesk(any)) thenFailWith DuplicateDeskNameForOffice(anyDeskName, anyOfficeId)
+      whenF(mock[DeskService[IO]].createDesk(any)) thenFailWith
+        DuplicateDeskNameForOffice(anyDeskName.some, anyOfficeId.some)
 
     val response = sendRequest(deskService) {
       basicRequest
@@ -180,13 +182,13 @@ object DeskEndpointsSuite
     val deskId = anyDeskId1
     val desk = Desk(
       id = anyDeskId1,
-      name = deskToUpdate.name,
-      isAvailable = deskToUpdate.isAvailable,
-      notes = deskToUpdate.notes,
-      isStanding = deskToUpdate.isStanding,
-      monitorsCount = deskToUpdate.monitorsCount,
-      hasPhone = deskToUpdate.hasPhone,
-      officeId = deskToUpdate.officeId
+      name = deskToUpdate.name.get,
+      isAvailable = deskToUpdate.isAvailable.get,
+      notes = deskToUpdate.notes.get,
+      isStanding = deskToUpdate.isStanding.get,
+      monitorsCount = deskToUpdate.monitorsCount.get,
+      hasPhone = deskToUpdate.hasPhone.get,
+      officeId = deskToUpdate.officeId.get
     )
     val deskService = whenF(mock[DeskService[IO]].updateDesk(any, any)) thenReturn desk
 
@@ -274,7 +276,7 @@ object DeskEndpointsSuite
       |""".stripMargin
   ) {
     val deskService = whenF(mock[DeskService[IO]].updateDesk(any, any)) thenFailWith
-      DuplicateDeskNameForOffice(anyDeskName, anyOfficeId)
+      DuplicateDeskNameForOffice(anyDeskName.some, anyOfficeId.some)
 
     val response = sendRequest(deskService) {
       basicRequest
@@ -592,14 +594,14 @@ object DeskEndpointsSuite
   )
 
   private lazy val anyApiUpdateDesk = ApiUpdateDesk(
-    name = anyDeskName,
-    isAvailable = true,
-    notes = List("Rubik's Cube on the desk"),
-    isStanding = true,
-    monitorsCount = 2,
-    hasPhone = false,
-    officeId = anyOfficeId,
-    isArchived = false
+    name = Some(anyDeskName),
+    isAvailable = Some(true),
+    notes = Some(List("Rubik's Cube on the desk")),
+    isStanding = Some(true),
+    monitorsCount = Some(2),
+    hasPhone = Some(false),
+    officeId = Some(anyOfficeId),
+    isArchived = Some(false)
   )
 
   private lazy val anyDeskId1 = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")

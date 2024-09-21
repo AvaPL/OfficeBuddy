@@ -40,15 +40,13 @@ case class CreateDesk(
 }
 
 case class UpdateDesk(
-  name: String,
-  isAvailable: Boolean,
-  notes: List[String],
+  name: Option[String] = None,
+  isAvailable: Option[Boolean] = None,
+  notes: Option[List[String]] = None,
   //
-  isStanding: Boolean,
-  monitorsCount: Short,
-  hasPhone: Boolean,
+  isStanding: Option[Boolean] = None,
+  monitorsCount: Option[Short] = None,
+  hasPhone: Option[Boolean] = None,
   //
-  officeId: UUID,
-  //
-  isArchived: Boolean = false
+  officeId: Option[UUID] = None
 )

@@ -77,7 +77,11 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
         case OfficeNotFound(officeId) =>
           ApiError.BadRequest(s"Office [id: $officeId] was not found").asLeft
         case DuplicateDeskNameForOffice(name, officeId) =>
-          ApiError.Conflict(s"Desk '$name' is already defined for office [id: $officeId]").asLeft
+          ApiError
+            .Conflict(
+              s"Desk '${name.getOrElse("<unknown>")}' is already defined for office [id: ${officeId.getOrElse("<unknown>")}]"
+            )
+            .asLeft
       }
 
   private lazy val readDeskEndpoint =
@@ -147,7 +151,11 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
       .map(_.asRight[ApiError])
       .recover {
         case DuplicateDeskNameForOffice(name, officeId) =>
-          ApiError.Conflict(s"Desk '$name' is already defined for office [id: $officeId]").asLeft
+          ApiError
+            .Conflict(
+              s"Desk '${name.getOrElse("<unknown>")}' is already defined for office [id: ${officeId.getOrElse("<unknown>")}]"
+            )
+            .asLeft
         case DeskNotFound(deskId) =>
           ApiError.NotFound(s"Desk [id: $deskId] was not found").asLeft
         case OfficeNotFound(officeId) =>
@@ -242,14 +250,14 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
   )
 
   private lazy val apiUpdateDeskExample = ApiUpdateDesk(
-    name = "107.1",
-    isAvailable = true,
-    notes = List("Rubik's Cube on the desk"),
-    isStanding = true,
-    monitorsCount = 2,
-    hasPhone = false,
-    officeId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
-    isArchived = false
+    name = Some("107.1"),
+    isAvailable = Some(true),
+    notes = Some(List("Rubik's Cube on the desk")),
+    isStanding = Some(true),
+    monitorsCount = Some(2),
+    hasPhone = Some(false),
+    officeId = Some(UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")),
+    isArchived = Some(false)
   )
 
   private lazy val officeIdExample = UUID.fromString("d5c4921a-3f7f-474f-8cba-e6fc8cb6c545")

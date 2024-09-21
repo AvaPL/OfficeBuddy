@@ -7,5 +7,5 @@ import scala.util.control.NoStackTrace
 package object desk {
 
   case class DeskNotFound(deskId: UUID) extends NoStackTrace
-  case class DuplicateDeskNameForOffice(name: String, officeId: UUID) extends NoStackTrace
+  case class DuplicateDeskNameForOffice(name: Option[String], officeId: Option[UUID]) extends NoStackTrace
 }

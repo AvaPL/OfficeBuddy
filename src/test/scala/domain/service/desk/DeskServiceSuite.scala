@@ -2,6 +2,7 @@ package io.github.avapl
 package domain.service.desk
 
 import cats.effect.IO
+import cats.syntax.all._
 import domain.model.desk.CreateDesk
 import domain.model.desk.Desk
 import domain.model.desk.UpdateDesk
@@ -48,7 +49,7 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   ) {
     val deskToCreate = anyCreateDesk
 
-    val duplicateDeskName = DuplicateDeskNameForOffice(name, anyOfficeId)
+    val duplicateDeskName = DuplicateDeskNameForOffice(name.some, deskToCreate.officeId.some)
     val deskRepository = whenF(mock[DeskRepository[IO]].create(any)) thenFailWith duplicateDeskName
     val deskService = new DeskService[IO](deskRepository)
 
@@ -111,13 +112,13 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
     val deskRepository = mock[DeskRepository[IO]]
     val desk = Desk(
       id = deskId,
-      name = deskUpdate.name,
-      isAvailable = deskUpdate.isAvailable,
-      notes = deskUpdate.notes,
-      isStanding = deskUpdate.isStanding,
-      monitorsCount = deskUpdate.monitorsCount,
-      hasPhone = deskUpdate.hasPhone,
-      officeId = deskUpdate.officeId
+      name = deskUpdate.name.get,
+      isAvailable = deskUpdate.isAvailable.get,
+      notes = deskUpdate.notes.get,
+      isStanding = deskUpdate.isStanding.get,
+      monitorsCount = deskUpdate.monitorsCount.get,
+      hasPhone = deskUpdate.hasPhone.get,
+      officeId = deskUpdate.officeId.get
     )
     whenF(deskRepository.update(any, any)) thenReturn desk
     val deskService = new DeskService[IO](deskRepository)
@@ -211,13 +212,13 @@ object DeskServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMat
   )
 
   private lazy val anyUpdateDesk = UpdateDesk(
-    name = "107.1",
-    isAvailable = true,
-    notes = List("Rubik's Cube on the desk"),
-    isStanding = true,
-    monitorsCount = 2,
-    hasPhone = false,
-    officeId = anyOfficeId
+    name = Some("107.1"),
+    isAvailable = Some(true),
+    notes = Some(List("Rubik's Cube on the desk")),
+    isStanding = Some(true),
+    monitorsCount = Some(2),
+    hasPhone = Some(false),
+    officeId = Some(anyOfficeId)
   )
 
   private lazy val anyDeskId = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")

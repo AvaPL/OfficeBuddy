@@ -84,7 +84,7 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       result <- deskRepository.create(deskWithTheSameName).attempt
     } yield matches(result) {
       case Left(throwable) =>
-        val duplicateDeskName = DuplicateDeskNameForOffice(desk.name, desk.officeId)
+        val duplicateDeskName = DuplicateDeskNameForOffice(desk.name.some, desk.officeId.some)
         expect(throwable == duplicateDeskName)
     }
   }
@@ -134,20 +134,12 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       |""".stripMargin
   ) { deskRepository =>
     val desk = anyDesk
-    val deskUpdate = anyUpdateDesk
-      .copy(officeId = officeId2)
-      .modify(_.name)
-      .using(_ + "updated")
-      .modify(_.notes)
-      .using("updated" :: _)
-      .modify(_.monitorsCount)
-      .using(c => (c + 1).toShort)
-      .modifyAll(
-        _.isAvailable,
-        _.isStanding,
-        _.hasPhone
-      )
-      .using(!_)
+    val deskUpdate = UpdateDesk( // only some properties updated
+      name = Some(desk.name + "updated"),
+      notes = Some("updated" :: anyDeskNotes),
+      isStanding = Some(!desk.isStanding),
+      monitorsCount = Some((desk.monitorsCount + 1).toShort)
+    )
 
     for {
       _ <- deskRepository.create(desk)
@@ -156,13 +148,13 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
     } yield {
       val expectedDesk = Desk(
         id = desk.id,
-        name = deskUpdate.name,
-        isAvailable = deskUpdate.isAvailable,
-        notes = deskUpdate.notes,
-        isStanding = deskUpdate.isStanding,
-        monitorsCount = deskUpdate.monitorsCount,
-        hasPhone = deskUpdate.hasPhone,
-        officeId = deskUpdate.officeId
+        name = deskUpdate.name.get,
+        isAvailable = desk.isAvailable,
+        notes = deskUpdate.notes.get,
+        isStanding = deskUpdate.isStanding.get,
+        monitorsCount = deskUpdate.monitorsCount.get,
+        hasPhone = desk.hasPhone,
+        officeId = desk.officeId
       )
       expect(readDesk == expectedDesk)
     }
@@ -176,15 +168,7 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       |""".stripMargin
   ) { deskRepository =>
     val desk = anyDesk
-    val deskUpdate = UpdateDesk(
-      name = desk.name,
-      isAvailable = desk.isAvailable,
-      notes = desk.notes,
-      isStanding = desk.isStanding,
-      monitorsCount = desk.monitorsCount,
-      hasPhone = desk.hasPhone,
-      officeId = desk.officeId
-    )
+    val deskUpdate = UpdateDesk()
 
     for {
       _ <- deskRepository.create(desk)
@@ -223,7 +207,7 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       id = UUID.fromString("96cb8558-8fe8-4330-b50a-00e7e1917757"),
       name = "other"
     )
-    val deskUpdate = anyUpdateDesk.copy(name = desk2.name)
+    val deskUpdate = anyUpdateDesk.copy(name = Some(desk2.name))
 
     for {
       _ <- deskRepository.create(desk1)
@@ -231,7 +215,7 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       result <- deskRepository.update(desk1.id, deskUpdate).attempt
     } yield matches(result) {
       case Left(throwable) =>
-        val duplicateDeskName = DuplicateDeskNameForOffice(desk2.name, desk2.officeId)
+        val duplicateDeskName = DuplicateDeskNameForOffice(desk2.name.some, desk2.officeId.some)
         expect(throwable == duplicateDeskName)
     }
   }
@@ -249,7 +233,7 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
       name = "other",
       officeId = officeId2
     )
-    val deskUpdate = anyUpdateDesk.copy(name = desk2.name)
+    val deskUpdate = anyUpdateDesk.copy(name = Some(desk2.name))
 
     for {
       _ <- deskRepository.create(desk1)
@@ -335,7 +319,7 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
     id = anyDeskId,
     name = anyDeskName,
     isAvailable = true,
-    notes = List("Rubik's Cube on the desk"),
+    notes = anyDeskNotes,
     isStanding = true,
     monitorsCount = 2,
     hasPhone = false,
@@ -343,16 +327,19 @@ object PostgresDeskRepositorySuite extends IOSuite with PostgresFixture {
   )
 
   private lazy val anyUpdateDesk = UpdateDesk(
-    name = anyDeskName,
-    isAvailable = true,
-    notes = List("Rubik's Cube on the desk"),
-    isStanding = true,
-    monitorsCount = 2,
-    hasPhone = false,
-    officeId = officeId1
+    name = Some(anyDeskName),
+    isAvailable = Some(true),
+    notes = Some(anyDeskNotes),
+    isStanding = Some(true),
+    monitorsCount = Some(2),
+    hasPhone = Some(false),
+    officeId = Some(officeId1)
   )
 
   private lazy val anyDeskId = UUID.fromString("4f99984c-e371-4b77-a184-7003f6281b8d")
 
   private lazy val anyDeskName = "107.1"
+
+  private lazy val anyDeskNotes: List[String] =
+    List("Rubik's Cube on the desk", "Near the window")
 }

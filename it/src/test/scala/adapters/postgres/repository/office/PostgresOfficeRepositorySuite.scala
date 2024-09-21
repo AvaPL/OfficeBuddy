@@ -122,17 +122,7 @@ object PostgresOfficeRepositorySuite extends IOSuite with PostgresFixture {
       |""".stripMargin
   ) { officeRepository =>
     val office = anyOffice
-    val officeUpdate = UpdateOffice(
-      name = None,
-      notes = None,
-      address = UpdateAddress(
-        addressLine1 = None,
-        addressLine2 = None,
-        postalCode = None,
-        city = None,
-        country = None
-      )
-    )
+    val officeUpdate = UpdateOffice()
 
     for {
       _ <- officeRepository.create(office)

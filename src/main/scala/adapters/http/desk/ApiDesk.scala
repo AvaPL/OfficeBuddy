@@ -56,17 +56,17 @@ case class ApiCreateDesk(
 @derive(circeEncoder, circeDecoder, tapirSchema)
 @encodedName("Desk (update)")
 case class ApiUpdateDesk(
-  name: String,
-  isAvailable: Boolean,
-  notes: List[String],
+  name: Option[String],
+  isAvailable: Option[Boolean],
+  notes: Option[List[String]],
   //
-  isStanding: Boolean,
-  monitorsCount: Short,
-  hasPhone: Boolean,
+  isStanding: Option[Boolean],
+  monitorsCount: Option[Short],
+  hasPhone: Option[Boolean],
   //
-  officeId: UUID,
+  officeId: Option[UUID],
   //
-  isArchived: Boolean
+  isArchived: Option[Boolean]
 ) {
 
   lazy val toDomain: UpdateDesk =
