@@ -117,6 +117,9 @@ class PostgresDeskRepository[F[_]: MonadCancelThrow](
     }
   }
 
+  /**
+   * Extracts the name and officeId from the exception detail if they are not provided in the update.
+   */
   private def extractNameAndOfficeId(
     updateName: Option[String],
     updateOfficeId: Option[UUID],

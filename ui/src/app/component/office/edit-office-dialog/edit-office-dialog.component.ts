@@ -53,14 +53,13 @@ export class EditOfficeDialogComponent {
 
   formToUpdateOffice(): UpdateOffice {
     return {
-      name: this.form.value.name || null,
-      notes: null,
+      name: this.form.value.name ?? undefined,
       address: {
-        addressLine1: this.form.value.address!.addressLine1 || null,
-        addressLine2: this.form.value.address!.addressLine2 || null,
-        postalCode: this.form.value.address!.postalCode || null,
-        city: this.form.value.address!.city || null,
-        country: this.form.value.address!.country || null
+        addressLine1: this.form.value.address!.addressLine1 ?? undefined,
+        addressLine2: this.form.value.address!.addressLine2 ?? undefined,
+        postalCode: this.form.value.address!.postalCode ?? undefined,
+        city: this.form.value.address!.city ?? undefined,
+        country: this.form.value.address!.country ?? undefined
       }
     };
   }

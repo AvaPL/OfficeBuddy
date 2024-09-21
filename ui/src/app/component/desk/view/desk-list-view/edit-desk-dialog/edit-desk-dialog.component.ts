@@ -45,12 +45,10 @@ export class EditDeskDialogComponent {
 
   formToUpdateDesk(): UpdateDesk {
     return {
-      name: this.form.value.name || null,
-      isAvailable: null,
-      notes: null,
-      isStanding: this.form.value.isStanding || null,
-      monitorsCount: this.form.value.monitorsCount || null,
-      hasPhone: this.form.value.hasPhone || null,
+      name: this.form.value.name ?? undefined,
+      isStanding: this.form.value.isStanding ?? undefined,
+      monitorsCount: this.form.value.monitorsCount ?? undefined,
+      hasPhone: this.form.value.hasPhone ?? undefined,
     }
   }
 

@@ -56,12 +56,7 @@ export class DeskService {
     });
 
     const update: UpdateDesk = {
-      name: null,
       isAvailable: isAvailable,
-      notes: null,
-      isStanding: null,
-      monitorsCount: null,
-      hasPhone: null
     }
 
     return firstValueFrom(this.http.patch<Desk>(`${this.baseUrl}/${deskId}`, update, {headers}));
