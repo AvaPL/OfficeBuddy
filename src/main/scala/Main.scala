@@ -26,6 +26,7 @@ import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
 import io.github.avapl.adapters.postgres.repository.account.view.PostgresAccountViewRepository
+import io.github.avapl.adapters.postgres.repository.desk.view.PostgresDeskViewRepository
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -106,6 +107,7 @@ object Main extends IOApp.Simple {
       val accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session)
 
       val officeViewRepository = new PostgresOfficeViewRepository[F](session)
+      val deskViewRepository = new PostgresDeskViewRepository[F](session)
       val accountViewRepository = new PostgresAccountViewRepository[F](session)
 
       val officeService = new OfficeService[F](officeRepository)
@@ -120,16 +122,20 @@ object Main extends IOApp.Simple {
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
-      val deskEndpoints =
-        new DeskEndpoints[F](deskService, publicKeyRepository, rolesExtractorService).endpoints
+      val deskEndpoints = new DeskEndpoints[F](
+        deskService,
+        deskViewRepository,
+        publicKeyRepository,
+        rolesExtractorService
+      ).endpoints
       val reservationEndpoints =
         new ReservationEndpoints[F](reservationService, publicKeyRepository, rolesExtractorService).endpoints
       val accountEndpoints = new AccountEndpoints[F](
-          accountService,
-          accountViewRepository,
-          publicKeyRepository,
-          rolesExtractorService
-        ).endpoints
+        accountService,
+        accountViewRepository,
+        publicKeyRepository,
+        rolesExtractorService
+      ).endpoints
 
       officeEndpoints <+> deskEndpoints <+> reservationEndpoints <+> accountEndpoints
     }

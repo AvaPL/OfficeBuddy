@@ -43,7 +43,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeToCreate = anyApiCreateOffice
-    val office = Office(anyOfficeId, officeToCreate.name, officeToCreate.notes, officeToCreate.address.toDomain)
+    val office = Office(anyOfficeId1, officeToCreate.name, officeToCreate.notes, officeToCreate.address.toDomain)
     val officeService = whenF(mock[OfficeService[IO]].createOffice(any)) thenReturn office
 
     val response = sendRequest(officeService, role = OfficeManager) {
@@ -108,7 +108,7 @@ object OfficeEndpointsSuite
       | THEN 200 OK and the read office is returned
       |""".stripMargin
   ) {
-    val officeId = anyOfficeId
+    val officeId = anyOfficeId1
     val office = anyOffice.copy(id = officeId)
     val officeService = whenF(mock[OfficeService[IO]].readOffice(any)) thenReturn office
 
@@ -130,7 +130,7 @@ object OfficeEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val officeId = anyOfficeId
+    val officeId = anyOfficeId1
     val officeService = whenF(mock[OfficeService[IO]].readOffice(any)) thenFailWith OfficeNotFound(officeId)
 
     val response = sendRequest(officeService) {
@@ -149,7 +149,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeToUpdate = anyApiUpdateOffice
-    val officeId = anyOfficeId
+    val officeId = anyOfficeId1
     val address = Address(
       addressLine1 = officeToUpdate.address.addressLine1.get,
       addressLine2 = officeToUpdate.address.addressLine2.get,
@@ -181,7 +181,7 @@ object OfficeEndpointsSuite
       |""".stripMargin
   ) {
     val officeToUpdate = anyApiUpdateOffice
-    val officeId = anyOfficeId
+    val officeId = anyOfficeId1
     val officeService = mock[OfficeService[IO]]
 
     val response = sendRequest(officeService, role = User) {
@@ -204,7 +204,7 @@ object OfficeEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val officeId = anyOfficeId
+    val officeId = anyOfficeId1
     val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenFailWith OfficeNotFound(officeId)
 
     val response = sendRequest(officeService) {
@@ -229,7 +229,7 @@ object OfficeEndpointsSuite
 
     val response = sendRequest(officeService) {
       basicRequest
-        .patch(uri"http://test.com/office/$anyOfficeId")
+        .patch(uri"http://test.com/office/$anyOfficeId1")
         .body(anyApiUpdateOffice)
     }
 
@@ -247,7 +247,7 @@ object OfficeEndpointsSuite
     val officeService = whenF(mock[OfficeService[IO]].archiveOffice(any)) thenReturn ()
 
     val response = sendRequest(officeService, role = OfficeManager) {
-      basicRequest.delete(uri"http://test.com/office/$anyOfficeId")
+      basicRequest.delete(uri"http://test.com/office/$anyOfficeId1")
     }
 
     for {
@@ -264,7 +264,7 @@ object OfficeEndpointsSuite
     val officeService = mock[OfficeService[IO]]
 
     val response = sendRequest(officeService, role = User) {
-      basicRequest.delete(uri"http://test.com/office/$anyOfficeId")
+      basicRequest.delete(uri"http://test.com/office/$anyOfficeId1")
     }
 
     for {
@@ -284,8 +284,8 @@ object OfficeEndpointsSuite
     val officeViewRepository = mock[OfficeViewRepository[IO]]
     val officeListView = OfficeListView(
       offices = List(
-        anyOfficeView.copy(id = UUID.randomUUID(), name = "Office 1"),
-        anyOfficeView.copy(id = UUID.randomUUID(), name = "Office 2")
+        anyOfficeView.copy(id = anyOfficeId1, name = "Office 1"),
+        anyOfficeView.copy(id = anyOfficeId2, name = "Office 2")
       ),
       pagination = Pagination(
         limit = 10,
@@ -401,6 +401,48 @@ object OfficeEndpointsSuite
     } yield expect(response.code == StatusCode.BadRequest)
   }
 
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called without limit
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called without offset
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "10"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
   private def sendRequest(
     officeService: OfficeService[IO],
     role: Role = SuperAdmin
@@ -428,7 +470,7 @@ object OfficeEndpointsSuite
   }
 
   private lazy val anyOffice = Office(
-    id = anyOfficeId,
+    id = anyOfficeId1,
     name = anyOfficeName,
     notes = anyOfficeNotes,
     address = anyOfficeAddress
@@ -446,8 +488,8 @@ object OfficeEndpointsSuite
     address = anyOfficeApiUpdateAddress
   )
 
-  private lazy val anyOfficeId =
-    UUID.fromString("4f99984c-e371-4b77-a184-7003f6281b8d")
+  private lazy val anyOfficeId1 = UUID.fromString("4f99984c-e371-4b77-a184-7003f6281b8d")
+  private lazy val anyOfficeId2 = UUID.fromString("b278adc4-0dd3-44b0-9cec-6b5338b480c3")
 
   private lazy val anyOfficeName =
     "Test Office"
@@ -480,8 +522,8 @@ object OfficeEndpointsSuite
   )
 
   private lazy val anyOfficeView = OfficeView(
-    id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298"),
-    name = "Wroclaw",
+    id = anyOfficeId1,
+    name = anyOfficeName,
     notes = List("Everyone's favorite", "The funniest one"),
     address = AddressView(
       addressLine1 = "Powstancow Slaskich 9",

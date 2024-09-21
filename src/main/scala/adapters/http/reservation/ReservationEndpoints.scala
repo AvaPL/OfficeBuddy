@@ -27,7 +27,7 @@ import sttp.tapir.server.ServerEndpoint
 class ReservationEndpoints[F[_]: Clock: MonadThrow](
   reservationService: ReservationService[F],
   override val publicKeyRepository: PublicKeyRepository[F],
-  override val rolesExtractor: ClaimsExtractorService
+  override val claimsExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F] {
 
   override protected val apiEndpointName: String = "reservation"

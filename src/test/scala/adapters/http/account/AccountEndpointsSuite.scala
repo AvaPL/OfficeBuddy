@@ -47,7 +47,7 @@ object AccountEndpointsSuite
   ) {
     val userToCreate = anyApiCreateUserAccount
     val user = UserAccount(
-      id = anyAccountId,
+      id = anyAccountId1,
       firstName = userToCreate.firstName,
       lastName = userToCreate.lastName,
       email = userToCreate.email,
@@ -77,7 +77,7 @@ object AccountEndpointsSuite
   ) {
     val officeManagerToCreate = anyApiCreateOfficeManagerAccount
     val officeManager = OfficeManagerAccount(
-      id = anyAccountId,
+      id = anyAccountId1,
       firstName = officeManagerToCreate.firstName,
       lastName = officeManagerToCreate.lastName,
       email = officeManagerToCreate.email,
@@ -107,7 +107,7 @@ object AccountEndpointsSuite
   ) {
     val superAdminToCreate = anyApiCreateSuperAdminAccount
     val superAdmin = SuperAdminAccount(
-      id = anyAccountId,
+      id = anyAccountId1,
       firstName = superAdminToCreate.firstName,
       lastName = superAdminToCreate.lastName,
       email = superAdminToCreate.email
@@ -241,7 +241,7 @@ object AccountEndpointsSuite
       | THEN 200 OK and the read user is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val user = anyUserAccount.copy(id = userId)
     val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn user
 
@@ -263,7 +263,7 @@ object AccountEndpointsSuite
       | THEN 200 OK and the read office manager is returned
       |""".stripMargin
   ) {
-    val officeManagerId = anyAccountId
+    val officeManagerId = anyAccountId1
     val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId)
     val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn officeManager
 
@@ -285,7 +285,7 @@ object AccountEndpointsSuite
       | THEN 200 OK and the read super admin is returned
       |""".stripMargin
   ) {
-    val superAdminId = anyAccountId
+    val superAdminId = anyAccountId1
     val superAdmin = anySuperAdminAccount.copy(id = superAdminId)
     val accountService = whenF(mock[AccountService[IO]].read(any)) thenReturn superAdmin
 
@@ -307,7 +307,7 @@ object AccountEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val accountId = anyAccountId
+    val accountId = anyAccountId1
     val accountService = whenF(mock[AccountService[IO]].read(any)) thenFailWith AccountNotFound(accountId)
 
     val response = sendRequest(accountService) {
@@ -325,7 +325,7 @@ object AccountEndpointsSuite
       | THEN 200 OK and the updated user is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val officeId = anyOfficeId
     val user = anyUserAccount.copy(id = userId, assignedOfficeId = Some(officeId))
     val accountService =
@@ -349,7 +349,7 @@ object AccountEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val officeId = anyOfficeId
     val accountService = mock[AccountService[IO]]
 
@@ -376,7 +376,7 @@ object AccountEndpointsSuite
       whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith OfficeNotFound(officeId)
 
     val response = sendRequest(accountService) {
-      basicRequest.put(uri"http://test.com/account/$anyAccountId/assigned-office-id/$officeId")
+      basicRequest.put(uri"http://test.com/account/$anyAccountId1/assigned-office-id/$officeId")
     }
 
     for {
@@ -390,7 +390,7 @@ object AccountEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val accountService =
       whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
 
@@ -409,7 +409,7 @@ object AccountEndpointsSuite
       | THEN 200 OK and the updated user is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val user = anyUserAccount.copy(id = userId, assignedOfficeId = None)
     val accountService =
       whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenReturn user
@@ -432,7 +432,7 @@ object AccountEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val accountService = mock[AccountService[IO]]
 
     val response = sendRequest(accountService, role = User) {
@@ -453,7 +453,7 @@ object AccountEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val userId = anyAccountId
+    val userId = anyAccountId1
     val accountService =
       whenF(mock[AccountService[IO]].updateAssignedOffice(any, any)) thenFailWith AccountNotFound(userId)
 
@@ -472,7 +472,7 @@ object AccountEndpointsSuite
       | THEN 200 OK and the updated office manager is returned
       |""".stripMargin
   ) {
-    val officeManagerId = anyAccountId
+    val officeManagerId = anyAccountId1
     val managedOfficeIds = List(anyOfficeId)
     val officeManager = anyOfficeManagerAccount.copy(id = officeManagerId, managedOfficeIds = managedOfficeIds)
     val accountService =
@@ -503,7 +503,7 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
-        .put(uri"http://test.com/account/$anyAccountId/managed-office-ids")
+        .put(uri"http://test.com/account/$anyAccountId1/managed-office-ids")
         .body(managedOfficeIds)
     }
 
@@ -521,7 +521,7 @@ object AccountEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val officeManagerId = anyAccountId
+    val officeManagerId = anyAccountId1
     val accountService =
       whenF(mock[AccountService[IO]].updateManagedOffices(any, any)) thenFailWith
         AccountNotFound(officeManagerId)
@@ -543,7 +543,7 @@ object AccountEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val accountId = anyAccountId
+    val accountId = anyAccountId1
     val accountService =
       whenF(mock[AccountService[IO]].updateRole(any, any)) thenReturn anyUserAccount
 
@@ -567,7 +567,7 @@ object AccountEndpointsSuite
 
     val response = sendRequest(accountService, role = OfficeManager) {
       basicRequest
-        .put(uri"http://test.com/account/$anyAccountId/role/${anyApiAccountRole.entryName}")
+        .put(uri"http://test.com/account/$anyAccountId1/role/${anyApiAccountRole.entryName}")
     }
 
     for {
@@ -584,7 +584,7 @@ object AccountEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val accountId = anyAccountId
+    val accountId = anyAccountId1
     val accountService =
       whenF(mock[AccountService[IO]].updateRole(any, any)) thenFailWith AccountNotFound(accountId)
 
@@ -604,7 +604,7 @@ object AccountEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val accountId = anyAccountId
+    val accountId = anyAccountId1
     val accountService = mock[AccountService[IO]]
     whenF(accountService.read(any)) thenReturn anyUserAccount
     whenF(accountService.archive(any)) thenReturn ()
@@ -627,7 +627,7 @@ object AccountEndpointsSuite
     val accountService = mock[AccountService[IO]]
 
     val response = sendRequest(accountService, role = User) {
-      basicRequest.delete(uri"http://test.com/account/$anyAccountId")
+      basicRequest.delete(uri"http://test.com/account/$anyAccountId1")
     }
 
     for {
@@ -644,7 +644,7 @@ object AccountEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val officeManagerAccountId = anyAccountId
+    val officeManagerAccountId = anyAccountId1
     val accountService = mock[AccountService[IO]]
     whenF(accountService.read(officeManagerAccountId)) thenReturn anyOfficeManagerAccount
 
@@ -666,7 +666,7 @@ object AccountEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val superAdminAccountId = anyAccountId
+    val superAdminAccountId = anyAccountId1
     val accountService = mock[AccountService[IO]]
     whenF(accountService.read(superAdminAccountId)) thenReturn anySuperAdminAccount
 
@@ -691,8 +691,8 @@ object AccountEndpointsSuite
     val accountViewRepository = mock[AccountViewRepository[IO]]
     val accountListView = AccountListView(
       accounts = List(
-        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Adam", lastName = "Doe"),
-        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Jane", lastName = "Doe")
+        anyAccountView.copy(id = anyAccountId1, firstName = "Adam", lastName = "Doe"),
+        anyAccountView.copy(id = anyAccountId2, firstName = "Jane", lastName = "Doe")
       ),
       pagination = Pagination(
         limit = 10,
@@ -732,8 +732,8 @@ object AccountEndpointsSuite
     val accountViewRepository = mock[AccountViewRepository[IO]]
     val accountListView = AccountListView(
       accounts = List(
-        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Adam", lastName = "Doe"),
-        anyAccountView.copy(id = UUID.randomUUID(), firstName = "Jane", lastName = "Doe")
+        anyAccountView.copy(id = anyAccountId1, firstName = "Adam", lastName = "Doe"),
+        anyAccountView.copy(id = anyAccountId2, firstName = "Jane", lastName = "Doe")
       ),
       pagination = Pagination(
         limit = 10,
@@ -895,6 +895,48 @@ object AccountEndpointsSuite
     } yield expect(response.code == StatusCode.BadRequest)
   }
 
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called without limit
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list account endpoint
+      | WHEN the endpoint is called without offset
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val accountViewRepository = mock[AccountViewRepository[IO]]
+    val response = sendViewRequest(accountViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/account/view/list"
+          .withParams(
+            "limit" -> "10"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
   private def sendRequest(accountService: AccountService[IO], role: Role = SuperAdmin)(
     request: Request[Either[String, String], Any]
   ) = {
@@ -915,12 +957,12 @@ object AccountEndpointsSuite
     request: Request[Either[String, String], Any]
   ): IO[Response[Either[PublicKey, PublicKey]]] = {
     val accountService = mock[AccountService[IO]]
-    sendSecuredApiEndpointRequest(request, role = User) { rolesExtractorService =>
+    sendSecuredApiEndpointRequest(request, role = User) { claimsExtractorService =>
       new AccountEndpoints[IO](
         accountService,
         accountViewRepository,
         publicKeyRepository,
-        rolesExtractorService
+        claimsExtractorService
       ).endpoints
     }
   }
@@ -929,7 +971,7 @@ object AccountEndpointsSuite
     response.body.flatMap(parse).toOption.get
 
   private lazy val anyUserAccount = UserAccount(
-    id = anyAccountId,
+    id = anyAccountId1,
     firstName = "John",
     lastName = "Doe",
     email = anyEmail,
@@ -978,7 +1020,8 @@ object AccountEndpointsSuite
     managedOfficeIds = Nil
   )
 
-  private lazy val anyAccountId = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
+  private lazy val anyAccountId1 = UUID.fromString("9104d3d5-9b7b-4296-aab0-dd76c1af6a40")
+  private lazy val anyAccountId2 = UUID.fromString("8539b4f6-b3ea-4771-aec9-0a6e18431bff")
 
   private lazy val anyEmail = "john.doe@example.com"
 
@@ -992,7 +1035,7 @@ object AccountEndpointsSuite
   private lazy val anyApiAccountRole = ApiRole.OfficeManager
 
   private lazy val anyAccountView = AccountView(
-    id = UUID.fromString("fa3c2fb4-73a1-4c2a-be69-f995d2fbbb73"),
+    id = anyAccountId1,
     firstName = "Test",
     lastName = "OfficeManager",
     email = "test.office.manager@postgres.localhost",

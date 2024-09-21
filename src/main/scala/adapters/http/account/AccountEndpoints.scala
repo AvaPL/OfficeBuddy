@@ -5,6 +5,10 @@ import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
+import adapters.http.account.model.view.ApiAccountListView
+import adapters.http.account.model.view.ApiAccountView
+import adapters.http.account.model.view.ApiOfficeView
+import adapters.http.model.view.ApiPagination
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -16,12 +20,8 @@ import domain.model.account.Role.User
 import domain.model.error.account.AccountNotFound
 import domain.model.error.account.DuplicateAccountEmail
 import domain.model.error.office.OfficeNotFound
+import domain.repository.account.view.AccountViewRepository
 import domain.service.account.AccountService
-import io.github.avapl.adapters.http.account.model.view.ApiAccountListView
-import io.github.avapl.adapters.http.account.model.view.ApiAccountView
-import io.github.avapl.adapters.http.account.model.view.ApiOfficeView
-import io.github.avapl.adapters.http.model.view.ApiPagination
-import io.github.avapl.domain.repository.account.view.AccountViewRepository
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -34,7 +34,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
   accountService: AccountService[F],
   accountViewRepository: AccountViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
-  override val rolesExtractor: ClaimsExtractorService
+  override val claimsExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F] {
 
   override protected def apiEndpointName: String = "account"

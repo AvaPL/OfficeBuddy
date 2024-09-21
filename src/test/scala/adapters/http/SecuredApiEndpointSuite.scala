@@ -194,7 +194,7 @@ object SecuredApiEndpointSuite extends SimpleIOSuite with MockitoSugar with Mock
     val name = "test"
     val endpoint = new SecuredApiEndpoint[IO] {
       val apiEndpointName: String = name
-      val rolesExtractor: ClaimsExtractorService = new ClaimsExtractorService {
+      val claimsExtractor: ClaimsExtractorService = new ClaimsExtractorService {
         override def extractRoles(json: Json): List[Role] = extractedRoles
         override def extractAccountId(json: Json): Option[UUID] = Some(extractedAccountId)
       }

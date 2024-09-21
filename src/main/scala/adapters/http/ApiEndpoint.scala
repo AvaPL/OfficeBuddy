@@ -46,7 +46,7 @@ trait PublicApiEndpoint extends ApiEndpoint {
 
 trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
 
-  protected def rolesExtractor: ClaimsExtractorService
+  protected def claimsExtractor: ClaimsExtractorService
   protected def publicKeyRepository: PublicKeyRepository[F]
 
   protected[http] def securedEndpoint(
@@ -86,7 +86,7 @@ trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
     monadThrow: MonadThrow[F]
   ) =
     AccessToken
-      .decode(bearer, rolesExtractor, publicKey)
+      .decode(bearer, claimsExtractor, publicKey)
       .map { accessToken =>
         if (accessToken.roles.exists(_.hasAccess(requiredRole))) accessToken.asRight[ApiError]
         else ApiError.Forbidden.asLeft

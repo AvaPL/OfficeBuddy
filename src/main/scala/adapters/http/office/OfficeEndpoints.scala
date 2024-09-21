@@ -30,7 +30,7 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
   officeService: OfficeService[F],
   officeViewRepository: OfficeViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
-  override val rolesExtractor: ClaimsExtractorService
+  override val claimsExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F] {
 
   override protected val apiEndpointName: String = "office"
