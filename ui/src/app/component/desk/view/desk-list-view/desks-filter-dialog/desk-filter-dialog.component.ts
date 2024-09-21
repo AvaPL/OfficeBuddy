@@ -1,9 +1,10 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
+import {OfficeCompact} from "../../../../../service/model/office/office-compact.model";
 
 export interface DeskFilterDialogData {
-  offices: { id: string, name: string }[],
-  selectedOfficeId: string,
+  offices: OfficeCompact[],
+  selectedOfficeId: string | null,
 }
 
 @Component({
@@ -16,7 +17,7 @@ export class DeskFilterDialogComponent {
   readonly dialogRef = inject(MatDialogRef<DeskFilterDialogComponent>);
   readonly data = inject<DeskFilterDialogData>(MAT_DIALOG_DATA);
 
-  selectedOfficeId: string = this.data.selectedOfficeId
+  selectedOfficeId: string | null = this.data.selectedOfficeId
 
   onApply() {
     this.dialogRef.close({

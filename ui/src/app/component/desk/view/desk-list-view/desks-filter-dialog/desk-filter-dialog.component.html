@@ -3,7 +3,7 @@
   <mat-form-field class="office-select" subscriptSizing="dynamic">
     <mat-label>Office</mat-label>
     <mat-select [(value)]="selectedOfficeId">
-      @for (office of data.offices; track office) {
+      @for (office of data.offices; track office.id) {
         <mat-option [value]="office.id">{{ office.name }}</mat-option>
       }
     </mat-select>

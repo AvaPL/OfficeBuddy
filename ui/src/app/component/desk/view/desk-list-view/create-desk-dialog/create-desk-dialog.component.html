@@ -1,5 +1,5 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <h2 mat-dialog-title class="title">New desk in {{data.officeName}}</h2>
+  <h2 mat-dialog-title class="title">New desk in {{ data.officeName }}</h2>
   <mat-divider></mat-divider>
   <mat-dialog-content>
     <div class="name-and-monitors-count">
@@ -14,9 +14,9 @@
       </mat-form-field>
     </div>
     <div class="slide-toggles">
-      <mat-slide-toggle formControlName="isAvailable">Enabled</mat-slide-toggle>
-      <mat-slide-toggle formControlName="isStanding">Standing</mat-slide-toggle>
-      <mat-slide-toggle formControlName="hasPhone">Phone</mat-slide-toggle>
+      <mat-slide-toggle formControlName="isAvailable" color="primary">Enabled</mat-slide-toggle>
+      <mat-slide-toggle formControlName="isStanding" color="primary">Standing</mat-slide-toggle>
+      <mat-slide-toggle formControlName="hasPhone" color="primary">Phone</mat-slide-toggle>
     </div>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
