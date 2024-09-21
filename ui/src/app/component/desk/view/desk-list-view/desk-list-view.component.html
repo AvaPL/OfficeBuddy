@@ -32,9 +32,9 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="editDesk(desk.id, {
-            officeId: selectedOffice!.id,
+          <button mat-menu-item (click)="editDesk({
             officeName: selectedOffice!.name,
+            deskId: desk.id,
             deskName: desk.name,
             monitorsCount: desk.monitorsCount,
             isStanding: desk.isStanding,

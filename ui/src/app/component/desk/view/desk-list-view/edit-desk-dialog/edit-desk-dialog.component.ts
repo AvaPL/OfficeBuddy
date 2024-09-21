@@ -1,10 +1,13 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {FormBuilder} from "@angular/forms";
+import {UpdateDesk} from "../../../../../service/model/desk/update-desk.model";
+import {DeskService} from "../../../../../service/desk.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 export interface EditDeskInitialValuesDialogData {
-  officeId: string
   officeName: string
+  deskId: string
   deskName: string
   monitorsCount: number
   isStanding: boolean
@@ -21,15 +24,34 @@ export class EditDeskDialogComponent {
   readonly dialogRef = inject(MatDialogRef<EditDeskDialogComponent>);
   readonly initialValues = inject<EditDeskInitialValuesDialogData>(MAT_DIALOG_DATA);
   readonly form = inject(FormBuilder).group({
-    officeId: [this.initialValues.officeId],
     name: [this.initialValues.deskName],
     monitorsCount: [this.initialValues.monitorsCount],
     isStanding: [this.initialValues.isStanding],
     hasPhone: [this.initialValues.hasPhone],
   });
+  readonly deskService = inject(DeskService);
+  readonly snackbar = inject(MatSnackBar);
 
-  onSubmit() {
-    this.dialogRef.close(this.form.value);
+  async onSubmit() {
+    try {
+      const response = await this.deskService.updateDesk(this.initialValues.deskId, this.formToUpdateDesk());
+      this.snackbar.open(`${this.form.value.name} edited`);
+      this.dialogRef.close(response);
+    } catch (error) {
+      this.snackbar.open(`Unexpected error occurred when editing ${this.initialValues.deskName}`, undefined, {panelClass: ['error-snackbar']});
+      console.error(`Error updating desk ${this.initialValues.deskName} [id: ${this.initialValues.deskId}]:`, error);
+    }
+  }
+
+  formToUpdateDesk(): UpdateDesk {
+    return {
+      name: this.form.value.name || null,
+      isAvailable: null,
+      notes: null,
+      isStanding: this.form.value.isStanding || null,
+      monitorsCount: this.form.value.monitorsCount || null,
+      hasPhone: this.form.value.hasPhone || null,
+    }
   }
 
   onCancel() {

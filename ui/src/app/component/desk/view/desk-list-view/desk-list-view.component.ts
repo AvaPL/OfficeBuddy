@@ -95,16 +95,14 @@ export class DeskListViewComponent implements OnInit {
     });
   }
 
-  editDesk(deskId: string, editDeskInitialValues: EditDeskInitialValuesDialogData) {
+  editDesk(editDeskInitialValues: EditDeskInitialValuesDialogData) {
     const dialogRef = this.editDeskDialog.open(EditDeskDialogComponent, {
       data: editDeskInitialValues
     })
 
     dialogRef.afterClosed().subscribe(editedDesk => {
       if (editedDesk) {
-        console.log(`Edited desk [${deskId}] in ${editedDesk.officeId}: `, editedDesk);
-      } else {
-        console.log(`Cancelled editing desk ${deskId}`);
+        this.fetchDesks(this.pagination.limit, 0)
       }
     });
   }
@@ -113,29 +111,25 @@ export class DeskListViewComponent implements OnInit {
     const dialogRef = this.toggleEnabledDeskDialog.open(ToggleEnabledDeskDialogComponent, {
       data: {
         officeName,
+        deskId,
         deskName,
         enabled
       }
     });
 
-    dialogRef.afterClosed().subscribe(isConfirmed => {
-      if (isConfirmed) {
-        if (enabled) console.log(`Enabled desk ${deskId}`);
-        else console.log(`Disabled desk ${deskId}`);
-      } else {
-        console.log(`Cancelled toggling enabled desk ${deskId}`);
+    dialogRef.afterClosed().subscribe(editedDesk => {
+      if (editedDesk) {
+        this.fetchDesks(this.pagination.limit, 0)
       }
     })
   }
 
   deleteDesk(deskId: string, deskName: string, officeName: string) {
-    const dialogRef = this.deleteDeskDialog.open(DeleteDeskDialogComponent, {data: {officeName, deskName}});
+    const dialogRef = this.deleteDeskDialog.open(DeleteDeskDialogComponent, {data: {officeName, deskId, deskName}});
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Deleted desk ${deskId}`);
-      } else {
-        console.log(`Cancelled deleting desk ${deskId}`);
+        this.fetchDesks(this.pagination.limit, 0)
       }
     });
   }
