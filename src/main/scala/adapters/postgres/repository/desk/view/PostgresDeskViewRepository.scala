@@ -64,7 +64,7 @@ object PostgresDeskViewRepository {
         uuid *: // office_id
         bool // is_archived
     ).map {
-      case id *: name *: isAvailable *: notes *: isStanding *: monitorsCount *: hasPhone *: _ *: _ *: EmptyTuple =>
-        DeskView(id, name, isAvailable, notes.flattenTo(List), isStanding, monitorsCount, hasPhone)
+      case id *: name *: isAvailable *: _ *: isStanding *: monitorsCount *: hasPhone *: _ *: _ *: EmptyTuple =>
+        DeskView(id, name, isAvailable, isStanding, monitorsCount, hasPhone)
     }
 }

@@ -17,12 +17,11 @@ export class DeskFilterDialogComponent {
   readonly dialogRef = inject(MatDialogRef<DeskFilterDialogComponent>);
   readonly data = inject<DeskFilterDialogData>(MAT_DIALOG_DATA);
 
-  selectedOfficeId: string | null = this.data.selectedOfficeId
+  selectedOffice: OfficeCompact | null =
+    this.data.offices.find(office => office.id === this.data.selectedOfficeId) ?? null;
 
   onApply() {
-    this.dialogRef.close({
-      selectedOfficeId: this.selectedOfficeId
-    });
+    this.dialogRef.close(this.selectedOffice);
   }
 
   onCancel() {

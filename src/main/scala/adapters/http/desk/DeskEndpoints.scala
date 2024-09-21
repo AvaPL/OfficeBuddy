@@ -260,7 +260,6 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
         id = UUID.fromString("1a84cc45-11db-468b-bf69-125ed293f6c9"),
         name = "107.1",
         isAvailable = true,
-        notes = List("Rubik's Cube on the desk"),
         isStanding = true,
         monitorsCount = 2,
         hasPhone = true
@@ -269,7 +268,6 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
         id = UUID.fromString("95af1416-0526-42af-8f25-71b09a6793d0"),
         name = "107.2",
         isAvailable = true,
-        notes = List("Near the window"),
         isStanding = false,
         monitorsCount = 1,
         hasPhone = false
@@ -278,7 +276,6 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
         id = UUID.fromString("71659873-7921-4bbf-9cdc-e62bac4b6177"),
         name = "108.1",
         isAvailable = false,
-        notes = Nil,
         isStanding = false,
         monitorsCount = 2,
         hasPhone = true

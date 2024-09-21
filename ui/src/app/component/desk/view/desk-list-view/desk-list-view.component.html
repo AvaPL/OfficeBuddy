@@ -13,7 +13,7 @@
   <mat-divider></mat-divider>
 </div>
 <div class="desk-cards">
-  <mat-card *ngFor="let desk of desksPage" appearance="raised">
+  <mat-card *ngFor="let desk of desks" appearance="raised">
     <mat-card-header>
       <mat-card-title-group>
         <mat-card-title>
@@ -63,9 +63,9 @@
   </mat-card>
 </div>
 <mat-paginator
-  [length]="1000"
-  [pageSize]="pageSize"
-  [pageIndex]="pageIndex"
+  [length]="pagination.offset + pagination.limit + (pagination.hasMoreResults ? 1 : 0)"
+  [pageSize]="pagination.limit"
+  [pageIndex]="pagination.offset / pagination.limit"
   (page)="handlePageEvent($event)"
   hidePageSize>
 </mat-paginator>

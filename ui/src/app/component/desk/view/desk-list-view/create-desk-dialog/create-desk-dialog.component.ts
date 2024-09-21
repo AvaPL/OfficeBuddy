@@ -36,6 +36,7 @@ export class CreateDeskDialogComponent {
       this.snackbar.open(`${createDesk.name} in ${this.data.officeName} created`);
       this.dialogRef.close(response);
     } catch (error) {
+      // TODO: Show readable error message in case of name conflict etc. (will require proper error codes from backend)
       this.snackbar.open(`Unexpected error occurred when creating desk in ${this.data.officeName}`, undefined, {panelClass: ['error-snackbar']});
       console.error(`Error creating desk in ${this.data.officeName} [id: ${this.data.officeId}]:`, error);
     }

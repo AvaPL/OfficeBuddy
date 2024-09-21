@@ -613,7 +613,6 @@ object DeskEndpointsSuite
     id = anyDeskId1,
     name = anyDeskName,
     isAvailable = true,
-    notes = List("Rubik's Cube on the desk"),
     isStanding = true,
     monitorsCount = 2,
     hasPhone = true

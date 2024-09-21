@@ -9,7 +9,8 @@ import {EditDeskDialogComponent, EditDeskInitialValuesDialogData} from "./edit-d
 import {OfficeCompact} from "../../../../service/model/office/office-compact.model";
 import {OfficeService} from "../../../../service/office.service";
 import {DeskService} from "../../../../service/desk.service";
-import {Desk} from "../../../../service/model/desk/desk.model";
+import {DeskView} from "../../../../service/model/desk/desk-view.model";
+import {Pagination} from "../../../../service/model/pagination/pagination.model";
 
 @Component({
   selector: 'app-desk-list-view',
@@ -29,19 +30,22 @@ export class DeskListViewComponent implements OnInit {
   readonly deleteDeskDialog = inject(MatDialog);
 
   offices: OfficeCompact[] = []
+  desks: DeskView[] = []
 
   selectedOffice: OfficeCompact | null = null
 
-  pageSize = 18
-  pageIndex = 0
-  desksPage: Desk[] = [] // TODO: Remove this and commented out code
+  pagination: Pagination = {
+    limit: 18,
+    offset: 0,
+    hasMoreResults: false
+  };
 
   constructor(private officeService: OfficeService, private deskService: DeskService) {
   }
 
-  ngOnInit() {
-    this.fetchOffices()
-    // this.handleFilter(this.selectedOfficeId)
+  async ngOnInit() {
+    await this.fetchOffices()
+    await this.fetchDesks(this.pagination.limit, this.pagination.offset)
   }
 
   async fetchOffices() {
@@ -49,18 +53,20 @@ export class DeskListViewComponent implements OnInit {
     this.selectedOffice = this.offices[0] ?? null // TODO: Prefer user's assigned office instead
   }
 
-  handleFilter(selectedOfficeId: string | null) {
-    console.log(`Filtering by officeId: ${selectedOfficeId}`)
-    // this.selectedOffice = this.selectOffice(this.selectedOfficeId)
-    // this.pageIndex = 0
-    // this.desksPage = this.paginateDesks()
+  async fetchDesks(limit: number, offset: number) {
+    if (this.selectedOffice) {
+      let response = await this.deskService.getDeskListView(this.selectedOffice.id, limit, offset)
+      this.desks = response.desks
+      this.pagination = response.pagination
+    } else {
+      this.desks = []
+    }
   }
 
-  selectOffice(selectedOfficeId: string | null) {
-    const selectedOffice = this.offices.find(office => office.id === selectedOfficeId) || this.offices[0]
-    if (selectedOfficeId)
-      this.selectedOfficeIdChange.emit(selectedOffice.id)
-    return selectedOffice
+  handleFilter(selectedOffice: OfficeCompact) {
+    this.selectedOffice = selectedOffice
+    this.selectedOfficeIdChange.emit(selectedOffice.id)
+    this.fetchDesks(this.pagination.limit, 0)
   }
 
   openFilterDialog() {
@@ -71,11 +77,9 @@ export class DeskListViewComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        const {selectedOfficeId} = result
-        this.handleFilter(selectedOfficeId)
-      }
+    dialogRef.afterClosed().subscribe(selectedOffice => {
+      if (selectedOffice)
+        this.handleFilter(selectedOffice)
     });
   }
 
@@ -86,9 +90,7 @@ export class DeskListViewComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(createdDesk => {
       if (createdDesk) {
-        console.log(`Created new desk in office ${createdDesk.officeId}: `, createdDesk);
-      } else {
-        console.log(`Cancelled creating new desk`);
+        this.fetchDesks(this.pagination.limit, 0)
       }
     });
   }
@@ -139,11 +141,6 @@ export class DeskListViewComponent implements OnInit {
   }
 
   handlePageEvent(event: PageEvent) {
-    this.pageIndex = event.pageIndex
-    // this.desksPage = this.paginateDesks()
+    this.fetchDesks(this.pagination.limit, event.pageIndex * this.pagination.limit);
   }
-
-  // paginateDesks() {
-  //   return this.selectedOffice.desks.slice(this.pageIndex * this.pageSize, (this.pageIndex + 1) * this.pageSize)
-  // }
 }
