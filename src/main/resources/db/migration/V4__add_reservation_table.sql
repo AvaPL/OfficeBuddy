@@ -16,6 +16,6 @@ CREATE TABLE reservation(
   -- TODO: Add columns for parking spots and meeting rooms
 
   CONSTRAINT reservation_overlap_excl EXCLUDE USING gist(
-    desk_id WITH =, tsrange(reserved_from, reserved_to) WITH &&
+    desk_id WITH =, tsrange(reserved_from, reserved_to, '[]') WITH &&
   ) WHERE (state IN ('Pending', 'Confirmed'))
 );

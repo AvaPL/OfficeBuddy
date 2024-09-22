@@ -7,6 +7,12 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.UUID
 
+/**
+ * Represents a generic reservation.
+ *
+ * All dates are assumed to be in the UTC. It's assumed that every client request will convert the dates selected by the
+ * user to UTC before sending them to the server.
+ */
 sealed trait Reservation {
 
   def id: UUID

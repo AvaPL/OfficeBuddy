@@ -104,11 +104,11 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     )
     val overlappingDeskReservation1 = deskReservation
       .copy(id = UUID.fromString("30c9119e-a866-48c8-85cd-1a5b4ee193a3"))
-      .modify(_.reservedFromDate)
+      .modifyAll(_.reservedFromDate, _.reservedToDate)
       .using(_.plusDays(1))
     val overlappingDeskReservation2 = deskReservation
       .copy(id = UUID.fromString("195eda92-5556-4eb7-b225-46059e86fe8a"))
-      .modify(_.reservedFromDate)
+      .modifyAll(_.reservedFromDate, _.reservedToDate)
       .using(_.minusDays(1))
     val overlappingDeskReservation3 = deskReservation
       .copy(id = UUID.fromString("9c31d5c5-a523-450a-84ca-a444e3a60d6a"))
@@ -122,6 +122,10 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
       .using(_.plusDays(1))
       .modify(_.reservedToDate)
       .using(_.minusDays(1))
+    val overlappingDeskReservation5 = deskReservation
+      .copy(id = UUID.fromString("3586cef5-6ab7-4a35-904c-2af18ac3fc54"))
+      .modify(_.reservedFromDate)
+      .setTo(deskReservation.reservedToDate)
 
     for {
       _ <- reservationRepository.createDeskReservation(deskReservation)
@@ -129,7 +133,8 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
         overlappingDeskReservation1,
         overlappingDeskReservation2,
         overlappingDeskReservation3,
-        overlappingDeskReservation4
+        overlappingDeskReservation4,
+        overlappingDeskReservation5
       ).traverse(reservationRepository.createDeskReservation(_).attempt)
     } yield forEach(results) { result =>
       matches(result) {
@@ -140,9 +145,32 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
+    """GIVEN 2 desk reservations for the same desk one right after another
+      | WHEN createDeskReservation is called
+      | THEN both reservations should be inserted successfully
+      |""".stripMargin
+  ) { reservationRepository =>
+    val deskReservation1 = anyDeskReservation.copy(
+      id = UUID.fromString("30c9119e-a866-48c8-85cd-1a5b4ee193a3"),
+      reservedFromDate = LocalDate.parse("2023-07-23"),
+      reservedToDate = LocalDate.parse("2023-07-24")
+    )
+    val deskReservation2 = anyDeskReservation.copy(
+      id = UUID.fromString("195eda92-5556-4eb7-b225-46059e86fe8a"),
+      reservedFromDate = LocalDate.parse("2023-07-25"),
+      reservedToDate = LocalDate.parse("2023-07-25")
+    )
+
+    for {
+      _ <- reservationRepository.createDeskReservation(deskReservation1)
+      _ <- reservationRepository.createDeskReservation(deskReservation2)
+    } yield success
+  }
+
+  beforeTest(
     """GIVEN 2 desk reservations at the same time for different desks
       | WHEN createDeskReservation is called
-      | THEN both reservation should be inserted successfully
+      | THEN both reservations should be inserted successfully
       |""".stripMargin
   ) { reservationRepository =>
     val deskReservation1 = anyDeskReservation.copy(deskId = deskId1)
