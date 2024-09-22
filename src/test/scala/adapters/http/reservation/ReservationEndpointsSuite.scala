@@ -1,7 +1,12 @@
 package io.github.avapl
 package adapters.http.reservation
 
+import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
+import domain.model.account.Role
+import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
+import domain.model.account.Role.User
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.reservation.InvalidStateTransition
 import domain.model.error.reservation.OverlappingReservations
@@ -12,25 +17,15 @@ import domain.model.reservation.ReservationState
 import domain.service.reservation.ReservationService
 import io.circe.parser._
 import io.circe.syntax._
-import io.github.avapl.adapters.auth.model.PublicKey
-import io.github.avapl.adapters.http.fixture.SecuredApiEndpointFixture
-import io.github.avapl.domain.model.account.Role
-import io.github.avapl.domain.model.account.Role.OfficeManager
-import io.github.avapl.domain.model.account.Role.SuperAdmin
-import io.github.avapl.domain.model.account.Role.User
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import sttp.client3._
 import sttp.client3.circe._
-import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
-import sttp.tapir.integ.cats.effect.CatsMonadError
-import sttp.tapir.server.stub.TapirStubInterpreter
 import weaver.SimpleIOSuite
 
 object ReservationEndpointsSuite
@@ -51,8 +46,8 @@ object ReservationEndpointsSuite
       id = anyReservationId,
       userId = reservationToCreate.userId,
       createdAt = anyCreatedAt,
-      reservedFrom = reservationToCreate.reservedFrom.atStartOfDay(),
-      reservedTo = reservationToCreate.reservedTo.atTime(LocalTime.MAX),
+      reservedFromDate = reservationToCreate.reservedFrom,
+      reservedToDate = reservationToCreate.reservedTo,
       state = ReservationState.Pending,
       notes = reservationToCreate.notes,
       deskId = reservationToCreate.deskId
@@ -88,8 +83,8 @@ object ReservationEndpointsSuite
       id = anyReservationId,
       userId = reservationToCreate.userId,
       createdAt = anyCreatedAt,
-      reservedFrom = reservationToCreate.reservedFrom.atStartOfDay(),
-      reservedTo = reservationToCreate.reservedTo.atTime(LocalTime.MAX),
+      reservedFromDate = reservationToCreate.reservedFrom,
+      reservedToDate = reservationToCreate.reservedTo,
       state = ReservationState.Pending,
       notes = reservationToCreate.notes,
       deskId = reservationToCreate.deskId
@@ -536,8 +531,8 @@ object ReservationEndpointsSuite
     id = anyReservationId,
     userId = anyUserId,
     createdAt = anyCreatedAt,
-    reservedFrom = LocalDateTime.parse("2023-07-19T00:00:00"),
-    reservedTo = LocalDateTime.parse("2023-07-20T23:59:59"),
+    reservedFromDate = LocalDate.parse("2023-07-19"),
+    reservedToDate = LocalDate.parse("2023-07-20"),
     state = ReservationState.Pending,
     notes = "Please remove the duck from the desk, it scares me",
     deskId = anyDeskId

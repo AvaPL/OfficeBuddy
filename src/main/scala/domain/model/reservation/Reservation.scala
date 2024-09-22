@@ -22,13 +22,17 @@ case class DeskReservation(
   id: UUID,
   userId: UUID,
   createdAt: LocalDateTime,
-  reservedFrom: LocalDateTime,
-  reservedTo: LocalDateTime,
+  reservedFromDate: LocalDate,
+  reservedToDate: LocalDate,
   state: ReservationState,
   notes: String,
   //
   deskId: UUID
-) extends Reservation
+) extends Reservation {
+
+  override lazy val reservedFrom: LocalDateTime = reservedFromDate.atStartOfDay()
+  override lazy val reservedTo: LocalDateTime = reservedToDate.atTime(LocalTime.MAX)
+}
 
 case class CreateDeskReservation(
   userId: UUID,
@@ -44,8 +48,8 @@ case class CreateDeskReservation(
       .into[DeskReservation]
       .withFieldConst(_.id, reservationId)
       .withFieldConst(_.createdAt, createdAt)
-      .withFieldComputed(_.reservedFrom, _.reservedFrom.atStartOfDay())
-      .withFieldComputed(_.reservedTo, _.reservedTo.atTime(LocalTime.MAX))
+      .withFieldComputed(_.reservedFromDate, _.reservedFrom)
+      .withFieldComputed(_.reservedToDate, _.reservedTo)
       .withFieldConst(_.state, ReservationState.Pending)
       .transform
 }

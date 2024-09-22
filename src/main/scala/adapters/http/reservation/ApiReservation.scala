@@ -19,8 +19,8 @@ case class ApiDeskReservation(
   id: UUID,
   userId: UUID,
   createdAt: LocalDateTime,
-  reservedFrom: LocalDateTime,
-  reservedTo: LocalDateTime,
+  reservedFromDate: LocalDate,
+  reservedToDate: LocalDate,
   state: ApiReservationState,
   notes: String,
   //

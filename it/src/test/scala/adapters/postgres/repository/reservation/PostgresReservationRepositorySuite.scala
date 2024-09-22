@@ -21,7 +21,6 @@ import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.util.UUID
 import skunk.Command
 import skunk.Session
@@ -100,28 +99,28 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
       |""".stripMargin
   ) { reservationRepository =>
     val deskReservation = anyDeskReservation.copy(
-      reservedFrom = LocalDate.parse("2023-07-21").atStartOfDay(),
-      reservedTo = LocalDate.parse("2023-07-24").atTime(LocalTime.MAX)
+      reservedFromDate = LocalDate.parse("2023-07-21"),
+      reservedToDate = LocalDate.parse("2023-07-24")
     )
     val overlappingDeskReservation1 = deskReservation
       .copy(id = UUID.fromString("30c9119e-a866-48c8-85cd-1a5b4ee193a3"))
-      .modifyAll(_.reservedFrom, _.reservedFrom)
+      .modify(_.reservedFromDate)
       .using(_.plusDays(1))
     val overlappingDeskReservation2 = deskReservation
       .copy(id = UUID.fromString("195eda92-5556-4eb7-b225-46059e86fe8a"))
-      .modifyAll(_.reservedFrom, _.reservedFrom)
+      .modify(_.reservedFromDate)
       .using(_.minusDays(1))
     val overlappingDeskReservation3 = deskReservation
       .copy(id = UUID.fromString("9c31d5c5-a523-450a-84ca-a444e3a60d6a"))
-      .modify(_.reservedFrom)
+      .modify(_.reservedFromDate)
       .using(_.minusDays(1))
-      .modify(_.reservedTo)
+      .modify(_.reservedToDate)
       .using(_.plusDays(1))
     val overlappingDeskReservation4 = deskReservation
       .copy(id = UUID.fromString("151ca0b8-3061-4b61-8e6a-d937387d4c34"))
-      .modify(_.reservedFrom)
+      .modify(_.reservedFromDate)
       .using(_.plusDays(1))
-      .modify(_.reservedTo)
+      .modify(_.reservedToDate)
       .using(_.minusDays(1))
 
     for {
@@ -341,8 +340,8 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     id = anyReservationId,
     userId = userId1,
     createdAt = LocalDateTime.parse("2023-07-18T20:41:00"),
-    reservedFrom = LocalDateTime.parse("2023-07-19T00:00:00"),
-    reservedTo = LocalDateTime.parse("2023-07-20T23:59:59"),
+    reservedFromDate = LocalDate.parse("2023-07-19"),
+    reservedToDate = LocalDate.parse("2023-07-20"),
     state = ReservationState.Pending,
     notes = "Please remove the duck from the desk, it scares me",
     deskId = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")

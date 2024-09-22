@@ -11,14 +11,12 @@ import domain.model.error.user.UserNotFound
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
 import domain.repository.reservation.ReservationRepository
-
 import java.util.UUID
+import scala.annotation.nowarn
 import skunk._
 import skunk.codec.all._
 import skunk.data.Completion
 import skunk.implicits._
-
-import scala.annotation.nowarn
 
 class PostgresReservationRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
@@ -146,7 +144,7 @@ object PostgresReservationRepository {
         uuid // desk_id
     ).map {
       case id *: userId *: createdAt *: reservedFrom *: reservedTo *: state *: notes *: _ *: deskId *: EmptyTuple =>
-        DeskReservation(id, userId, createdAt, reservedFrom, reservedTo, state, notes, deskId)
+        DeskReservation(id, userId, createdAt, reservedFrom.toLocalDate, reservedTo.toLocalDate, state, notes, deskId)
     }
 
   private lazy val reservationStateCodec: Codec[ReservationState] =

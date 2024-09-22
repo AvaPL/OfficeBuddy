@@ -260,8 +260,8 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
     id = UUID.fromString("dcd64f97-a57a-4b57-9e63-dbe56187b557"),
     userId = UUID.fromString("0f0cdeb7-c6f0-4f1e-93a5-b3fd34506dc5"),
     createdAt = LocalDateTime.parse("2023-07-18T20:41:00"),
-    reservedFrom = LocalDateTime.parse("2023-07-19T00:00:00"),
-    reservedTo = LocalDateTime.parse("2023-07-20T23:59:59"),
+    reservedFromDate = LocalDate.parse("2023-07-19"),
+    reservedToDate = LocalDate.parse("2023-07-20"),
     state = ApiReservationState.Pending,
     notes = "Please remove the duck from the desk, it scares me",
     deskId = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")
