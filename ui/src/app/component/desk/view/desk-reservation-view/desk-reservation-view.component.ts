@@ -285,6 +285,7 @@ export class DeskReservationViewComponent implements OnInit {
   pageSize = 10
   pageIndex = 0
   selectedReservationStates = [ReservationState.PENDING, ReservationState.CONFIRMED]
+  reservationStartDate = new Date()
   reservedByYou = false
   filteredReservations = this.filterReservations()
   reservationsPage = this.paginateAndGroupReservations()
@@ -297,7 +298,7 @@ export class DeskReservationViewComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.handleFilter(this.selectedOfficeId, this.selectedReservationStates, this.reservedByYou)
+    this.handleFilter(this.selectedOfficeId, this.selectedReservationStates, this.reservationStartDate, this.reservedByYou)
   }
 
   handlePageEvent(event: PageEvent) {
@@ -313,12 +314,13 @@ export class DeskReservationViewComponent implements OnInit {
     return selectedOffice
   }
 
-  handleFilter(selectedOfficeId: string | null, selectedReservationStates: ReservationState[], reservedByYou: boolean) {
+  handleFilter(selectedOfficeId: string | null, selectedReservationStates: ReservationState[], reservationStartDate: Date, reservedByYou: boolean) {
     // TODO: Replace with more robust code, the below is temporary only
-    console.log(`Filtering by officeId: ${selectedOfficeId}, selectedReservationStates: ${selectedReservationStates}, reservedByYou: ${reservedByYou}`)
+    console.log(`Filtering by officeId: ${selectedOfficeId}, selectedReservationStates: ${selectedReservationStates}, reservationStartDate: ${reservationStartDate}, reservedByYou: ${reservedByYou}`)
     this.reservedByYou = reservedByYou
     this.selectedOffice = this.selectOffice(selectedOfficeId)
     this.selectedReservationStates = selectedReservationStates
+    this.reservationStartDate = reservationStartDate
     this.filteredReservations = this.filterReservations()
     this.pageIndex = 0
     this.reservationsPage = this.paginateAndGroupReservations()
@@ -385,14 +387,15 @@ export class DeskReservationViewComponent implements OnInit {
         offices: this.offices,
         selectedOfficeId: this.selectedOffice.id,
         selectedReservationStates: this.selectedReservationStates,
+        reservationStartDate: this.reservationStartDate,
         reservedByYou: this.reservedByYou
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        const {selectedOfficeId, selectedReservationStates, reservedByYou} = result
-        this.handleFilter(selectedOfficeId, selectedReservationStates, reservedByYou)
+        const {selectedOfficeId, selectedReservationStates, reservationStartDate, reservedByYou} = result
+        this.handleFilter(selectedOfficeId, selectedReservationStates, reservationStartDate, reservedByYou)
       }
     });
   }
