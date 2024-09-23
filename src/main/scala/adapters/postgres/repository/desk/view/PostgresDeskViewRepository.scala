@@ -39,7 +39,6 @@ class PostgresDeskViewRepository[F[_]: Concurrent: MonadCancelThrow](
       }
     }
 
-  // TODO: Add integration tests
   override def listDesksAvailableForReservation(
     officeId: UUID,
     reservationFrom: LocalDate,
@@ -98,7 +97,7 @@ object PostgresDeskViewRepository {
           FROM   reservation r
           WHERE  r.type = 'Desk'
             AND  r.state = 'Confirmed'
-            AND  NOT (tsrange(r.reserved_from, r.reserved_to, '[]') && tsrange($date, $date, '[]'))
+            AND  tsrange(r.reserved_from, r.reserved_to, '[]') && tsrange($date, $date, '[]')
         )
     """.query(reservableDeskViewDecoder)
 
