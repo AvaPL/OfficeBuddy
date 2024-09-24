@@ -44,7 +44,7 @@ class PostgresDeskViewRepository[F[_]: Concurrent: MonadCancelThrow](
     reservationFrom: LocalDate,
     reservationTo: LocalDate
   ): F[List[ReservableDeskView]] =
-    if (reservationFrom.isBefore(reservationTo))
+    if (reservationFrom == reservationTo || reservationFrom.isBefore(reservationTo))
       safeListDesksAvailableForReservation(officeId, reservationFrom, reservationTo)
     else
       List.empty[ReservableDeskView].pure[F]
