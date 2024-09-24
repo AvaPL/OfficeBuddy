@@ -82,9 +82,6 @@ export class DeskService {
     const reservationFromString = this.formatYYYYMMDD(reservationFrom)
     const reservationToString = this.formatYYYYMMDD(reservationTo)
 
-    console.log(`reservationFromString: ${reservationFromString}`);
-    console.log(`reservationToString: ${reservationToString}`);
-
     const url = `${this.baseUrl}/view/reservable?office_id=${officeId}&reservation_from=${reservationFromString}&reservation_to=${reservationToString}`;
     return firstValueFrom(this.http.get<ReservableDeskView[]>(url, {headers}));
   }
