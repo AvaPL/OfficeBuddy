@@ -44,6 +44,16 @@ class PostgresDeskViewRepository[F[_]: Concurrent: MonadCancelThrow](
     reservationFrom: LocalDate,
     reservationTo: LocalDate
   ): F[List[ReservableDeskView]] =
+    if (reservationFrom.isBefore(reservationTo))
+      safeListDesksAvailableForReservation(officeId, reservationFrom, reservationTo)
+    else
+      List.empty[ReservableDeskView].pure[F]
+
+  private def safeListDesksAvailableForReservation(
+    officeId: UUID,
+    reservationFrom: LocalDate,
+    reservationTo: LocalDate
+  ) =
     session.use { session =>
       for {
         sql <- session.prepare(listDesksAvailableForReservationSql)
@@ -109,7 +119,7 @@ object PostgresDeskViewRepository {
         bool *: // is_standing
         int2 *: // monitors_count
         bool // has_phone
-      ).map {
+    ).map {
       case id *: name *: isStanding *: monitorsCount *: hasPhone *: EmptyTuple =>
         ReservableDeskView(id, name, isStanding, monitorsCount, hasPhone)
     }

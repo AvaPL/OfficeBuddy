@@ -7,6 +7,7 @@ import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
 import adapters.http.desk.view.ApiDeskListView
 import adapters.http.desk.view.ApiDeskView
+import adapters.http.desk.view.ApiReservableDeskView
 import adapters.http.model.view.ApiPagination
 import cats.MonadThrow
 import cats.effect.Clock
@@ -18,6 +19,7 @@ import domain.model.error.desk.DuplicateDeskNameForOffice
 import domain.model.error.office.OfficeNotFound
 import domain.repository.desk.view.DeskViewRepository
 import domain.service.desk.DeskService
+import java.time.LocalDate
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -39,6 +41,7 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
       updateDeskEndpoint ::
       archiveDeskEndpoint ::
       deskListViewEndpoint ::
+      reservableDeskViewListEndpoint ::
       Nil
 
   private lazy val createDeskEndpoint =
@@ -227,6 +230,47 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
       .map(ApiDeskListView.fromDomain)
       .map(_.asRight[ApiError])
 
+  private lazy val reservableDeskViewListEndpoint =
+    securedEndpoint(requiredRole = User).get
+      .summary("Desks available for reservation")
+      .description(
+        """List of desks available for reservation in a given office in the specified time range.
+          |
+          |Required role: user
+          |""".stripMargin
+      )
+      .in("view" / "reservable")
+      .in(
+        query[UUID]("office_id")
+          .description("Assigned office ID")
+          .example(officeIdExample)
+      )
+      .in(
+        query[LocalDate]("reservation_from")
+          .description("Reservation start date")
+          .example(LocalDate.parse("2024-09-24"))
+      )
+      .in(
+        query[LocalDate]("reservation_to")
+          .description("Reservation end date")
+          .example(LocalDate.parse("2024-09-27"))
+      )
+      .out(
+        jsonBody[List[ApiReservableDeskView]]
+          .description("List of desks available for reservation")
+          .example(apiReservableDeskViewListExample)
+      )
+      .serverLogic(_ => (reservableDesksView _).tupled)
+
+  private def reservableDesksView(
+    officeId: UUID,
+    reservationFrom: LocalDate,
+    reservationTo: LocalDate
+  ) =
+    deskViewRepository
+      .listDesksAvailableForReservation(officeId, reservationFrom, reservationTo)
+      .map(_.map(ApiReservableDeskView.fromDomain).asRight[ApiError])
+
   private lazy val apiDeskExample = ApiDesk(
     id = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b"),
     name = "107.1",
@@ -293,6 +337,30 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
       limit = 3,
       offset = 0,
       hasMoreResults = true
+    )
+  )
+
+  private lazy val apiReservableDeskViewListExample = List(
+    ApiReservableDeskView(
+      id = UUID.fromString("1a84cc45-11db-468b-bf69-125ed293f6c9"),
+      name = "107.1",
+      isStanding = true,
+      monitorsCount = 2,
+      hasPhone = true
+    ),
+    ApiReservableDeskView(
+      id = UUID.fromString("95af1416-0526-42af-8f25-71b09a6793d0"),
+      name = "107.2",
+      isStanding = false,
+      monitorsCount = 1,
+      hasPhone = false
+    ),
+    ApiReservableDeskView(
+      id = UUID.fromString("71659873-7921-4bbf-9cdc-e62bac4b6177"),
+      name = "108.1",
+      isStanding = false,
+      monitorsCount = 2,
+      hasPhone = true
     )
   )
 }

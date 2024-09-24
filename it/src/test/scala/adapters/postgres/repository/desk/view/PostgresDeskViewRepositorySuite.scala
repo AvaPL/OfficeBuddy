@@ -367,6 +367,24 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
     } yield expect(reservableDesks.isEmpty)
   }
 
+  beforeTest(
+    """GIVEN 1 desk assigned to an office
+      | WHEN listDesksAvailableForReservation is called with reservationFrom after reservationTo
+      | THEN return an empty list of results
+      |""".stripMargin
+  ) { (deskRepository, deskViewRepository, _) =>
+    val desk = anyDesk.copy(id = anyDeskId1, name = "desk", officeId = officeId1)
+
+    for {
+      _ <- deskRepository.create(desk)
+      reservableDesks <- deskViewRepository.listDesksAvailableForReservation(
+        officeId1,
+        reservationFrom = LocalDate.parse("2024-09-21"),
+        reservationTo = LocalDate.parse("2024-09-20")
+      )
+    } yield expect(reservableDesks.isEmpty)
+  }
+
   // TODO: Verify that other types of reservations (parking, meeting room) are not considered as overlapping
 
   private def truncateTables(session: Resource[IO, Session[IO]]) =

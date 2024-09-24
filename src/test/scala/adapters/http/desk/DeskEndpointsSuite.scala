@@ -2,6 +2,7 @@ package io.github.avapl
 package adapters.http.desk
 
 import adapters.http.desk.view.ApiDeskListView
+import adapters.http.desk.view.ApiReservableDeskView
 import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
 import cats.syntax.all._
@@ -11,6 +12,7 @@ import domain.model.account.Role.User
 import domain.model.desk.Desk
 import domain.model.desk.view.DeskListView
 import domain.model.desk.view.DeskView
+import domain.model.desk.view.ReservableDeskView
 import domain.model.error.desk.DeskNotFound
 import domain.model.error.desk.DuplicateDeskNameForOffice
 import domain.model.error.office.OfficeNotFound
@@ -537,6 +539,119 @@ object DeskEndpointsSuite
           .withParams(
             "office_id" -> anyOfficeId.toString,
             "limit" -> "10"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
+      | WHEN the endpoint is called with office ID and reservation range
+      | THEN 200 OK and the list of reservable desks is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val reservableDeskViews = List(
+      ReservableDeskView(
+        id = anyDeskId1,
+        name = "107.1",
+        isStanding = true,
+        monitorsCount = 2,
+        hasPhone = true
+      ),
+      ReservableDeskView(
+        id = anyDeskId2,
+        name = "107.2",
+        isStanding = false,
+        monitorsCount = 1,
+        hasPhone = false
+      )
+    )
+    whenF(deskViewRepository.listDesksAvailableForReservation(any, any, any)) thenReturn reservableDeskViews
+
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24",
+            "reservation_to" -> "2024-09-27"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == reservableDeskViews.map(ApiReservableDeskView.fromDomain).asJson
+    )
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
+      | WHEN office_id is not a valid UUID
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "office_id" -> "not a UUID",
+            "reservation_from" -> "2024-09-24",
+            "reservation_to" -> "2024-09-27"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
+      | WHEN reservation_from is not a valid date
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "not a date",
+            "reservation_to" -> "2024-09-27"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
+        | WHEN reservation_to is not a valid date
+        | THEN 400 BadRequest is returned
+        |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24",
+            "reservation_to" -> "not a date"
           )
       )
     }
