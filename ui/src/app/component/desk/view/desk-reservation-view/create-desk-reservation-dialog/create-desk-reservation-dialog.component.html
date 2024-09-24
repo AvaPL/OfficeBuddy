@@ -1,22 +1,24 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <h2 mat-dialog-title class="title">New reservation</h2>
+  <h2 mat-dialog-title class="title">New reservation in {{ data.officeName }}</h2>
   <mat-dialog-content>
     <mat-form-field class="reservation-date-range">
       <mat-label>Reservation date range</mat-label>
       <mat-date-range-input [rangePicker]="picker">
-        <input matStartDate formControlName="startDate" placeholder="Start date" required>
-        <input matEndDate formControlName="endDate" placeholder="End date" required>
+        <input matStartDate formControlName="reservationFrom" placeholder="Start date" required
+               (dateChange)="fetchDesks()">
+        <input matEndDate formControlName="reservationTo" placeholder="End date" required (dateChange)="fetchDesks()">
       </mat-date-range-input>
       <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-date-range-picker [touchUi]="touchUiQuery.matches" #picker></mat-date-range-picker>
-      <mat-error *ngIf="form.get('startDate')?.hasError('required') || form.get('endDate')?.hasError('required')">
+      <mat-date-range-picker [touchUi]="false" #picker></mat-date-range-picker>
+      <mat-error
+        *ngIf="form.get('reservationFrom')?.hasError('required') || form.get('reservationTo')?.hasError('required')">
         Reservation date range is required
       </mat-error>
     </mat-form-field>
     <mat-selection-list
-      *ngIf="!form.get('startDate')?.hasError('required') && !form.get('endDate')?.hasError('required')"
+      *ngIf="desks.length > 0 && !form.get('reservationFrom')?.hasError('required') && !form.get('reservationTo')?.hasError('required')"
       formControlName="deskId" [multiple]="false">
-      @for (desk of desks; track desk) {
+      @for (desk of desks; track desk.id) {
         <mat-list-option color="primary" [value]="desk.id" [selected]="[desk.id] === form.get('deskId')?.value">
           <div class="desk-horizontal">
             <span>{{ desk.name }}</span>
@@ -31,6 +33,8 @@
         <mat-divider *ngIf="!$last"></mat-divider>
       }
     </mat-selection-list>
+    <span *ngIf="desks.length === 0 && form.get('reservationFrom')?.value && form.get('reservationTo')?.value"
+          class="mat-h3 no-free-desks-info">No available desks found</span>
     <mat-form-field subscriptSizing="dynamic">
       <mat-label>Comment (optional)</mat-label>
       <textarea formControlName="comment" class="comment" matInput></textarea>

@@ -402,10 +402,17 @@ export class DeskReservationViewComponent implements OnInit {
   }
 
   createReservation() {
-    const dialogRef = this.createDeskReservationDialog.open(CreateDeskReservationDialogComponent);
+    const dialogRef = this.createDeskReservationDialog.open(CreateDeskReservationDialogComponent,
+      {
+        data: {
+          officeId: this.selectedOffice!.id,
+          officeName: this.selectedOffice!.name
+        }
+      });
 
     dialogRef.afterClosed().subscribe(createdReservation => {
       if (createdReservation) {
+        // TODO: Reload reservations after a new one is created
         console.log(`Created new reservation: `, createdReservation);
       } else {
         console.log(`Cancelled creating new reservation`);

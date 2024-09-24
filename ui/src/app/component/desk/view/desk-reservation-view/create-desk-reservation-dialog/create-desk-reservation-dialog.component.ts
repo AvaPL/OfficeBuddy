@@ -1,7 +1,15 @@
 import {Component, inject} from '@angular/core';
-import {MatDialogRef} from "@angular/material/dialog";
+import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {MediaMatcher} from "@angular/cdk/layout";
-import {FormBuilder} from "@angular/forms";
+import {FormBuilder, Validators} from "@angular/forms";
+import {ReservableDeskView} from "../../../../../service/model/desk/reservable-desk-view.model";
+import {DeskService} from "../../../../../service/desk.service";
+import {MatSnackBar} from "@angular/material/snack-bar";
+
+export interface CreateDeskReservationDialogData {
+  officeId: string
+  officeName: string
+}
 
 @Component({
   selector: 'app-create-desk-reservation-dialog',
@@ -10,91 +18,50 @@ import {FormBuilder} from "@angular/forms";
 })
 export class CreateDeskReservationDialogComponent {
 
-  desks = [
-    {
-      id: "1",
-      name: "107/1",
-      isAvailable: true,
-      isStanding: true,
-      monitorsCount: 2,
-      hasPhone: true,
-    },
-    {
-      id: "2",
-      name: "107/2",
-      isAvailable: false,
-      isStanding: false,
-      monitorsCount: 1,
-      hasPhone: false,
-    },
-    {
-      id: "3",
-      name: "107/3",
-      isAvailable: true,
-      isStanding: false,
-      monitorsCount: 1,
-      hasPhone: true,
-    },
-    {
-      id: "4",
-      name: "107/4",
-      isAvailable: false,
-      isStanding: true,
-      monitorsCount: 2,
-      hasPhone: false
-    },
-    {
-      id: "5",
-      name: "108/1",
-      isAvailable: true,
-      isStanding: true,
-      monitorsCount: 2,
-      hasPhone: true,
-    },
-    {
-      id: "6",
-      name: "108/2",
-      isAvailable: false,
-      isStanding: false,
-      monitorsCount: 1,
-      hasPhone: false,
-    },
-    {
-      id: "7",
-      name: "108/3",
-      isAvailable: true,
-      isStanding: false,
-      monitorsCount: 1,
-      hasPhone: true,
-    },
-    {
-      id: "8",
-      name: "108/4",
-      isAvailable: false,
-      isStanding: true,
-      monitorsCount: 2,
-      hasPhone: false
-    }
-  ]
+  desks: ReservableDeskView[] = []
 
   readonly dialogRef = inject(MatDialogRef<CreateDeskReservationDialogComponent>);
+  readonly data = inject<CreateDeskReservationDialogData>(MAT_DIALOG_DATA);
   readonly form = inject(FormBuilder).group({
-    deskId: [[this.desks[0].id]],
-    startDate: [],
-    endDate: [],
+    deskId: [[""], Validators.pattern(/.+/)],
+    reservationFrom: [],
+    reservationTo: [],
     comment: [""]
   })
+  readonly deskService = inject(DeskService);
+  readonly snackBar = inject(MatSnackBar);
 
   touchUiQuery: MediaQueryList;
 
   constructor(
-    media: MediaMatcher
+    media: MediaMatcher,
   ) {
     this.touchUiQuery = media.matchMedia('(max-width: 600px)');
   }
 
+  async fetchDesks() {
+    this.desks = []
+
+    const reservationFrom = this.form.value.reservationFrom;
+    const reservationTo = this.form.value.reservationTo;
+
+    if (reservationFrom && reservationTo)
+      this.desks = await this.deskService.getReservableDeskViewList(this.data.officeId, reservationFrom!, reservationTo!);
+  }
+
   onSubmit() {
-    this.dialogRef.close(this.form.value);
+
+    try {
+      // TODO: Implement desk reservation request
+      // let createDeskReservation = this.formToCreateDeskReservation();
+      // const response = await this.deskService.createDeskReservation(createDeskReservation)
+      this.snackBar.open(`Desk reservation created and waiting for approval`);
+      // this.dialogRef.close(response);
+      this.dialogRef.close(this.form.value); // TODO: Remove
+    } catch (error) {
+      this.snackBar.open(`Unexpected error occurred when creating desk reservation`, undefined, {panelClass: ['error-snackbar']});
+      console.error(`Error creating desk reservation in ${this.data.officeName} [id: ${this.data.officeId}] for desk [id: ${this.form.value.deskId}]:`, error);
+    }
   }
 
   onCancel() {

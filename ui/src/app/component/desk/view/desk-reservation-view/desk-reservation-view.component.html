@@ -74,7 +74,7 @@
     (page)="handlePageEvent($event)"
     hidePageSize>
   </mat-paginator>
-  <button mat-fab class="add-button" color="primary" matTooltip="Reserve a desk"
+  <button *ngIf="selectedOffice" mat-fab class="add-button" color="primary" matTooltip="Reserve a desk"
           matTooltipPosition="above" (click)="createReservation()">
     <mat-icon>add</mat-icon>
   </button>
