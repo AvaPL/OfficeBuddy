@@ -188,7 +188,7 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
-    """GIVEN 5 desks in the database assigned to an office, where 4 have confirmed reservations
+    """GIVEN 5 desks in the database assigned to an office, where 4 have Confirmed reservations
       | WHEN listDesksAvailableForReservation is called with period overlapping all reservations
       | THEN return only the free desks
       |""".stripMargin
@@ -243,7 +243,7 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
-    """GIVEN 3 desks in the database assigned to an office, where all have confirmed reservations
+    """GIVEN 3 desks in the database assigned to an office, where all have Confirmed reservations
       | WHEN listDesksAvailableForReservation is called with period overlapping only some of the reservations
       | THEN return only the free desks
       |""".stripMargin
@@ -314,7 +314,33 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
-    """GIVEN 1 desk assigned to an office and Pending, Cancelled and Rejected reservations
+    """GIVEN 1 desk assigned to an office and a Pending reservation
+      | WHEN listDesksAvailableForReservation is called with period overlapping the reservation
+      | THEN return an empty list of results
+      |""".stripMargin
+  ) { (deskRepository, deskViewRepository, reservationRepository) =>
+    val desk = anyDesk.copy(id = anyDeskId1, name = "desk", officeId = officeId1)
+
+    val reservationFrom = LocalDate.parse("2024-09-20")
+    val reservationTo = LocalDate.parse("2024-09-21")
+
+    val pendingReservation = createDeskReservation(
+      id = anyReservationId1,
+      reservedFromDate = reservationFrom,
+      reservedToDate = reservationTo,
+      state = Pending,
+      deskId = desk.id
+    )
+
+    for {
+      _ <- deskRepository.create(desk)
+      _ <- reservationRepository.createDeskReservation(pendingReservation)
+      reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId1, reservationFrom, reservationTo)
+    } yield expect(reservableDesks.isEmpty)
+  }
+
+  beforeTest(
+    """GIVEN 1 desk assigned to an office and Cancelled and Rejected reservations
       | WHEN listDesksAvailableForReservation is called with period overlapping the reservations
       | THEN the desk is returned as free
       |""".stripMargin
@@ -332,13 +358,11 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
       deskId = desk.id
     )
 
-    val pendingReservation = createOverlappingReservation(id = anyReservationId1, state = Pending)
-    val cancelledReservation = createOverlappingReservation(id = anyReservationId2, state = Cancelled)
-    val rejectedReservation = createOverlappingReservation(id = anyReservationId3, state = Rejected)
+    val cancelledReservation = createOverlappingReservation(id = anyReservationId1, state = Cancelled)
+    val rejectedReservation = createOverlappingReservation(id = anyReservationId2, state = Rejected)
 
     for {
       _ <- deskRepository.create(desk)
-      _ <- reservationRepository.createDeskReservation(pendingReservation)
       _ <- reservationRepository.createDeskReservation(cancelledReservation)
       _ <- reservationRepository.createDeskReservation(rejectedReservation)
       reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId1, reservationFrom, reservationTo)

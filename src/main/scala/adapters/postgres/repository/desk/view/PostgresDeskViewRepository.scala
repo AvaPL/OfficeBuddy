@@ -106,7 +106,7 @@ object PostgresDeskViewRepository {
           SELECT r.desk_id
           FROM   reservation r
           WHERE  r.type = 'Desk'
-            AND  r.state = 'Confirmed'
+            AND  r.state IN ('Pending', 'Confirmed')
             AND  tsrange(r.reserved_from, r.reserved_to, '[]') && tsrange($date, $date, '[]')
         )
     """.query(reservableDeskViewDecoder)
