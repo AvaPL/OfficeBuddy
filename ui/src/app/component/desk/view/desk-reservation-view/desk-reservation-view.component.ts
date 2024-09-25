@@ -414,8 +414,6 @@ export class DeskReservationViewComponent implements OnInit {
       if (createdReservation) {
         // TODO: Reload reservations after a new one is created
         console.log(`Created new reservation: `, createdReservation);
-      } else {
-        console.log(`Cancelled creating new reservation`);
       }
     });
   }

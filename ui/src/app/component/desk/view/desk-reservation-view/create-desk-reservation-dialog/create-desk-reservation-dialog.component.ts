@@ -5,6 +5,10 @@ import {FormBuilder, Validators} from "@angular/forms";
 import {ReservableDeskView} from "../../../../../service/model/desk/reservable-desk-view.model";
 import {DeskService} from "../../../../../service/desk.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {LocalDate} from "../../../../../service/model/date/local-date.model";
+import {CreateDeskReservation} from "../../../../../service/model/reservation/create-desk-reservation.model";
+import {ReservationService} from "../../../../../service/reservation.service";
+import {KeycloakService} from "keycloak-angular";
 
 export interface CreateDeskReservationDialogData {
   officeId: string
@@ -29,6 +33,8 @@ export class CreateDeskReservationDialogComponent {
     comment: [""]
   })
   readonly deskService = inject(DeskService);
+  readonly reservationService = inject(ReservationService);
+  readonly keycloakService = inject(KeycloakService);
   readonly snackBar = inject(MatSnackBar);
 
   touchUiQuery: MediaQueryList;
@@ -42,26 +48,44 @@ export class CreateDeskReservationDialogComponent {
   async fetchDesks() {
     this.desks = []
 
-    const reservationFrom = this.form.value.reservationFrom;
-    const reservationTo = this.form.value.reservationTo;
+    const reservationFromValue = this.form.value.reservationFrom;
+    const reservationToValue = this.form.value.reservationTo;
 
-    if (reservationFrom && reservationTo)
-      this.desks = await this.deskService.getReservableDeskViewList(this.data.officeId, reservationFrom!, reservationTo!);
+    if (reservationFromValue && reservationToValue) {
+      const reservationFrom = new LocalDate(reservationFromValue);
+      const reservationTo = new LocalDate(reservationToValue);
+      this.desks = await this.deskService.getReservableDeskViewList(this.data.officeId, reservationFrom, reservationTo);
+    }
   }
 
-  onSubmit() {
-
+  async onSubmit() {
     try {
-      // TODO: Implement desk reservation request
-      // let createDeskReservation = this.formToCreateDeskReservation();
-      // const response = await this.deskService.createDeskReservation(createDeskReservation)
+      let createDeskReservation = await this.formToCreateDeskReservation();
+      const response = await this.reservationService.createDeskReservation(createDeskReservation)
       this.snackBar.open(`Desk reservation created and waiting for approval`);
-      // this.dialogRef.close(response);
-      this.dialogRef.close(this.form.value); // TODO: Remove
+      this.dialogRef.close(response);
     } catch (error) {
       this.snackBar.open(`Unexpected error occurred when creating desk reservation`, undefined, {panelClass: ['error-snackbar']});
       console.error(`Error creating desk reservation in ${this.data.officeName} [id: ${this.data.officeId}] for desk [id: ${this.form.value.deskId}]:`, error);
     }
+  }
+
+  async formToCreateDeskReservation(): Promise<CreateDeskReservation> {
+    const userId = await this.getAccountId();
+    return {
+      userId: userId,
+      reservedFrom: new LocalDate(this.form.value.reservationFrom!).toString(),
+      reservedTo: new LocalDate(this.form.value.reservationTo!).toString(),
+      notes: this.form.value.comment!,
+      deskId: this.form.value.deskId![0],
+    }
+  }
+
+  // TODO: Extract as a common function
+  async getAccountId() {
+    const userProfile = await this.keycloakService.loadUserProfile();
+    const attributes = userProfile.attributes!;
+    return (attributes['account_id'] as string[])[0]
   }
 
   onCancel() {

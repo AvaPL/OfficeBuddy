@@ -7,6 +7,7 @@ import {Desk} from "./model/desk/desk.model";
 import {DeskListView} from "./model/desk/desk-view.model";
 import {UpdateDesk} from "./model/desk/update-desk.model";
 import {ReservableDeskView} from "./model/desk/reservable-desk-view.model";
+import {LocalDate} from "./model/date/local-date.model";
 
 @Injectable({
   providedIn: 'root'
@@ -72,26 +73,14 @@ export class DeskService {
     return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${deskId}`, {headers}));
   }
 
-  async getReservableDeskViewList(officeId: string, reservationFrom: Date, reservationTo: Date): Promise<ReservableDeskView[]> {
+  async getReservableDeskViewList(officeId: string, reservationFrom: LocalDate, reservationTo: LocalDate): Promise<ReservableDeskView[]> {
     const token = await this.keycloakService.getToken();
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     });
 
-    const reservationFromString = this.formatYYYYMMDD(reservationFrom)
-    const reservationToString = this.formatYYYYMMDD(reservationTo)
-
-    const url = `${this.baseUrl}/view/reservable?office_id=${officeId}&reservation_from=${reservationFromString}&reservation_to=${reservationToString}`;
+    const url = `${this.baseUrl}/view/reservable?office_id=${officeId}&reservation_from=${reservationFrom}&reservation_to=${reservationTo}`;
     return firstValueFrom(this.http.get<ReservableDeskView[]>(url, {headers}));
-  }
-
-  // Removes time, including time zone, WITHOUT conversion to UTC
-  formatYYYYMMDD(date: Date): string {
-    return [
-      date.getFullYear(),
-      ('0' + (date.getMonth() + 1)).slice(-2),
-      ('0' + date.getDate()).slice(-2)
-    ].join('-');
   }
 }
