@@ -21,8 +21,8 @@ trait ReservationViewRepository[F[_]] {
   def listDeskReservations(
     officeId: UUID,
     reservationFrom: LocalDate,
-    reservationStates: Option[List[ReservationState]],
-    userId: Option[UUID],
+    reservationStates: Option[List[ReservationState]] = None,
+    userId: Option[UUID] = None,
     limit: Int,
     offset: Int
   ): F[DeskReservationListView]

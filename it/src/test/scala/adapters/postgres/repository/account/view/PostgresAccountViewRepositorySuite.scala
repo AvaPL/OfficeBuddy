@@ -307,7 +307,7 @@ object PostgresAccountViewRepositorySuite extends IOSuite with PostgresFixture {
   beforeTest(
     """
       |GIVEN 4 accounts in the database
-      | WHEN listAccounts is called with textSearchQuery, officeId and roles matching 1 account
+      | WHEN listAccounts is called with textSearchQuery, officeId, and roles matching 1 account
       | THEN return the matching account
       |""".stripMargin
   ) { (accountRepository, accountViewRepository) =>

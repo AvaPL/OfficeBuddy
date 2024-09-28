@@ -67,9 +67,21 @@ object PostgresReservationViewRepository {
     offset: Int
   ): AppliedFragment = {
     val select = sql"""
-      SELECT   id, reserved_from, reserved_to, state, notes, user_id, user_first_name, user_last_name, user_email, desk_id, desk_name
-      FROM     reservation
-      WHERE    desk_id IN (
+      SELECT r.id,
+             r.reserved_from,
+             r.reserved_to,
+             r.state,
+             r.notes,
+             a.id AS user_id,
+             a.first_name AS user_first_name,
+             a.last_name AS user_last_name,
+             a.email AS user_email,
+             d.id AS desk_id,
+             d.name AS desk_name
+      FROM reservation r
+      LEFT JOIN desk d ON desk_id = d.id
+      LEFT JOIN account a ON user_id = a.id
+      WHERE desk_id IN (
         SELECT id
         FROM   desk
         WHERE  office_id = $uuid
@@ -86,7 +98,7 @@ object PostgresReservationViewRepository {
     ).flatten.fold(AppliedFragment.empty)(_ |+| _)
 
     val orderByLimitOffset = sql"""
-      ORDER BY first_name, last_name, email
+      ORDER BY reserved_from, reserved_to, desk_name
       LIMIT    $int4
       OFFSET   $int4
     """
