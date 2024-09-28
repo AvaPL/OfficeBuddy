@@ -5,7 +5,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {
   DeskReservationConfirmDialogComponent
 } from "./desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
-import {DeskFilterDialogComponent} from "./desk-filter-dialog/desk-filter-dialog.component";
+import {DeskReservationFilterDialogComponent} from "./desk-reservation-filter-dialog/desk-reservation-filter-dialog.component";
 import {
   CreateDeskReservationDialogComponent
 } from "./create-desk-reservation-dialog/create-desk-reservation-dialog.component";
@@ -321,7 +321,7 @@ export class DeskReservationViewComponent implements OnInit {
   }
 
   openFilterDialog() {
-    const dialogRef = this.deskFilterDialog.open(DeskFilterDialogComponent, {
+    const dialogRef = this.deskFilterDialog.open(DeskReservationFilterDialogComponent, {
       data: {
         offices: this.offices,
         selectedOfficeId: this.selectedOffice?.id,

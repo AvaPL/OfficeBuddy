@@ -34,8 +34,8 @@ import {
   DeskReservationConfirmDialogComponent
 } from "./component/desk/view/desk-reservation-view/desk-reservation-confirm-dialog/desk-reservation-confirm-dialog.component";
 import {
-  DeskFilterDialogComponent as DeskReservationFilterDialogComponent
-} from "./component/desk/view/desk-reservation-view/desk-filter-dialog/desk-filter-dialog.component";
+  DeskReservationFilterDialogComponent as DeskReservationFilterDialogComponent
+} from "./component/desk/view/desk-reservation-view/desk-reservation-filter-dialog/desk-reservation-filter-dialog.component";
 import {MatSelectModule} from "@angular/material/select";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {

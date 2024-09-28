@@ -13,12 +13,12 @@ export interface DeskFilterDialogData {
 
 @Component({
   selector: 'app-desk-reservation-filter-dialog',
-  templateUrl: './desk-filter-dialog.component.html',
-  styleUrl: './desk-filter-dialog.component.scss'
+  templateUrl: './desk-reservation-filter-dialog.component.html',
+  styleUrl: './desk-reservation-filter-dialog.component.scss'
 })
-export class DeskFilterDialogComponent {
+export class DeskReservationFilterDialogComponent {
 
-  readonly dialogRef = inject(MatDialogRef<DeskFilterDialogComponent>);
+  readonly dialogRef = inject(MatDialogRef<DeskReservationFilterDialogComponent>);
   readonly data = inject<DeskFilterDialogData>(MAT_DIALOG_DATA);
 
   touchUiQuery: MediaQueryList;
