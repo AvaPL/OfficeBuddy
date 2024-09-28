@@ -1,5 +1,5 @@
 package io.github.avapl
-package adapters.http.desk.view
+package adapters.http.desk.model.view
 
 import derevo.derive
 import java.util.UUID

@@ -29,7 +29,7 @@
         <mat-card-subtitle *ngIf="account.assignedOffice" class="account-subtitle-line"
                            matTooltip="Assigned office">
           <mat-icon matListItemIcon>domain</mat-icon>
-          <span matListItemLine>{{ account.assignedOffice?.name }}</span>
+          <span matListItemLine>{{ account.assignedOffice.name }}</span>
         </mat-card-subtitle>
         <mat-card-subtitle *ngIf="account.managedOffices && account.managedOffices.length > 0"
                            class="account-subtitle-line"

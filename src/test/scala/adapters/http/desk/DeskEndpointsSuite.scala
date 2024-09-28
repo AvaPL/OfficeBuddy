@@ -1,8 +1,11 @@
 package io.github.avapl
 package adapters.http.desk
 
-import adapters.http.desk.view.ApiDeskListView
-import adapters.http.desk.view.ApiReservableDeskView
+import adapters.http.desk.model.ApiCreateDesk
+import adapters.http.desk.model.ApiDesk
+import adapters.http.desk.model.ApiUpdateDesk
+import adapters.http.desk.model.view.ApiDeskListView
+import adapters.http.desk.model.view.ApiReservableDeskView
 import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
 import cats.syntax.all._

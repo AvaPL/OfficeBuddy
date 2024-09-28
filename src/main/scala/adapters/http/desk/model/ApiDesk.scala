@@ -1,5 +1,5 @@
 package io.github.avapl
-package adapters.http.desk
+package adapters.http.desk.model
 
 import derevo.derive
 import domain.model.desk.CreateDesk

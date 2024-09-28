@@ -5,9 +5,12 @@ import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
-import adapters.http.desk.view.ApiDeskListView
-import adapters.http.desk.view.ApiDeskView
-import adapters.http.desk.view.ApiReservableDeskView
+import adapters.http.desk.model.ApiCreateDesk
+import adapters.http.desk.model.ApiDesk
+import adapters.http.desk.model.ApiUpdateDesk
+import adapters.http.desk.model.view.ApiDeskListView
+import adapters.http.desk.model.view.ApiDeskView
+import adapters.http.desk.model.view.ApiReservableDeskView
 import adapters.http.model.view.ApiPagination
 import cats.MonadThrow
 import cats.effect.Clock

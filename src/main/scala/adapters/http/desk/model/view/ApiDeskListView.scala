@@ -1,5 +1,5 @@
 package io.github.avapl
-package adapters.http.desk.view
+package adapters.http.desk.model.view
 
 import adapters.http.model.view.ApiPagination
 import derevo.derive
