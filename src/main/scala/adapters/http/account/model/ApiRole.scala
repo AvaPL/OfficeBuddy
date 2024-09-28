@@ -1,5 +1,5 @@
 package io.github.avapl
-package adapters.http.account
+package adapters.http.account.model
 
 import enumeratum.CirceEnum
 import enumeratum.Enum

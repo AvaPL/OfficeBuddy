@@ -372,6 +372,28 @@ object DeskEndpointsSuite
 
   test(
     """GIVEN view list desk endpoint
+      | WHEN the endpoint is called without office_id
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list desk endpoint
       | WHEN office_id is not a valid UUID
       | THEN 400 BadRequest is returned
       |""".stripMargin
@@ -487,28 +509,6 @@ object DeskEndpointsSuite
 
   test(
     """GIVEN view list desk endpoint
-      | WHEN the endpoint is called without office_id
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val deskViewRepository = mock[DeskViewRepository[IO]]
-    val response = sendViewRequest(deskViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/desk/view/list"
-          .withParams(
-            "limit" -> "10",
-            "offset" -> "0"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN view list desk endpoint
       | WHEN the endpoint is called without limit
       | THEN 400 BadRequest is returned
       |""".stripMargin
@@ -597,6 +597,28 @@ object DeskEndpointsSuite
 
   test(
     """GIVEN reservable desks view list endpoint
+      | WHEN the endpoint is called without office_id
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "reservation_from" -> "2024-09-24",
+            "reservation_to" -> "2024-09-27"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
       | WHEN office_id is not a valid UUID
       | THEN 400 BadRequest is returned
       |""".stripMargin
@@ -608,6 +630,28 @@ object DeskEndpointsSuite
           .withParams(
             "office_id" -> "not a UUID",
             "reservation_from" -> "2024-09-24",
+            "reservation_to" -> "2024-09-27"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
+      | WHEN the endpoint is called without reservation_from
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
             "reservation_to" -> "2024-09-27"
           )
       )
@@ -632,6 +676,28 @@ object DeskEndpointsSuite
             "office_id" -> anyOfficeId.toString,
             "reservation_from" -> "not a date",
             "reservation_to" -> "2024-09-27"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN reservable desks view list endpoint
+      | WHEN the endpoint is called without reservation_to
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val deskViewRepository = mock[DeskViewRepository[IO]]
+    val response = sendViewRequest(deskViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/desk/view/reservable"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24"
           )
       )
     }

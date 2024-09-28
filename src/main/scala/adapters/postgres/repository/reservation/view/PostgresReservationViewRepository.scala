@@ -28,7 +28,6 @@ class PostgresReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
 
   import PostgresReservationViewRepository._
 
-  // TODO: Implement integration tests
   override def listDeskReservations(
     officeId: UUID,
     reservationFrom: LocalDate,

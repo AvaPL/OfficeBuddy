@@ -12,7 +12,7 @@ trait ReservationViewRepository[F[_]] {
    * @param officeId
    *   desk's office ID
    * @param reservationFrom
-   *   reservation start date
+   *   reservation start date lower bound (inclusive)
    * @param reservationStates
    *   list of allowed reservation states
    * @param userId

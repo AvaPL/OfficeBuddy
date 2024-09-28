@@ -5,6 +5,7 @@ import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.SecuredApiEndpoint
+import adapters.http.account.model.ApiRole
 import adapters.http.account.model.view.ApiAccountListView
 import adapters.http.account.model.view.ApiAccountView
 import adapters.http.account.model.view.ApiOfficeView

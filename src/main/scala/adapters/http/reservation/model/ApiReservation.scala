@@ -1,5 +1,5 @@
 package io.github.avapl
-package adapters.http.reservation
+package adapters.http.reservation.model
 
 import derevo.derive
 import domain.model.reservation.CreateDeskReservation

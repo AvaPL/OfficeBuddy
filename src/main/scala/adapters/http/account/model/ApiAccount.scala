@@ -1,6 +1,7 @@
 package io.github.avapl
 package adapters.http.account
 
+import adapters.http.account.model.ApiRole
 import derevo.derive
 import domain.model.account._
 import io.circe.generic.extras.{Configuration => CirceConfiguration}

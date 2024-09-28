@@ -9,24 +9,24 @@ import adapters.http.reservation.ReservationEndpoints
 import adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
 import adapters.keycloak.auth.service.KeycloakClaimsExtractorService
 import adapters.postgres.migration.FlywayMigration
+import adapters.postgres.repository.account.view.PostgresAccountViewRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
+import adapters.postgres.repository.desk.view.PostgresDeskViewRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresReservationRepository
-import cats.data.NonEmptyList
-import cats.effect._
-import cats.effect.std.Console
-import cats.implicits._
-import config.AppConfig
-import config.HttpConfig
-import config.KeycloakConfig
-import config.PostgresConfig
+import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
+import config.{AppConfig, HttpConfig, KeycloakConfig, PostgresConfig}
 import domain.service.account.AccountService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.ReservationService
-import io.github.avapl.adapters.postgres.repository.account.view.PostgresAccountViewRepository
-import io.github.avapl.adapters.postgres.repository.desk.view.PostgresDeskViewRepository
+import util.BuildInfo
+
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.effect.std.Console
+import cats.implicits._
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -38,12 +38,10 @@ import pureconfig.module.catseffect.syntax._
 import skunk.Session
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.server.http4s.Http4sServerInterpreter
-import sttp.tapir.server.http4s.Http4sServerOptions
+import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
 import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import util.BuildInfo
 
 object Main extends IOApp.Simple {
 
@@ -108,6 +106,7 @@ object Main extends IOApp.Simple {
 
       val officeViewRepository = new PostgresOfficeViewRepository[F](session)
       val deskViewRepository = new PostgresDeskViewRepository[F](session)
+      val reservationViewRepository = new PostgresReservationViewRepository[F](session)
       val accountViewRepository = new PostgresAccountViewRepository[F](session)
 
       val officeService = new OfficeService[F](officeRepository)
@@ -128,8 +127,12 @@ object Main extends IOApp.Simple {
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
-      val reservationEndpoints =
-        new ReservationEndpoints[F](reservationService, publicKeyRepository, rolesExtractorService).endpoints
+      val reservationEndpoints = new ReservationEndpoints[F](
+        reservationService,
+        reservationViewRepository,
+        publicKeyRepository,
+        rolesExtractorService
+      ).endpoints
       val accountEndpoints = new AccountEndpoints[F](
         accountService,
         accountViewRepository,

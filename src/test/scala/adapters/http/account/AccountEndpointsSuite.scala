@@ -2,6 +2,7 @@ package io.github.avapl
 package adapters.http.account
 
 import adapters.auth.model.PublicKey
+import adapters.http.account.model.ApiRole
 import adapters.http.account.model.view.ApiAccountListView
 import adapters.http.fixture.SecuredApiEndpointFixture
 import cats.effect.IO
@@ -725,7 +726,7 @@ object AccountEndpointsSuite
 
   test(
     """GIVEN view list account endpoint
-      | WHEN the endpoint is called with no filters, limit and offset
+      | WHEN the endpoint is called with limit, offset, and no filters
       | THEN 200 OK and the list of accounts is returned
       |""".stripMargin
   ) {

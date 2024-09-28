@@ -1,7 +1,12 @@
 package io.github.avapl
 package adapters.http.reservation
 
+import adapters.auth.model.PublicKey
 import adapters.http.fixture.SecuredApiEndpointFixture
+import adapters.http.reservation.model.ApiCreateDeskReservation
+import adapters.http.reservation.model.ApiDeskReservation
+import adapters.http.reservation.model.ApiReservationState
+import adapters.http.reservation.model.view.ApiDeskReservationListView
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -14,6 +19,12 @@ import domain.model.error.reservation.ReservationNotFound
 import domain.model.error.user.UserNotFound
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState
+import domain.model.reservation.view.DeskReservationListView
+import domain.model.reservation.view.DeskReservationView
+import domain.model.reservation.view.DeskView
+import domain.model.reservation.view.UserView
+import domain.model.view.Pagination
+import domain.repository.reservation.view.ReservationViewRepository
 import domain.service.reservation.ReservationService
 import io.circe.parser._
 import io.circe.syntax._
@@ -43,7 +54,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationToCreate = anyApiCreateDeskReservation
     val reservation = DeskReservation(
-      id = anyReservationId,
+      id = anyReservationId1,
       userId = reservationToCreate.userId,
       createdAt = anyCreatedAt,
       reservedFromDate = reservationToCreate.reservedFrom,
@@ -57,7 +68,7 @@ object ReservationEndpointsSuite
     val response = sendRequest(
       reservationService,
       role = User,
-      accountId = reservationToCreate.userId
+      requesterAccountId = reservationToCreate.userId
     ) {
       basicRequest
         .post(uri"http://test.com/reservation/desk")
@@ -80,7 +91,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationToCreate = anyApiCreateDeskReservation
     val reservation = DeskReservation(
-      id = anyReservationId,
+      id = anyReservationId1,
       userId = reservationToCreate.userId,
       createdAt = anyCreatedAt,
       reservedFromDate = reservationToCreate.reservedFrom,
@@ -94,7 +105,7 @@ object ReservationEndpointsSuite
     val response = sendRequest(
       reservationService,
       role = OfficeManager,
-      accountId = anyOfficeManagerId
+      requesterAccountId = anyOfficeManagerId
     ) {
       basicRequest
         .post(uri"http://test.com/reservation/desk")
@@ -123,7 +134,7 @@ object ReservationEndpointsSuite
     val response = sendRequest(
       reservationService,
       role = User,
-      accountId = requesterId
+      requesterAccountId = requesterId
     ) {
       basicRequest
         .post(uri"http://test.com/reservation/desk")
@@ -204,7 +215,7 @@ object ReservationEndpointsSuite
       | THEN 200 OK and the read reservation is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservation = anyDeskReservation.copy(id = reservationId)
     val reservationService = whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenReturn reservation
 
@@ -226,7 +237,7 @@ object ReservationEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
@@ -254,7 +265,7 @@ object ReservationEndpointsSuite
     val response = sendRequest(
       reservationService,
       role = User,
-      accountId = userId
+      requesterAccountId = userId
     ) {
       basicRequest.put(uri"http://test.com/reservation/${reservation.id}/cancel")
     }
@@ -277,9 +288,9 @@ object ReservationEndpointsSuite
     val response = sendRequest(
       reservationService,
       role = OfficeManager,
-      accountId = anyOfficeManagerId
+      requesterAccountId = anyOfficeManagerId
     ) {
-      basicRequest.put(uri"http://test.com/reservation/$anyReservationId/cancel")
+      basicRequest.put(uri"http://test.com/reservation/$anyReservationId1/cancel")
     }
 
     for {
@@ -302,7 +313,7 @@ object ReservationEndpointsSuite
     val response = sendRequest(
       reservationService,
       role = User,
-      accountId = requesterUserId
+      requesterAccountId = requesterUserId
     ) {
       basicRequest.put(uri"http://test.com/reservation/${reservation.id}/cancel")
     }
@@ -321,7 +332,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService = mock[ReservationService[IO]]
     whenF(reservationService.readDeskReservation(any)) thenReturn anyDeskReservation
     whenF(reservationService.cancelReservation(any)) thenFailWith
@@ -342,7 +353,7 @@ object ReservationEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
@@ -361,7 +372,7 @@ object ReservationEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].confirmReservation(any)) thenReturn ()
 
@@ -380,7 +391,7 @@ object ReservationEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService = mock[ReservationService[IO]]
 
     val response = sendRequest(reservationService, role = User) {
@@ -401,7 +412,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].confirmReservation(any)) thenFailWith
         InvalidStateTransition(reservationId, ReservationState.Rejected, ReservationState.Confirmed)
@@ -421,7 +432,7 @@ object ReservationEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].confirmReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
@@ -440,7 +451,7 @@ object ReservationEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].rejectReservation(any)) thenReturn ()
 
@@ -459,7 +470,7 @@ object ReservationEndpointsSuite
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService = mock[ReservationService[IO]]
 
     val response = sendRequest(reservationService, role = User) {
@@ -480,7 +491,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].rejectReservation(any)) thenFailWith
         InvalidStateTransition(reservationId, ReservationState.Cancelled, ReservationState.Rejected)
@@ -500,7 +511,7 @@ object ReservationEndpointsSuite
       | THEN 404 NotFound is returned
       |""".stripMargin
   ) {
-    val reservationId = anyReservationId
+    val reservationId = anyReservationId1
     val reservationService =
       whenF(mock[ReservationService[IO]].rejectReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
@@ -513,22 +524,277 @@ object ReservationEndpointsSuite
     } yield expect(response.code == StatusCode.NotFound)
   }
 
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN the endpoint is called with filters, limit and offset
+      | THEN 200 OK and the list of reservations is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val deskReservationListView = DeskReservationListView(
+      reservations = List(
+        anyDeskReservationView.copy(id = anyReservationId1),
+        anyDeskReservationView.copy(id = anyReservationId2)
+      ),
+      pagination = Pagination(
+        limit = 10,
+        offset = 0,
+        hasMoreResults = false
+      )
+    )
+    whenF(
+      reservationViewRepository.listDeskReservations(any, any, any, any, any, any)
+    ) thenReturn deskReservationListView
+
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24",
+            "reservation_states" -> List(ApiReservationState.Pending, ApiReservationState.Confirmed)
+              .map(_.entryName)
+              .mkString(","),
+            "user_id" -> anyUserId.toString,
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiDeskReservationListView.fromDomain(deskReservationListView).asJson
+    )
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN the endpoint is called with office ID and reservedFrom
+      | THEN 200 OK and the list of reservations is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val deskReservationListView = DeskReservationListView(
+      reservations = List(
+        anyDeskReservationView.copy(id = anyReservationId1),
+        anyDeskReservationView.copy(id = anyReservationId2)
+      ),
+      pagination = Pagination(
+        limit = 10,
+        offset = 0,
+        hasMoreResults = false
+      )
+    )
+    whenF(
+      reservationViewRepository.listDeskReservations(any, any, any, any, any, any)
+    ) thenReturn deskReservationListView
+
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == ApiDeskReservationListView.fromDomain(deskReservationListView).asJson
+    )
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN the endpoint is called without office ID
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "reservation_from" -> "2024-09-24",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN office_id is not a valid UUID
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> "not a UUID",
+            "reservation_from" -> "2024-09-24",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN the endpoint is called without reservedFrom
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN reservation_from is not a valid date
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "not a date",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN reservation_states contains an invalid state
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24",
+            "reservation_states" -> s"${ApiReservationState.Confirmed},InvalidState",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list desk reservation endpoint
+      | WHEN user_id is not a valid UUID
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val response = sendViewRequest(reservationViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/reservation/desk/view/list"
+          .withParams(
+            "office_id" -> anyOfficeId.toString,
+            "reservation_from" -> "2024-09-24",
+            "user_id" -> "not a UUID",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
   private def sendRequest(
     reservationService: ReservationService[IO],
     role: Role = SuperAdmin,
-    accountId: UUID = anySuperAdminId
+    requesterAccountId: UUID = anySuperAdminId
   )(
     request: Request[Either[String, String], Any]
-  ) =
-    sendSecuredApiEndpointRequest(request, role, accountId) { rolesExtractorService =>
-      new ReservationEndpoints[IO](reservationService, publicKeyRepository, rolesExtractorService).endpoints
+  ) = {
+    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    sendSecuredApiEndpointRequest(request, role, requesterAccountId) { claimsExtractorService =>
+      new ReservationEndpoints[IO](
+        reservationService,
+        reservationViewRepository,
+        publicKeyRepository,
+        claimsExtractorService
+      ).endpoints
     }
+  }
+
+  private def sendViewRequest(
+    reservationViewRepository: ReservationViewRepository[IO]
+  )(
+    request: Request[Either[String, String], Any]
+  ): IO[Response[Either[PublicKey, PublicKey]]] = {
+    val reservationService = mock[ReservationService[IO]]
+    sendSecuredApiEndpointRequest(request, role = User, accountId = anyUserId) { claimsExtractorService =>
+      new ReservationEndpoints[IO](
+        reservationService,
+        reservationViewRepository,
+        publicKeyRepository,
+        claimsExtractorService
+      ).endpoints
+    }
+  }
 
   private def bodyJson(response: Response[Either[String, String]]) =
     response.body.flatMap(parse).toOption.get
 
   private lazy val anyDeskReservation = DeskReservation(
-    id = anyReservationId,
+    id = anyReservationId1,
     userId = anyUserId,
     createdAt = anyCreatedAt,
     reservedFromDate = LocalDate.parse("2023-07-19"),
@@ -554,7 +820,28 @@ object ReservationEndpointsSuite
 
   private lazy val anyDeskId = UUID.fromString("e6fd42f1-61cd-4ee7-b436-e24bc84f9d2b")
 
-  private lazy val anyReservationId = UUID.fromString("dcd64f97-a57a-4b57-9e63-dbe56187b557")
+  private lazy val anyReservationId1 = UUID.fromString("dcd64f97-a57a-4b57-9e63-dbe56187b557")
+  private lazy val anyReservationId2 = UUID.fromString("2b6cae88-393a-4222-9ddd-052aff904b94")
 
   private lazy val anyCreatedAt = LocalDateTime.parse("2023-07-18T20:41:00")
+
+  private lazy val anyOfficeId = UUID.fromString("9ddcf215-c54d-4368-ad5b-d6c10a76800f")
+
+  private lazy val anyDeskReservationView = DeskReservationView(
+    id = anyReservationId1,
+    reservedFromDate = LocalDate.parse("2024-09-24"),
+    reservedToDate = LocalDate.parse("2024-09-27"),
+    state = ReservationState.Confirmed,
+    notes = "Test notes",
+    user = UserView(
+      id = UUID.fromString("a28420c3-da66-4f87-bac3-a399bafa2756"),
+      firstName = "John",
+      lastName = "Doe",
+      email = "john.doe@example.com"
+    ),
+    desk = DeskView(
+      id = UUID.fromString("2215a152-cc29-4086-b5a8-7aef2a96867b"),
+      name = "102.1"
+    )
+  )
 }
