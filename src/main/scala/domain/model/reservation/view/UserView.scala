@@ -1,9 +1,9 @@
 package io.github.avapl
-package domain.model.office.view
+package domain.model.reservation.view
 
 import java.util.UUID
 
-case class OfficeManagerView(
+case class UserView(
   id: UUID,
   firstName: String,
   lastName: String,

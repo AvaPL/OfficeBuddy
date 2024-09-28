@@ -196,7 +196,7 @@ object PostgresAccountRepository {
       role.transformInto[PostgresAccountType]
   }
 
-  lazy val accountEncoder: Encoder[Account] =
+  private lazy val accountEncoder: Encoder[Account] =
     (
       uuid *: // id
         varchar *: // first_name
@@ -226,7 +226,7 @@ object PostgresAccountRepository {
     }
 
   @nowarn("msg=match may not be exhaustive")
-  lazy val accountDecoder: Decoder[Account] =
+  private lazy val accountDecoder: Decoder[Account] =
     (
       uuid *: // id
         varchar *: // first_name

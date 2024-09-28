@@ -536,12 +536,14 @@ object OfficeEndpointsSuite
       OfficeManagerView(
         id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297"),
         firstName = "John",
-        lastName = "Doe"
+        lastName = "Doe",
+        email = "john.doe@example.com"
       ),
       OfficeManagerView(
         id = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227296"),
         firstName = "Jane",
-        lastName = "Doe"
+        lastName = "Doe",
+        email = "jane.doe@example.com"
       )
     ),
     assignedAccountsCount = 20,

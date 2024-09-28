@@ -147,6 +147,6 @@ object PostgresReservationRepository {
         DeskReservation(id, userId, createdAt, reservedFrom.toLocalDate, reservedTo.toLocalDate, state, notes, deskId)
     }
 
-  private lazy val reservationStateCodec: Codec[ReservationState] =
+  lazy val reservationStateCodec: Codec[ReservationState] =
     varchar.imap[ReservationState](ReservationState.withNameInsensitive)(_.entryName)
 }

@@ -87,7 +87,7 @@ object PostgresAccountViewRepository {
         OR $uuid = ANY(managed_office_ids)
       )
     """
-    val rolesFilter = sql"AND type = ANY(${_accountTypeCodec})"
+    val rolesFilter = sql"AND type = ANY(${_accountTypeEncoder})"
 
     val appliedFilters = List(
       textSearchQuery.map(q => s"%$q%").map(q => textSearchFilter(q, q)),
@@ -104,14 +104,15 @@ object PostgresAccountViewRepository {
     select(Void) |+| appliedFilters |+| orderByLimitOffset(limit, offset)
   }
 
-  private lazy val _accountTypeCodec: Codec[List[PostgresAccountType]] =
+  private lazy val _accountTypeEncoder: Encoder[List[PostgresAccountType]] =
     Codec
       .array[PostgresAccountType](
         _.value,
-        PostgresAccountType.withValueEither(_).left.map(_.getMessage),
+        decode = _ => ???,
         Type._varchar
       )
-      .imap(_.flattenTo(List))(Arr(_: _*))
+      .asEncoder
+      .contramap[List[PostgresAccountType]](Arr(_: _*))
 
   @nowarn("msg=match may not be exhaustive")
   private lazy val accountViewDecoder: Decoder[AccountView] =
@@ -122,7 +123,7 @@ object PostgresAccountViewRepository {
         varchar *: // email
         bool *: // is_archived
         PostgresAccountType.accountTypeCodec *: // type
-        assignedOfficeDecoder *: // assigned_offices
+        assignedOfficeDecoder *: // assigned_office
         managedOfficesDecoder // managed_offices
     ).map {
       case id *: firstName *: lastName *: email *: _ *: accountType *: assignedOffice *: managedOffices *: EmptyTuple =>
