@@ -1,4 +1,4 @@
-import {ReservationState} from "../../../component/desk/view/desk-reservation-view/model/reservation-state.enum";
+import {ReservationState} from "./reservation-state.enum";
 
 export interface DeskReservation {
   id: string;

@@ -1,7 +1,8 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {ReservationState} from "../model/reservation-state.enum";
 import {MediaMatcher} from "@angular/cdk/layout";
+import {ReservationState} from "../../../../../service/model/reservation/reservation-state.enum";
+import {OfficeCompact} from "../../../../../service/model/office/office-compact.model";
 
 export interface DeskFilterDialogData {
   offices: { id: string, name: string }[],
@@ -23,7 +24,8 @@ export class DeskReservationFilterDialogComponent {
 
   touchUiQuery: MediaQueryList;
 
-  selectedOfficeId: string = this.data.selectedOfficeId
+  selectedOffice: OfficeCompact | null =
+    this.data.offices.find(office => office.id === this.data.selectedOfficeId) ?? null;
   selectedReservationStates: ReservationState[] = this.data.selectedReservationStates
   reservationStartDate: Date = this.data.reservationStartDate
   reservedByYou: boolean = this.data.reservedByYou
@@ -34,7 +36,7 @@ export class DeskReservationFilterDialogComponent {
 
   onApply() {
     this.dialogRef.close({
-      selectedOfficeId: this.selectedOfficeId,
+      selectedOffice: this.selectedOffice,
       selectedReservationStates: this.selectedReservationStates,
       reservationStartDate: this.reservationStartDate,
       reservedByYou: this.reservedByYou
@@ -42,7 +44,7 @@ export class DeskReservationFilterDialogComponent {
   }
 
   onCancel() {
-    this.dialogRef.close();
+    this.dialogRef.close(false);
   }
 
   protected readonly Object = Object;

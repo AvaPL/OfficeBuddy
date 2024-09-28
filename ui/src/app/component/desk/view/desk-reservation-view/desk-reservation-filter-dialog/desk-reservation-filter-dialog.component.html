@@ -2,9 +2,9 @@
 <mat-dialog-content>
   <mat-form-field class="office-select">
     <mat-label>Office</mat-label>
-    <mat-select [(value)]="selectedOfficeId">
-      @for (office of data.offices; track office) {
-        <mat-option [value]="office.id">{{ office.name }}</mat-option>
+    <mat-select [(value)]="selectedOffice">
+      @for (office of data.offices; track office.id) {
+        <mat-option [value]="office">{{ office.name }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
