@@ -85,7 +85,7 @@ object PostgresReservationViewRepository {
         FROM   desk
         WHERE  office_id = $uuid
       )
-      AND reserved_from >= $timestamp
+      AND $timestamp <= reserved_to
     """
 
     val statesFilter = sql""" AND state = ANY(${_reservationStatesEncoder})"""

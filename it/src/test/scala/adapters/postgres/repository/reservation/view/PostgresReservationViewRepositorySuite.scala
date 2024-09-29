@@ -9,6 +9,7 @@ import adapters.postgres.repository.reservation.PostgresReservationRepository
 import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all._
+import com.softwaremill.quicklens._
 import domain.model.account.UserAccount
 import domain.model.desk.Desk
 import domain.model.office.Address
@@ -184,7 +185,7 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
       id = anyDeskReservationId3,
       deskId = office1DeskId3,
       reservedFromDate = LocalDate.parse("2024-09-24"),
-      reservedToDate = LocalDate.parse("2024-09-27")
+      reservedToDate = LocalDate.parse("2024-09-24")
     )
     val matchingReservation1 = anyDeskReservation.copy(
       id = anyDeskReservationId1,
@@ -213,6 +214,34 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
       reservationListView.reservations.map(_.id) == List(matchingReservation1.id, matchingReservation2.id),
       !reservationListView.pagination.hasMoreResults
     )
+  }
+
+  beforeTest(
+    """GIVEN 1 reservation in the database
+      | WHEN listDeskReservations is called with reservationFrom between reservedFromDate and reservedToDate
+      | THEN return the matching reservation
+      |""".stripMargin
+  ) {
+    case (reservationRepository, reservationViewRepository) =>
+      val reservation = anyDeskReservation.copy(
+        id = anyDeskReservationId1,
+        deskId = office1DeskId1,
+        reservedFromDate = LocalDate.parse("2024-09-24"),
+        reservedToDate = LocalDate.parse("2024-09-27")
+      )
+
+      for {
+        _ <- reservationRepository.createDeskReservation(reservation)
+        reservationListView <- reservationViewRepository.listDeskReservations(
+          officeId1,
+          reservationFrom = LocalDate.parse("2024-09-25"),
+          limit = 10,
+          offset = 0
+        )
+      } yield expect.all(
+        reservationListView.reservations.map(_.id) == List(reservation.id),
+        !reservationListView.pagination.hasMoreResults
+      )
   }
 
   beforeTest(
@@ -317,11 +346,13 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
       id = anyDeskReservationId2,
       deskId = office2DeskId1 // not matching office
     )
-    val notMatchingReservation2 = matchingReservation.copy(
-      id = anyDeskReservationId3,
-      deskId = office1DeskId2,
-      reservedFromDate = matchingReservation.reservedFromDate.minusDays(3) // not matching reservationFrom
-    )
+    val notMatchingReservation2 = matchingReservation
+      .copy(
+        id = anyDeskReservationId3,
+        deskId = office1DeskId2
+      )
+      .modifyAll(_.reservedFromDate, _.reservedToDate)
+      .using(_.minusDays(7)) // not matching reservationFrom
     val notMatchingReservation3 = matchingReservation.copy(
       id = anyDeskReservationId4,
       deskId = office1DeskId3,
@@ -371,11 +402,13 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
       id = anyDeskReservationId2,
       deskId = office2DeskId1 // not matching office
     )
-    val notMatchingReservation2 = matchingReservation.copy(
-      id = anyDeskReservationId3,
-      deskId = office1DeskId2,
-      reservedFromDate = matchingReservation.reservedFromDate.minusDays(3) // not matching reservationFrom
-    )
+    val notMatchingReservation2 = matchingReservation
+      .copy(
+        id = anyDeskReservationId3,
+        deskId = office1DeskId2
+      )
+      .modifyAll(_.reservedFromDate, _.reservedToDate)
+      .using(_.minusDays(7)) // not matching reservationFrom
     val notMatchingReservation3 = matchingReservation.copy(
       id = anyDeskReservationId4,
       deskId = office1DeskId3,
