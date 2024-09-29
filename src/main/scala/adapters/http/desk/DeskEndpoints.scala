@@ -4,6 +4,7 @@ package adapters.http.desk
 import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
+import adapters.http.PaginationInput
 import adapters.http.SecuredApiEndpoint
 import adapters.http.desk.model.ApiCreateDesk
 import adapters.http.desk.model.ApiDesk
@@ -34,7 +35,8 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
   deskViewRepository: DeskViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val claimsExtractor: ClaimsExtractorService
-) extends SecuredApiEndpoint[F] {
+) extends SecuredApiEndpoint[F]
+  with PaginationInput {
 
   override protected val apiEndpointName: String = "desk"
 
@@ -204,18 +206,7 @@ class DeskEndpoints[F[_]: Clock: MonadThrow](
           .description("Assigned office ID")
           .example(officeIdExample)
       )
-      .in(
-        query[Int]("limit")
-          .description("Maximum number of results to return (pagination)")
-          .validate(Validator.min(1))
-          .example(10)
-      )
-      .in(
-        query[Int]("offset")
-          .description("Number of results to skip (pagination)")
-          .validate(Validator.min(0))
-          .example(0)
-      )
+      .in(paginationLimitAndOffset)
       .out(
         jsonBody[ApiDeskListView]
           .description("List of desks")

@@ -15,11 +15,11 @@ import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.view._
+import domain.model.view.Pagination
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
 import io.circe.parser._
 import io.circe.syntax._
-import io.github.avapl.domain.model.view.Pagination
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
@@ -311,136 +311,6 @@ object OfficeEndpointsSuite
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiOfficeListView.fromDomain(officeListView).asJson
     )
-  }
-
-  test(
-    """GIVEN view list office endpoint
-      | WHEN the endpoint is called with limit less than 1
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/office/view/list"
-          .withParams(
-            "limit" -> "0",
-            "offset" -> "0"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN view list office endpoint
-      | WHEN the endpoint is called with negative offset
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/office/view/list"
-          .withParams(
-            "limit" -> "10",
-            "offset" -> "-1"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN view list office endpoint
-      | WHEN the endpoint is called with limit that is not a number
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/office/view/list"
-          .withParams(
-            "limit" -> "notANumber",
-            "offset" -> "0"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN view list office endpoint
-      | WHEN the endpoint is called with offset that is not a number
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/office/view/list"
-          .withParams(
-            "limit" -> "10",
-            "offset" -> "notANumber"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN view list office endpoint
-      | WHEN the endpoint is called without limit
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/office/view/list"
-          .withParams(
-            "offset" -> "0"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
-  }
-
-  test(
-    """GIVEN view list office endpoint
-      | WHEN the endpoint is called without offset
-      | THEN 400 BadRequest is returned
-      |""".stripMargin
-  ) {
-    val officeViewRepository = mock[OfficeViewRepository[IO]]
-    val response = sendViewRequest(officeViewRepository) {
-      basicRequest.get(
-        uri"http://test.com/office/view/list"
-          .withParams(
-            "limit" -> "10"
-          )
-      )
-    }
-
-    for {
-      response <- response
-    } yield expect(response.code == StatusCode.BadRequest)
   }
 
   private def sendRequest(

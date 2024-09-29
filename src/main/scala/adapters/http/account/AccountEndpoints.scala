@@ -4,6 +4,7 @@ package adapters.http.account
 import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
+import adapters.http.PaginationInput
 import adapters.http.SecuredApiEndpoint
 import adapters.http.account.model.ApiRole
 import adapters.http.account.model.view.ApiAccountListView
@@ -36,7 +37,8 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
   accountViewRepository: AccountViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val claimsExtractor: ClaimsExtractorService
-) extends SecuredApiEndpoint[F] {
+) extends SecuredApiEndpoint[F]
+  with PaginationInput {
 
   override protected def apiEndpointName: String = "account"
 
@@ -311,18 +313,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
           .description("List of allowed roles")
           .example(Some(rolesExample))
       )
-      .in(
-        query[Int]("limit")
-          .description("Maximum number of results to return (pagination)")
-          .validate(Validator.min(1))
-          .example(10)
-      )
-      .in(
-        query[Int]("offset")
-          .description("Number of results to skip (pagination)")
-          .validate(Validator.min(0))
-          .example(0)
-      )
+      .in(paginationLimitAndOffset)
       .out(
         jsonBody[ApiAccountListView]
           .description("List of accounts")

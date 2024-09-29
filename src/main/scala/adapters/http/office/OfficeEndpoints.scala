@@ -4,10 +4,10 @@ package adapters.http.office
 import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
+import adapters.http.PaginationInput
 import adapters.http.SecuredApiEndpoint
 import adapters.http.office.model._
 import adapters.http.office.model.view._
-
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -17,9 +17,7 @@ import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
-
 import io.github.avapl.adapters.http.model.view.ApiPagination
-
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -31,7 +29,8 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
   officeViewRepository: OfficeViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val claimsExtractor: ClaimsExtractorService
-) extends SecuredApiEndpoint[F] {
+) extends SecuredApiEndpoint[F]
+  with PaginationInput {
 
   override protected val apiEndpointName: String = "office"
 
@@ -168,18 +167,7 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
           |""".stripMargin
       )
       .in("view" / "list")
-      .in(
-        query[Int]("limit")
-          .description("Maximum number of results to return (pagination)")
-          .validate(Validator.min(1))
-          .example(10)
-      )
-      .in(
-        query[Int]("offset")
-          .description("Number of results to skip (pagination)")
-          .validate(Validator.min(0))
-          .example(0)
-      )
+      .in(paginationLimitAndOffset)
       .out(
         jsonBody[ApiOfficeListView]
           .description("Array of offices with statistics and pagination information")

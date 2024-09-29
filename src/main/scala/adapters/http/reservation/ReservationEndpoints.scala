@@ -4,6 +4,7 @@ package adapters.http.reservation
 import adapters.auth.repository.PublicKeyRepository
 import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
+import adapters.http.PaginationInput
 import adapters.http.SecuredApiEndpoint
 import adapters.http.reservation.model.ApiCreateDeskReservation
 import adapters.http.reservation.model.ApiDeskReservation
@@ -40,7 +41,8 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
   reservationViewRepository: ReservationViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val claimsExtractor: ClaimsExtractorService
-) extends SecuredApiEndpoint[F] {
+) extends SecuredApiEndpoint[F]
+  with PaginationInput {
 
   override protected val apiEndpointName: String = "reservation"
 
@@ -293,18 +295,7 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
           .description("Reservation's assigned user ID")
           .example(Some(userIdExample))
       )
-      .in( // TODO: Add limit and offset as a common input with separate tests
-        query[Int]("limit")
-          .description("Maximum number of results to return (pagination)")
-          .validate(Validator.min(1))
-          .example(10)
-      )
-      .in(
-        query[Int]("offset")
-          .description("Number of results to skip (pagination)")
-          .validate(Validator.min(0))
-          .example(0)
-      )
+      .in(paginationLimitAndOffset)
       .out(
         jsonBody[ApiDeskReservationListView]
           .description("List of desk reservations")
