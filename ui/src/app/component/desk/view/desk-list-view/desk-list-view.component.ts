@@ -19,6 +19,7 @@ import {Pagination} from "../../../../service/model/pagination/pagination.model"
 })
 export class DeskListViewComponent implements OnInit {
 
+  // TODO: Office is not retained when switching between views
   @Input() selectedOfficeId!: string | null
   @Output() selectedOfficeIdChange = new EventEmitter<string>();
   @Output() changeToReservationsView = new EventEmitter();

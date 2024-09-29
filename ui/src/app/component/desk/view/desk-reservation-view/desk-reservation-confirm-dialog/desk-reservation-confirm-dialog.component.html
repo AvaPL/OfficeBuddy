@@ -1,11 +1,11 @@
 <h2 mat-dialog-title>Are you sure?</h2>
 <mat-dialog-content>
   Desk: <span class="mat-body-strong">{{ data.deskName }}</span><br>
-  <ng-container *ngIf="data.userName">
-    User: <span class="mat-body-strong">{{ data.userName }}</span><br>
+  <ng-container *ngIf="data.userFirstName && data.userLastName">
+    User: <span class="mat-body-strong">{{ data.userFirstName }} {{ data.userLastName }}</span><br>
   </ng-container>
-  Starting from: <span class="mat-body-strong">{{ data.startDate }}</span><br>
-  Ending at: <span class="mat-body-strong">{{ data.endDate }}</span>
+  Starting from: <span class="mat-body-strong">{{ data.reservedFromDate }}</span><br>
+  Ending at: <span class="mat-body-strong">{{ data.reservedToDate }}</span>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Back</button>

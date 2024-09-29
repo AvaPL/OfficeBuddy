@@ -177,17 +177,21 @@ export class DeskReservationViewComponent implements OnInit {
         isWarn: false,
         buttonText: "Confirm",
         deskName: desk.name,
-        userName: `${user.firstName} ${user.lastName}`,
-        startDate: reservedFromDate,
-        endDate: reservedToDate
+        userFirstName: user.firstName,
+        userLastName: user.lastName,
+        reservedFromDate,
+        reservedToDate,
+        snackbarSuccessText: "Desk reservation confirmed",
+        snackbarErrorText: "Unexpected error occurred when confirming desk reservation",
+        sendRequest: async () => {
+          return this.reservationService.confirmDeskReservation(reservationId)
+        }
       }
     });
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Confirmed reservation ${reservationId}`);
-      } else {
-        console.log(`Cancelled confirming reservation ${reservationId}`);
+        this.fetchReservations(this.pagination.limit, 0)
       }
     });
   }
@@ -198,17 +202,21 @@ export class DeskReservationViewComponent implements OnInit {
         isWarn: true,
         buttonText: "Reject",
         deskName: desk.name,
-        userName: `${user.firstName} ${user.lastName}`,
-        startDate: reservedFromDate,
-        endDate: reservedToDate
+        userFirstName: user.firstName,
+        userLastName: user.lastName,
+        reservedFromDate,
+        reservedToDate,
+        snackbarSuccessText: "Desk reservation rejected",
+        snackbarErrorText: "Unexpected error occurred when rejecting desk reservation",
+        sendRequest: async () => {
+          return this.reservationService.rejectDeskReservation(reservationId)
+        }
       }
     });
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Rejected reservation ${reservationId}`);
-      } else {
-        console.log(`Cancelled rejecting reservation ${reservationId}`);
+        this.fetchReservations(this.pagination.limit, 0)
       }
     });
   }
@@ -219,16 +227,19 @@ export class DeskReservationViewComponent implements OnInit {
         isWarn: true,
         buttonText: "Cancel",
         deskName: desk.name,
-        startDate: reservedFromDate,
-        endDate: reservedToDate
+        reservedFromDate,
+        reservedToDate,
+        snackbarSuccessText: "Desk reservation cancelled",
+        snackbarErrorText: "Unexpected error occurred when cancelling desk reservation",
+        sendRequest: async () => {
+          return this.reservationService.cancelDeskReservation(reservationId)
+        }
       }
     });
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {
-        console.log(`Cancelled reservation ${reservationId}`);
-      } else {
-        console.log(`Cancelled cancelling reservation ${reservationId}`);
+        this.fetchReservations(this.pagination.limit, 0)
       }
     });
   }

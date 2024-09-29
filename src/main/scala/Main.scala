@@ -56,6 +56,7 @@ object Main extends IOApp.Simple {
       _ <- runDatabaseMigrations(config.postgres)
       session = createPostgresSessionPool(config.postgres)
       keycloak = createKeycloakClient(config.keycloak)
+      // TODO: Add an option to load initial demo data
       endpoints <- session.use(createEndpoints(_, keycloak, config.keycloak.appRealmName))
       _ <- runHttpServer(config.http, endpoints)
     } yield ()

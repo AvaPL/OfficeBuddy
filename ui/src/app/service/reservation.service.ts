@@ -9,8 +9,8 @@ import {ReservationState} from "./model/reservation/reservation-state.enum";
 import {DeskReservationListView} from "./model/reservation/reservation-view.model";
 
 @Injectable({
-    providedIn: 'root'
-  })
+  providedIn: 'root'
+})
 export class ReservationService {
 
   constructor(private http: HttpClient, private keycloakService: KeycloakService) {
@@ -47,5 +47,36 @@ export class ReservationService {
     });
 
     return firstValueFrom(this.http.post<DeskReservation>(`${this.baseUrl}/desk`, reservation, {headers}));
+  }
+
+  async confirmDeskReservation(reservationId: string): Promise<void> {
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${reservationId}/confirm`, null, {headers}));
+  }
+
+  async rejectDeskReservation(reservationId: string): Promise<void> {
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${reservationId}/reject`, null, {headers}));
+  }
+
+  async cancelDeskReservation(reservationId: string): Promise<void> {
+    // TODO: Introduce common code for getting the token and specifying the headers
+    const token = await this.keycloakService.getToken();
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${reservationId}/cancel`, null, {headers}));
   }
 }
