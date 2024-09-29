@@ -14,13 +14,19 @@ trait PostgresFixture {
   override val maxParallelism: Int = 1
   override type Res = Resource[IO, Session[IO]]
 
-  override def sharedResource: Resource[IO, Res] = {
+  override def sharedResource: Resource[IO, Res] =
+    PostgresFixture.resource
+}
+
+object PostgresFixture {
+
+  lazy val resource: Resource[IO, Resource[IO, Session[IO]]] = {
     val host = "localhost"
     val port = 2345
     val user = "office_buddy"
     val password = "office_buddy"
     val database = "office_buddy"
-    val session = Session.pooled(
+    val session = Session.pooled[IO](
       host = host,
       port = port,
       user = user,

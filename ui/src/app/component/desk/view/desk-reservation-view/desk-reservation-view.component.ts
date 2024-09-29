@@ -163,7 +163,6 @@ export class DeskReservationViewComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log(`The dialog was closed with result:`, result);
       if (result) {
         const {selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou} = result
         if (selectedOffice)
