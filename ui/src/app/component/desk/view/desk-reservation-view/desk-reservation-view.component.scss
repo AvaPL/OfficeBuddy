@@ -96,6 +96,8 @@ mat-card-header {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
 
   div {
     display: block;
@@ -115,8 +117,9 @@ mat-card-header {
 }
 
 .buttons-row {
-  display: flex;
-  flex-wrap: nowrap;
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 .reservation-button {
