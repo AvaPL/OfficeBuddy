@@ -19,7 +19,6 @@ import {Pagination} from "../../../../service/model/pagination/pagination.model"
 })
 export class DeskListViewComponent implements OnInit {
 
-  // TODO: Office is not retained when switching between views
   @Input() selectedOfficeId!: string | null
   @Output() selectedOfficeIdChange = new EventEmitter<string>();
   @Output() changeToReservationsView = new EventEmitter();
@@ -51,7 +50,9 @@ export class DeskListViewComponent implements OnInit {
 
   async fetchOffices() {
     this.offices = await this.officeService.getCompactOffices();
-    this.selectedOffice = this.offices[0] ?? null // TODO: Prefer user's assigned office instead
+    this.selectedOffice = this.offices.find(
+      office => office.id === this.selectedOfficeId
+    ) ?? this.offices[0] ?? null // TODO: Prefer user's assigned office instead as fallback
   }
 
   async fetchDesks(limit: number, offset: number) {

@@ -32,7 +32,6 @@ class AccountService[F[_]: FlatMap: FUUID](
     accountRepository.updateManagedOffices(accountId, officeIds)
 
   def updateRole(accountId: UUID, role: Role): F[Account] =
-    // TODO: Remove managed offices if the role is a user
     accountRepository.updateRole(accountId, role)
 
   def archive(accountId: UUID): F[Unit] =

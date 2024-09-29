@@ -70,7 +70,9 @@ export class DeskReservationViewComponent implements OnInit {
 
   async fetchOffices() {
     this.offices = await this.officeService.getCompactOffices();
-    this.selectedOffice = this.offices[0] ?? null // TODO: Prefer user's assigned office instead
+    this.selectedOffice = this.offices.find(
+      office => office.id === this.selectedOfficeId
+    ) ?? this.offices[0] ?? null // TODO: Prefer user's assigned office instead as fallback
   }
 
   async fetchReservations(limit: number, offset: number) {
@@ -113,8 +115,9 @@ export class DeskReservationViewComponent implements OnInit {
     this.fetchReservations(this.pagination.limit, event.pageIndex * this.pagination.limit)
   }
 
-  handleFilter(selectedOfficeId: OfficeCompact, selectedReservationStates: ReservationState[], reservationStartDate: Date, reservedByYou: boolean) {
-    this.selectedOffice = selectedOfficeId
+  handleFilter(selectedOffice: OfficeCompact, selectedReservationStates: ReservationState[], reservationStartDate: Date, reservedByYou: boolean) {
+    this.selectedOffice = selectedOffice
+    this.selectedOfficeIdChange.emit(selectedOffice.id)
     this.selectedReservationStates = selectedReservationStates
     this.reservationStartDate = reservationStartDate
     this.reservedByYou = reservedByYou
