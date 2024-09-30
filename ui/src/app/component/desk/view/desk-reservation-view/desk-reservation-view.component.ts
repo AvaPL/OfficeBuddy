@@ -18,7 +18,7 @@ import {DeskReservationView, DeskView, UserView} from "../../../../service/model
 import {Pagination} from "../../../../service/model/pagination/pagination.model";
 import {ReservationService} from "../../../../service/reservation.service";
 import {LocalDate} from "../../../../service/model/date/local-date.model";
-import {KeycloakService} from "keycloak-angular";
+import {AuthService} from "../../../../service/auth.service";
 
 type GroupedDeskReservations = { [key: string]: DeskReservationView[] }
 
@@ -57,7 +57,7 @@ export class DeskReservationViewComponent implements OnInit {
   constructor(
     private officeService: OfficeService,
     private reservationService: ReservationService,
-    private keycloakService: KeycloakService,
+    private authService: AuthService,
     media: MediaMatcher,
   ) {
     this.notesTooltipQuery = media.matchMedia('(max-width: 374px)');
@@ -77,7 +77,7 @@ export class DeskReservationViewComponent implements OnInit {
 
   async fetchReservations(limit: number, offset: number) {
     if (this.selectedOffice) {
-      const userId = this.reservedByYou ? await this.getAccountId() : null
+      const userId = this.reservedByYou ? await this.authService.getAccountId() : null
       let response = await this.reservationService.getDeskReservationListView(
         this.selectedOffice.id,
         new LocalDate(this.reservationStartDate),
@@ -91,13 +91,6 @@ export class DeskReservationViewComponent implements OnInit {
     } else {
       this.groupedReservations = {}
     }
-  }
-
-  // TODO: Extract as a common function
-  async getAccountId() {
-    const userProfile = await this.keycloakService.loadUserProfile();
-    const attributes = userProfile.attributes!;
-    return (attributes['account_id'] as string[])[0]
   }
 
   groupReservations(reservations: DeskReservationView[]): GroupedDeskReservations {

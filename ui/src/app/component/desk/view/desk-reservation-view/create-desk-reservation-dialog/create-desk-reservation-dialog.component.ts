@@ -8,7 +8,7 @@ import {MatSnackBar} from "@angular/material/snack-bar";
 import {LocalDate} from "../../../../../service/model/date/local-date.model";
 import {CreateDeskReservation} from "../../../../../service/model/reservation/create-desk-reservation.model";
 import {ReservationService} from "../../../../../service/reservation.service";
-import {KeycloakService} from "keycloak-angular";
+import {AuthService} from "../../../../../service/auth.service";
 
 export interface CreateDeskReservationDialogData {
   officeId: string
@@ -34,7 +34,7 @@ export class CreateDeskReservationDialogComponent {
   })
   readonly deskService = inject(DeskService);
   readonly reservationService = inject(ReservationService);
-  readonly keycloakService = inject(KeycloakService);
+  readonly authService = inject(AuthService);
   readonly snackBar = inject(MatSnackBar);
 
   touchUiQuery: MediaQueryList;
@@ -71,7 +71,7 @@ export class CreateDeskReservationDialogComponent {
   }
 
   async formToCreateDeskReservation(): Promise<CreateDeskReservation> {
-    const userId = await this.getAccountId();
+    const userId = await this.authService.getAccountId();
     return {
       userId: userId,
       reservedFrom: new LocalDate(this.form.value.reservationFrom!).toString(),
@@ -79,13 +79,6 @@ export class CreateDeskReservationDialogComponent {
       notes: this.form.value.comment!,
       deskId: this.form.value.deskId![0],
     }
-  }
-
-  // TODO: Extract as a common function
-  async getAccountId() {
-    const userProfile = await this.keycloakService.loadUserProfile();
-    const attributes = userProfile.attributes!;
-    return (attributes['account_id'] as string[])[0]
   }
 
   onCancel() {

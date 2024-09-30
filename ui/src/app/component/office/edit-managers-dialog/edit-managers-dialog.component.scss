@@ -13,7 +13,7 @@ mat-dialog-content {
     }
   }
 
-  width: min(450px, 80vw);
+  width: min(450px, 80vw); // TODO: User name might be wider, which causes overflow
 }
 
 .mat-mdc-dialog-content {
