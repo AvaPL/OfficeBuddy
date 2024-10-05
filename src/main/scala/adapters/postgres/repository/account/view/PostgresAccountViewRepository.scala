@@ -66,10 +66,14 @@ object PostgresAccountViewRepository {
       SELECT   account.id, first_name, last_name, email, is_archived, type, assigned_office, managed_offices
       FROM     account
       LEFT JOIN (
-        SELECT account.id, ARRAY_AGG((ao.id, ao.name)) AS assigned_office, ARRAY_AGG((mo.id, mo.name)) AS managed_offices
+        SELECT account.id,
+               ARRAY_AGG((ao.id, ao.name)) AS assigned_office,
+               ARRAY_AGG(mo.id) as managed_office_ids,
+               ARRAY_AGG((mo.id, mo.name)) AS managed_offices
         FROM   account
+        LEFT JOIN account_managed_office amo ON account.id = amo.account_id
         LEFT JOIN office ao ON assigned_office_id = ao.id
-        LEFT JOIN office mo ON mo.id = ANY(managed_office_ids)
+        LEFT JOIN office mo ON mo.id = amo.office_id
         GROUP BY account.id
       ) AS office ON account.id = office.id
       WHERE is_archived = 'no'
