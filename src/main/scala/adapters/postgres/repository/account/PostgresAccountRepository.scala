@@ -56,16 +56,6 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
     }
   }
 
-  private def recoverOnManagedOfficeNotFound[T](e: PostgresErrorException, managedOfficeIds: List[UUID]): F[T] = {
-    extractOfficeId(e) match {
-      case Some(officeId) => OfficeNotFound(officeId)
-      case None =>
-        new RuntimeException(
-          s"One of the offices was not found, but couldn't determine which one [ids: ${managedOfficeIds.mkString(", ")}]"
-        )
-    }
-  }.raiseError
-
   private def managedOfficeIdsFromDomain(account: Account) =
     account match {
       case superAdmin: SuperAdminAccount       => superAdmin.managedOfficeIds
@@ -78,6 +68,16 @@ class PostgresAccountRepository[F[_]: MonadCancelThrow](
       INSERT INTO account
       VALUES      ($accountEncoder)
     """.command
+
+  private def recoverOnManagedOfficeNotFound[T](e: PostgresErrorException, managedOfficeIds: List[UUID]): F[T] = {
+    extractOfficeId(e) match {
+      case Some(officeId) => OfficeNotFound(officeId)
+      case None =>
+        new RuntimeException(
+          s"One of the offices was not found, but couldn't determine which one [ids: ${managedOfficeIds.mkString(", ")}]"
+        )
+    }
+  }.raiseError
 
   /**
    * Extracts the officeId from the exception detail.

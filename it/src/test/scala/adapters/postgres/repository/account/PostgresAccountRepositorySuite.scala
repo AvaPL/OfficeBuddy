@@ -257,7 +257,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- accountRepository.create(account)
-      _ <- accountRepository.updateManagedOffices(account.id, Nil)
+      _ <- accountRepository.updateManagedOffices(account.id, managedOfficeIds = Nil)
       readAccount <- accountRepository.read(account.id)
     } yield expect(readAccount.asInstanceOf[OfficeManagerAccount].managedOfficeIds.isEmpty)
   }
@@ -270,7 +270,7 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
     val accountId = UUID.fromString("d5ba9cf1-6dd6-47ad-b6f1-9956f71b30ae")
 
     for {
-      result <- accountRepository.updateManagedOffices(accountId, List(officeId1)).attempt
+      result <- accountRepository.updateManagedOffices(accountId, managedOfficeIds = List(officeId1)).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val accountNotFound = AccountNotFound(accountId)

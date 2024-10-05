@@ -11,12 +11,17 @@ import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
+
+import io.github.avapl.adapters.postgres.repository.SessionOps
+import io.github.avapl.domain.model.error.account.AccountNotFound
+
 import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
 import skunk.codec.all._
 import skunk.data.Arr
 import skunk.data.Completion
+import skunk.exception.PostgresErrorException
 import skunk.implicits._
 
 class PostgresOfficeRepository[F[_]: MonadCancelThrow](
@@ -111,6 +116,69 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
       appliedSets.foldSmash(sql"UPDATE office SET ".apply(Void), void", ", sql" WHERE id = $uuid".apply(officeId))
     }
   }
+
+  // TODO: Expose in the API
+  def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[List[UUID]] = {
+    val accountIdToOfficeId = officeManagerIds.map(_ -> officeId)
+    session.use { session =>
+      for {
+        delete <- session.prepare(deleteManagedOfficesSql)
+        insert <- session.prepareIf(accountIdToOfficeId.nonEmpty)(insertOfficeManagersSql(accountIdToOfficeId))
+        _ <- session.transaction
+          .use { _ =>
+            delete.execute(officeId) *>
+              insert.execute(accountIdToOfficeId)
+          }
+          .recoverWith {
+            case SqlState.ForeignKeyViolation(e)
+              if e.constraintName.contains("account_managed_office_office_id_fkey") =>
+              OfficeNotFound(officeId).raiseError
+            case SqlState.ForeignKeyViolation(e)
+              if e.constraintName.contains("account_managed_office_account_id_fkey") =>
+              recoverOnAccountNotFound(e, officeManagerIds)
+          }
+      } yield officeManagerIds
+    }
+  }
+
+  private lazy val deleteManagedOfficesSql: Command[UUID] =
+    sql"""
+      DELETE FROM account_managed_office
+      WHERE office_id = $uuid
+    """.command
+
+  private def insertOfficeManagersSql(accountIdToOfficeId: List[(UUID, UUID)]): Command[accountIdToOfficeId.type] = {
+    val encoder = (uuid ~ uuid).values.list(accountIdToOfficeId)
+    sql"""
+      INSERT INTO account_managed_office
+      VALUES      $encoder
+    """.command
+  }
+
+  private def recoverOnAccountNotFound[T](e: PostgresErrorException, accountIds: List[UUID]): F[T] = {
+    extractAccountId(e) match {
+      case Some(accountId) => AccountNotFound(accountId)
+      case None =>
+        new RuntimeException(
+          s"One of the accounts was not found, but couldn't determine which one [ids: ${accountIds.mkString(", ")}]"
+        )
+    }
+  }.raiseError
+
+  /**
+   * Extracts the accountId from the exception detail.
+   */
+  private def extractAccountId(exception: PostgresErrorException) =
+    exception.detail match {
+      case Some(accountIdViolationDetailRegex(accountIdString)) =>
+        Either
+          .catchOnly[IllegalArgumentException](UUID.fromString(accountIdString))
+          .toOption
+      case _ => None
+    }
+
+  private lazy val accountIdViolationDetailRegex =
+    """Key \(account_id\)=\((?<accountIdValue>.+?)\) is not present in table "account"\.""".r
 
   override def archive(officeId: UUID): F[Unit] =
     session.use { session =>
