@@ -30,7 +30,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """
-      |GIVEN three offices in the database
+      |GIVEN 3 offices in the database
       | WHEN listOffices is called with limit 2 and offsets 0 and 2
       | THEN return two pages of results
       |""".stripMargin
@@ -55,7 +55,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """
-      |GIVEN one office in the database
+      |GIVEN 1 office in the database
       | WHEN listOffices is called with limit 1 and offset 1
       | THEN return an empty list of results
       |""".stripMargin
@@ -73,7 +73,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
 
   beforeTest(
     """
-      |GIVEN one archived office in the database
+      |GIVEN 1 archived office in the database
       | WHEN listOffices is called with limit 1 and offset 0
       | THEN return an empty list of results
       |""".stripMargin

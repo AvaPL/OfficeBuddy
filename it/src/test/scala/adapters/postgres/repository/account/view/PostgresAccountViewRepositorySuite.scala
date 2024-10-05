@@ -446,9 +446,9 @@ object PostgresAccountViewRepositorySuite extends IOSuite with PostgresFixture {
   )
 
   private lazy val officeId1 = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227298")
-  private lazy val officeName1 = "office1"
+  private lazy val officeName1 = "office 1"
   private lazy val officeId2 = UUID.fromString("c1e29bfd-5a8a-468f-ba27-4673c42fec04")
-  private lazy val officeName2 = "office2"
+  private lazy val officeName2 = "office 2"
 
   private lazy val anyUserAccount = UserAccount(
     id = anyAccountId1,
