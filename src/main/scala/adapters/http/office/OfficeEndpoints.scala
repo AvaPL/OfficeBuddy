@@ -150,9 +150,9 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
           .example(officeManagerIdsExample)
       )
       .out(
-        jsonBody[List[UUID]] // TODO: Include office managers in the Office model
-          .description("Office manager IDs")
-          .example(officeManagerIdsExample)
+        jsonBody[ApiOffice]
+          .description("Updated office")
+          .example(apiOfficeExample)
       )
       .errorOutVariantPrepend(
         oneOfVariant(
@@ -165,6 +165,7 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
   private def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]) =
     officeService
       .updateOfficeManagers(officeId, officeManagerIds)
+      .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
         case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
@@ -221,7 +222,8 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
     name = "Wroclaw",
     notes = List("Everyone's favorite", "The funniest one"),
     address = apiAddressExample,
-    isArchived = false
+    isArchived = false,
+    officeManagerIds = officeManagerIdsExample
   )
 
   private lazy val apiAddressExample = ApiAddress(
@@ -230,6 +232,11 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
     postalCode = "53-332",
     city = "Wroclaw",
     country = "Poland"
+  )
+
+  private lazy val officeManagerIdsExample = List(
+    UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297"),
+    UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227296")
   )
 
   private lazy val apiCreateOfficeExample = ApiCreateOffice(
@@ -250,11 +257,6 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
     postalCode = Some("53-332"),
     city = Some("Wroclaw"),
     country = Some("Poland")
-  )
-
-  private lazy val officeManagerIdsExample = List(
-    UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297"),
-    UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227296")
   )
 
   private lazy val apiOfficeListViewExample =

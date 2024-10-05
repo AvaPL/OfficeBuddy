@@ -21,7 +21,9 @@ case class ApiOffice(
   //
   address: ApiAddress,
   //
-  isArchived: Boolean
+  isArchived: Boolean,
+  //
+  officeManagerIds: List[UUID]
 ) {
 
   lazy val toDomain: Office =

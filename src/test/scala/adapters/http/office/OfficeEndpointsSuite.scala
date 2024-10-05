@@ -242,12 +242,13 @@ object OfficeEndpointsSuite
   test(
     """GIVEN update office managers endpoint
       | WHEN the office managers are successfully assigned by a super admin to an office
-      | THEN 200 OK and the office managers ids are returned
+      | THEN 200 OK and the updated office is returned
       |""".stripMargin
   ) {
     val officeId = anyOfficeId1
     val officeManagerIds = List(anyOfficeManagerId)
-    val officeService = whenF(mock[OfficeService[IO]].updateOfficeManagers(any, any)) thenReturn officeManagerIds
+    val office = anyOffice.copy(id = officeId, officeManagerIds = officeManagerIds)
+    val officeService = whenF(mock[OfficeService[IO]].updateOfficeManagers(any, any)) thenReturn office
 
     val response = sendRequest(officeService, role = SuperAdmin) {
       basicRequest
@@ -259,7 +260,7 @@ object OfficeEndpointsSuite
       response <- response
     } yield expect.all(
       response.code == StatusCode.Ok,
-      bodyJson(response) == officeManagerIds.asJson
+      bodyJson(response) == ApiOffice.fromDomain(office).asJson
     )
   }
 

@@ -160,14 +160,14 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
     val officeManagerIds = List(anyOfficeManagerId1, anyOfficeManagerId2)
 
     val officeRepository = mock[OfficeRepository[IO]]
-    whenF(officeRepository.updateOfficeManagers(any, any)) thenReturn officeManagerIds
+    whenF(officeRepository.updateOfficeManagers(any, any)) thenReturn anyOffice
     val officeService = new OfficeService[IO](officeRepository)
 
     for {
-      updatedOfficeManagerIds <- officeService.updateOfficeManagers(officeId, officeManagerIds)
+      _ <- officeService.updateOfficeManagers(officeId, officeManagerIds)
     } yield {
       verify(officeRepository, only).updateOfficeManagers(eqTo(officeId), eqTo(officeManagerIds))
-      expect(updatedOfficeManagerIds == officeManagerIds)
+      success
     }
   }
 

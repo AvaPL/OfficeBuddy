@@ -27,7 +27,7 @@ class OfficeService[F[_]: FlatMap: FUUID](
   def updateOffice(officeId: UUID, updateOffice: UpdateOffice): F[Office] =
     officeRepository.update(officeId, updateOffice)
 
-  def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[List[UUID]] =
+  def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[Office] =
     officeRepository.updateOfficeManagers(officeId, officeManagerIds)
 
   def archiveOffice(officeId: UUID): F[Unit] =

@@ -11,7 +11,9 @@ case class Office(
   //
   address: Address,
   //
-  isArchived: Boolean = false
+  isArchived: Boolean = false,
+  //
+  officeManagerIds: List[UUID] = Nil
 )
 
 case class CreateOffice(
@@ -19,6 +21,7 @@ case class CreateOffice(
   notes: List[String],
   //
   address: Address
+  // TODO: Add an option to provide office managers
 ) {
 
   def toOffice(officeId: UUID): Office =
@@ -26,6 +29,7 @@ case class CreateOffice(
       .into[Office]
       .withFieldConst(_.id, officeId)
       .withFieldConst(_.isArchived, false)
+      .withFieldConst(_.officeManagerIds, Nil)
       .transform
 }
 

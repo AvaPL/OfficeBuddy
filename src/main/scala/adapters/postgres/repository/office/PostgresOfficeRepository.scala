@@ -1,20 +1,19 @@
 package io.github.avapl
 package adapters.postgres.repository.office
 
+import adapters.postgres.repository._uuid
+import adapters.postgres.repository.SessionOps
 import cats.data.OptionT
 import cats.effect.Resource
 import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
+import domain.model.error.account.AccountNotFound
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.office.UpdateOffice
 import domain.repository.office.OfficeRepository
-
-import io.github.avapl.adapters.postgres.repository.SessionOps
-import io.github.avapl.domain.model.error.account.AccountNotFound
-
 import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
@@ -59,10 +58,18 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
 
   private lazy val readSql: Query[UUID, Office] =
     sql"""
-      SELECT *
+      SELECT id, name, notes, address_line_1, address_line_2, postal_code, city, country, is_archived, office_manager_ids
       FROM   office
-      WHERE  id = $uuid
-    """.query(officeDecoder)
+      LEFT JOIN (
+        SELECT office_id, ARRAY_AGG(account_id) AS office_manager_ids
+        FROM   account_managed_office
+        WHERE  office_id = $uuid
+        GROUP BY office_id
+      ) AS account ON office.id = account.office_id
+      WHERE id = $uuid
+    """
+      .query(officeDecoder)
+      .contramap(id => id *: id *: EmptyTuple)
 
   override def update(officeId: UUID, updateOffice: UpdateOffice): F[Office] =
     for {
@@ -117,7 +124,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
     }
   }
 
-  def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[List[UUID]] = {
+  def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[Office] = {
     val accountIdToOfficeId = officeManagerIds.map(_ -> officeId)
     session.use { session =>
       for {
@@ -130,13 +137,14 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
           }
           .recoverWith {
             case SqlState.ForeignKeyViolation(e)
-              if e.constraintName.contains("account_managed_office_office_id_fkey") =>
+                if e.constraintName.contains("account_managed_office_office_id_fkey") =>
               OfficeNotFound(officeId).raiseError
             case SqlState.ForeignKeyViolation(e)
-              if e.constraintName.contains("account_managed_office_account_id_fkey") =>
+                if e.constraintName.contains("account_managed_office_account_id_fkey") =>
               recoverOnAccountNotFound(e, officeManagerIds)
           }
-      } yield officeManagerIds
+        office <- read(officeId)
+      } yield office
     }
   }
 
@@ -147,6 +155,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
     """.command
 
   private def insertOfficeManagersSql(accountIdToOfficeId: List[(UUID, UUID)]): Command[accountIdToOfficeId.type] = {
+    println(s"Inserting office managers: ${accountIdToOfficeId.mkString(", ")}")
     val encoder = (uuid ~ uuid).values.list(accountIdToOfficeId)
     sql"""
       INSERT INTO account_managed_office
@@ -234,10 +243,11 @@ object PostgresOfficeRepository {
         varchar *: // postal_code
         varchar *: // city
         varchar *: // country
-        bool // is_archived
+        bool *: // is_archived
+        _uuid.opt // office_manager_ids
     ).map {
-      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: isArchived *: EmptyTuple =>
+      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: isArchived *: officeManagerIds *: EmptyTuple =>
         val address = Address(addressLine1, addressLine2, postalCode, city, country)
-        Office(id, name, notes.flattenTo(List), address, isArchived)
+        Office(id, name, notes.flattenTo(List), address, isArchived, officeManagerIds.getOrElse(Nil))
     }
 }
