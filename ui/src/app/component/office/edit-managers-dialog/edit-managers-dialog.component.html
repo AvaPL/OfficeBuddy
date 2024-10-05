@@ -5,7 +5,7 @@
     <mat-chip-grid #chipGrid>
       @for (manager of assignedManagers(); track $index) {
         <mat-chip-row (removed)="remove(manager)">
-          {{ displayManager(manager) }}
+          {{ displayManager(manager, false) }}
           <button matChipRemove>
             <mat-icon>cancel</mat-icon>
           </button>

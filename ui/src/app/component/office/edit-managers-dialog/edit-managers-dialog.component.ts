@@ -52,8 +52,13 @@ export class EditManagersDialogComponent implements OnInit {
     }
   }
 
-  displayManager(account: AccountCompact | undefined): string {
-    return account ? `${account.firstName} ${account.lastName} (${account.email})` : '';
+  displayManager(account: AccountCompact | undefined, showEmail: Boolean = true): string {
+    if (!account)
+      return ''
+    if (showEmail)
+      return `${account.firstName} ${account.lastName} (${account.email})`
+    else
+      return `${account.firstName} ${account.lastName}`
   }
 
   private addUnique(accountId: string) {
