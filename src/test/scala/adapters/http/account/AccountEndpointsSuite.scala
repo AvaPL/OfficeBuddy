@@ -518,6 +518,27 @@ object AccountEndpointsSuite
 
   test(
     """GIVEN update managed offices endpoint
+      | WHEN assigning the offices fails with OfficeNotFound error
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId
+    val accountService =
+      whenF(mock[AccountService[IO]].updateManagedOffices(any, any)) thenFailWith OfficeNotFound(officeId)
+
+    val response = sendRequest(accountService) {
+      basicRequest
+        .put(uri"http://test.com/account/$anyAccountId1/managed-office-ids")
+        .body(List(officeId))
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN update managed offices endpoint
       | WHEN assigning the offices fails with AccountNotFound error
       | THEN 404 NotFound is returned
       |""".stripMargin

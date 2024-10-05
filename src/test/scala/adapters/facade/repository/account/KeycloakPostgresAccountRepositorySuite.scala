@@ -17,6 +17,7 @@ import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
 import weaver.SimpleIOSuite
 
+// TODO: Fix integration tests
 object KeycloakPostgresAccountRepositorySuite
   extends SimpleIOSuite
   with MockitoSugar

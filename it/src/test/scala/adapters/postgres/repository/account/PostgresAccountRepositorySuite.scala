@@ -98,6 +98,25 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
+    """GIVEN an account with non-existent managed office ID
+      | WHEN create is called
+      | THEN the call should fail with OfficeNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val nonExistentOfficeId = UUID.fromString("5980c269-9c59-41f0-aef6-f09834493c41")
+    val managedOfficeIds = List(officeId1, nonExistentOfficeId)
+    val account = anyOfficeManagerAccount.copy(managedOfficeIds = managedOfficeIds)
+
+    for {
+      result <- accountRepository.create(account).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val officeNotFound = OfficeNotFound(nonExistentOfficeId)
+        expect(throwable == officeNotFound)
+    }
+  }
+
+  beforeTest(
     """GIVEN an existing account and a new account with the same email
       | WHEN create is called
       | THEN the call should fail with DuplicateAccountEmail
@@ -197,6 +216,89 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
+    """GIVEN an account without managed offices
+      | WHEN updateManagedOffices is called with a list of office IDs
+      | THEN the managed offices should be assigned to the account
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyOfficeManagerAccount.copy(managedOfficeIds = Nil)
+    val newManagedOfficeIds = List(officeId1, officeId2)
+
+    for {
+      _ <- accountRepository.create(account)
+      _ <- accountRepository.updateManagedOffices(account.id, newManagedOfficeIds)
+      readAccount <- accountRepository.read(account.id)
+    } yield expect(readAccount.asInstanceOf[OfficeManagerAccount].managedOfficeIds == newManagedOfficeIds)
+  }
+
+  beforeTest(
+    """GIVEN an account with managed offices
+      | WHEN updateManagedOffices is called with a different list of office IDs
+      | THEN the managed offices should be updated
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyOfficeManagerAccount.copy(managedOfficeIds = List(officeId1))
+    val newManagedOfficeIds = List(officeId2)
+
+    for {
+      _ <- accountRepository.create(account)
+      _ <- accountRepository.updateManagedOffices(account.id, newManagedOfficeIds)
+      readAccount <- accountRepository.read(account.id)
+    } yield expect(readAccount.asInstanceOf[OfficeManagerAccount].managedOfficeIds == newManagedOfficeIds)
+  }
+
+  beforeTest(
+    """GIVEN an account with managed offices
+      | WHEN updateManagedOffices is called with an empty list
+      | THEN the managed offices should be removed
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyOfficeManagerAccount.copy(managedOfficeIds = List(officeId1))
+
+    for {
+      _ <- accountRepository.create(account)
+      _ <- accountRepository.updateManagedOffices(account.id, Nil)
+      readAccount <- accountRepository.read(account.id)
+    } yield expect(readAccount.asInstanceOf[OfficeManagerAccount].managedOfficeIds.isEmpty)
+  }
+
+  beforeTest(
+    """WHEN updateManagedOffices is called with non-existent account ID
+      |THEN the call should fail with AccountNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val accountId = UUID.fromString("d5ba9cf1-6dd6-47ad-b6f1-9956f71b30ae")
+
+    for {
+      result <- accountRepository.updateManagedOffices(accountId, List(officeId1)).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val accountNotFound = AccountNotFound(accountId)
+        expect(throwable == accountNotFound)
+    }
+  }
+
+  beforeTest(
+    """GIVEN an account
+      | WHEN updateManagedOffices is called with a non-existent office ID
+      | THEN the call should fail with OfficeNotFound
+      |""".stripMargin
+  ) { accountRepository =>
+    val account = anyOfficeManagerAccount
+    val nonExistentOfficeId = UUID.fromString("83df3731-3f6d-4415-9b70-9b079fd72d60")
+    val newManagedOfficeIds = List(officeId1, nonExistentOfficeId)
+
+    for {
+      _ <- accountRepository.create(account)
+      result <- accountRepository.updateManagedOffices(account.id, newManagedOfficeIds).attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val officeNotFound = OfficeNotFound(nonExistentOfficeId)
+        expect(throwable == officeNotFound)
+    }
+  }
+
+  beforeTest(
     """GIVEN a user account
       | WHEN updateRole is called with OfficeManager role
       | THEN the user should be promoted to an office manager
@@ -248,7 +350,6 @@ object PostgresAccountRepositorySuite extends IOSuite with PostgresFixture {
       | THEN the resulting account should have managed offices removed because of being demoted to a user previously
       |""".stripMargin
   ) { accountRepository =>
-
     val officeManager = anyOfficeManagerAccount
 
     for {

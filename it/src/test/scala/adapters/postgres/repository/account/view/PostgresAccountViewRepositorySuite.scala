@@ -22,6 +22,7 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
+// TODO: Fix integration tests
 object PostgresAccountViewRepositorySuite extends IOSuite with PostgresFixture {
 
   private def beforeTest(

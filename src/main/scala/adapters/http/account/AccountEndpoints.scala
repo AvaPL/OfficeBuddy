@@ -98,7 +98,6 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       .map(ApiAccount.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
-        // TODO: Recover on non-existent managed office IDs
         case OfficeNotFound(officeId) =>
           ApiError.BadRequest(s"Office [id: $officeId] was not found").asLeft
         case DuplicateAccountEmail(email) =>
@@ -211,7 +210,6 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
           .description("Updated account")
           .example(apiOfficeManagerAccountExample)
       )
-      // TODO: Validate managed office IDs
       .errorOutVariantPrepend(
         oneOfVariant(
           statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
@@ -227,6 +225,7 @@ class AccountEndpoints[F[_]: Clock: MonadThrow](
       .map(_.asRight[ApiError])
       .recover {
         case AccountNotFound(accountId) => ApiError.NotFound(s"Account [id: $accountId] was not found").asLeft
+        case OfficeNotFound(officeId)   => ApiError.BadRequest(s"Office [id: $officeId] was not found").asLeft
       }
 
   private lazy val updateRoleEndpoint =
