@@ -151,6 +151,47 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
   }
 
   test(
+    """GIVEN an office ID and a list of office manager IDs
+      | WHEN updateOfficeManagers is called
+      | THEN the office managers are updated via officeRepository
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId
+    val officeManagerIds = List(anyOfficeManagerId1, anyOfficeManagerId2)
+
+    val officeRepository = mock[OfficeRepository[IO]]
+    whenF(officeRepository.updateOfficeManagers(any, any)) thenReturn officeManagerIds
+    val officeService = new OfficeService[IO](officeRepository)
+
+    for {
+      updatedOfficeManagerIds <- officeService.updateOfficeManagers(officeId, officeManagerIds)
+    } yield {
+      verify(officeRepository, only).updateOfficeManagers(eqTo(officeId), eqTo(officeManagerIds))
+      expect(updatedOfficeManagerIds == officeManagerIds)
+    }
+  }
+
+  test(
+    """GIVEN an office ID and a list of office manager IDs
+      | WHEN updateOfficeManagers is called and the repository fails
+      | THEN the result should contain the failure
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId
+    val officeManagerIds = List(anyOfficeManagerId1, anyOfficeManagerId2)
+
+    val officeNotFound = OfficeNotFound(officeId)
+    val officeRepository = whenF(mock[OfficeRepository[IO]].updateOfficeManagers(any, any)) thenFailWith officeNotFound
+    val officeService = new OfficeService[IO](officeRepository)
+
+    for {
+      result <- officeService.updateOfficeManagers(officeId, officeManagerIds).attempt
+    } yield matches(result) {
+      case Left(throwable) => expect(throwable == officeNotFound)
+    }
+  }
+
+  test(
     """GIVEN an office ID
       | WHEN archiveOffice is called
       | THEN the office is archived via officeRepository
@@ -232,4 +273,7 @@ object OfficeServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentM
     city = Some("Wroclaw"),
     country = Some("Poland")
   )
+
+  private lazy val anyOfficeManagerId1 = UUID.fromString("7a0bd2d7-c0cf-4ebd-a0c8-db046d2398a3")
+  private lazy val anyOfficeManagerId2 = UUID.fromString("c0cf4b14-ecd0-4374-ac71-159955ab031b")
 }

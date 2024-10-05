@@ -12,12 +12,14 @@ import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
 import domain.model.account.Role.OfficeManager
+import domain.model.account.Role.SuperAdmin
 import domain.model.account.Role.User
 import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
 import io.github.avapl.adapters.http.model.view.ApiPagination
+import io.github.avapl.domain.model.error.account.AccountNotFound
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -38,6 +40,7 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
     createOfficeEndpoint ::
       readOfficeEndpoint ::
       updateOfficeEndpoint ::
+      updateOfficeManagersEndpoint ::
       archiveOfficeEndpoint ::
       officeListViewEndpoint ::
       Nil
@@ -136,6 +139,38 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
         case DuplicateOfficeName(name) => ApiError.Conflict(s"Office '$name' is already defined").asLeft
       }
 
+  private lazy val updateOfficeManagersEndpoint =
+    securedEndpoint(requiredRole = SuperAdmin).put
+      .summary("Assign office managers to an office")
+      .description("Required role: super admin")
+      .in(path[UUID]("officeId") / "office-manager-ids")
+      .in(
+        jsonBody[List[UUID]]
+          .description("Office manager IDs")
+          .example(officeManagerIdsExample)
+      )
+      .out(
+        jsonBody[List[UUID]] // TODO: Include office managers in the Office model
+          .description("Office manager IDs")
+          .example(officeManagerIdsExample)
+      )
+      .errorOutVariantPrepend(
+        oneOfVariant(
+          statusCode(StatusCode.NotFound) and jsonBody[ApiError.NotFound]
+            .description("Office with the given ID was not found")
+        )
+      )
+      .serverLogic(_ => (updateOfficeManagers _).tupled)
+
+  private def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]) =
+    officeService
+      .updateOfficeManagers(officeId, officeManagerIds)
+      .map(_.asRight[ApiError])
+      .recover {
+        case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
+        case AccountNotFound(accountId) => ApiError.BadRequest(s"Account [id: $accountId] was not found").asLeft
+      }
+
   private lazy val archiveOfficeEndpoint =
     securedEndpoint(requiredRole = OfficeManager).delete
       .summary("Archive an office")
@@ -215,6 +250,11 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
     postalCode = Some("53-332"),
     city = Some("Wroclaw"),
     country = Some("Poland")
+  )
+
+  private lazy val officeManagerIdsExample = List(
+    UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297"),
+    UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227296")
   )
 
   private lazy val apiOfficeListViewExample =

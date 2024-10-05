@@ -117,7 +117,6 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
     }
   }
 
-  // TODO: Expose in the API
   def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[List[UUID]] = {
     val accountIdToOfficeId = officeManagerIds.map(_ -> officeId)
     session.use { session =>

@@ -20,6 +20,7 @@ import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
 import io.circe.parser._
 import io.circe.syntax._
+import io.github.avapl.domain.model.error.account.AccountNotFound
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
@@ -239,6 +240,95 @@ object OfficeEndpointsSuite
   }
 
   test(
+    """GIVEN update office managers endpoint
+      | WHEN the office managers are successfully assigned by a super admin to an office
+      | THEN 200 OK and the office managers ids are returned
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId1
+    val officeManagerIds = List(anyOfficeManagerId)
+    val officeService = whenF(mock[OfficeService[IO]].updateOfficeManagers(any, any)) thenReturn officeManagerIds
+
+    val response = sendRequest(officeService, role = SuperAdmin) {
+      basicRequest
+        .put(uri"http://test.com/office/$officeId/office-manager-ids")
+        .body(officeManagerIds)
+    }
+
+    for {
+      response <- response
+    } yield expect.all(
+      response.code == StatusCode.Ok,
+      bodyJson(response) == officeManagerIds.asJson
+    )
+  }
+
+  test(
+    """GIVEN update office managers endpoint
+      | WHEN there is an attempt to assign the office managers by an office manager
+      | THEN 403 Forbidden is returned
+      |""".stripMargin
+  ) {
+    val officeManagerIds = List(anyOfficeManagerId)
+    val officeService = mock[OfficeService[IO]]
+
+    val response = sendRequest(officeService, role = OfficeManager) {
+      basicRequest
+        .put(uri"http://test.com/office/$anyOfficeId1/office-manager-ids")
+        .body(officeManagerIds)
+    }
+
+    for {
+      response <- response
+    } yield {
+      verify(officeService, never).updateOfficeManagers(any, any)
+      expect(response.code == StatusCode.Forbidden)
+    }
+  }
+
+  test(
+    """GIVEN update office managers endpoint
+      | WHEN assigning the office managers fails with AccountNotFound error
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeManagerId = anyOfficeManagerId
+    val officeService =
+      whenF(mock[OfficeService[IO]].updateOfficeManagers(any, any)) thenFailWith AccountNotFound(officeManagerId)
+
+    val response = sendRequest(officeService, role = SuperAdmin) {
+      basicRequest
+        .put(uri"http://test.com/office/$anyOfficeId1/office-manager-ids")
+        .body(List(officeManagerId))
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN update office managers endpoint
+      | WHEN assigning the office managers fails with OfficeNotFound error
+      | THEN 404 NotFound is returned
+      |""".stripMargin
+  ) {
+    val officeId = anyOfficeId1
+    val officeService =
+      whenF(mock[OfficeService[IO]].updateOfficeManagers(any, any)) thenFailWith OfficeNotFound(officeId)
+
+    val response = sendRequest(officeService) {
+      basicRequest
+        .put(uri"http://test.com/office/$officeId/office-manager-ids")
+        .body(List(anyOfficeManagerId))
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.NotFound)
+  }
+
+  test(
     """GIVEN archive office endpoint
       | WHEN an existing office is archived by an office manager
       | THEN 204 NoContent is returned
@@ -390,6 +480,8 @@ object OfficeEndpointsSuite
     city = Some("Wroclaw"),
     country = Some("Poland")
   )
+
+  private lazy val anyOfficeManagerId = UUID.fromString("4f840b82-63c1-4eb7-8184-d46e49227297")
 
   private lazy val anyOfficeView = OfficeView(
     id = anyOfficeId1,
