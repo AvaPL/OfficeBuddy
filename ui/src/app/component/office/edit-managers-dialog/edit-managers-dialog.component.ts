@@ -7,6 +7,7 @@ import {AccountCompact} from "../../../service/model/account/account-compact.mod
 import {AccountService} from "../../../service/account.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {OfficeService} from "../../../service/office.service";
+import {AccountRole} from "../../../service/model/account/account-role.enum";
 
 export interface EditManagersDialogData {
   officeId: string,
@@ -46,7 +47,7 @@ export class EditManagersDialogComponent implements OnInit {
   async filterManagers(value: string | null) {
     if (value && value.length >= 2) {
       const filterValue = value.toLowerCase();
-      this.managers = await this.accountService.getCompactAccounts(filterValue, null);
+      this.managers = await this.accountService.getCompactAccounts(filterValue, [AccountRole.OFFICE_MANAGER, AccountRole.SUPER_ADMIN]);
     } else {
       this.managers = [];
     }
@@ -64,7 +65,11 @@ export class EditManagersDialogComponent implements OnInit {
   private addUnique(accountId: string) {
     const managerToAdd = this.managers.find(manager => manager.id === accountId)
     if (managerToAdd)
-      this.assignedManagers.update(managers => [...new Set([...managers, managerToAdd])]);
+      this.assignedManagers.update(managers => {
+        return [...managers, managerToAdd].filter((manager, index, self) => {
+          return self.findIndex(x => x.id === manager.id) === index;
+        });
+      });
   }
 
   private resetManagerInput() {
@@ -89,9 +94,8 @@ export class EditManagersDialogComponent implements OnInit {
 
   async onAssign() {
     try {
-      // TODO: Implement managers assignment on the backend
-      // TODO: Consider removing assigned managers from account model and adding a many-to-many table instead
-      // await this.officeService.assignManagers(this.data.officeId, this.assignedManagers());
+      const officeManagerIds = this.assignedManagers().map(manager => manager.id);
+      await this.officeService.updateOfficeManagers(this.data.officeId, officeManagerIds);
       this.snackbar.open(`Managers assigned to ${this.data.officeName}`);
       this.dialogRef.close(true);
     } catch (error) {

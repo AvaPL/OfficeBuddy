@@ -62,6 +62,13 @@ export class OfficeService {
     return firstValueFrom(this.http.patch<Office>(`${this.baseUrl}/${officeId}`, update, {headers}));
   }
 
+  async updateOfficeManagers(officeId: string, officeManagerIds: string[]): Promise<Office> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token)
+
+    return firstValueFrom(this.http.put<Office>(`${this.baseUrl}/${officeId}/office-manager-ids`, officeManagerIds, {headers}));
+  }
+
   async archiveOffice(officeId: string): Promise<void> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token)

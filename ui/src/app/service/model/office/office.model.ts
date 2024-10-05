@@ -4,6 +4,7 @@ export interface Office {
   notes: string[];
   address: Address;
   isArchived: boolean;
+  officeManagerIds: string[];
 }
 
 export interface Address {

@@ -124,6 +124,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
     }
   }
 
+  // TODO: Ensure that officeManagerIds contains only office managers or admins (maybe via a DB constraint?)
   def updateOfficeManagers(officeId: UUID, officeManagerIds: List[UUID]): F[Office] = {
     val accountIdToOfficeId = officeManagerIds.map(_ -> officeId)
     session.use { session =>

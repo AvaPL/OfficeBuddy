@@ -56,6 +56,7 @@ export class OfficeComponent implements OnInit {
   editManagers(officeId: string, officeName: string, officeManagers: OfficeManagerView[]) {
     const dialogRef = this.editManagersDialog.open(EditManagersDialogComponent, {
       data: {
+        officeId: officeId,
         officeName: officeName,
         currentManagers: officeManagers.map(manager => {
           return {
