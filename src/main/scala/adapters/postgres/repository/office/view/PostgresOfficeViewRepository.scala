@@ -57,18 +57,29 @@ object PostgresOfficeViewRepository {
              city,
              country,
              office_managers,
-             0, 
+             COALESCE(assigned_accounts_count, 0),
              0, 
              0, 
              0, 
              0
       FROM office
+
+      -- Office managers
       LEFT JOIN (
         SELECT office_id, ARRAY_AGG((a.id, a.first_name, a.last_name, a.email)) AS office_managers
         FROM   account_managed_office amo
         LEFT JOIN account a ON amo.account_id = a.id
         GROUP BY office_id
       ) AS om ON office.id = om.office_id
+
+      -- Assigned accounts count
+      LEFT JOIN (
+        SELECT   assigned_office_id, COUNT(*)::int4 AS assigned_accounts_count
+        FROM     account
+        WHERE    assigned_office_id IS NOT NULL
+        GROUP BY assigned_office_id
+      ) AS aa ON office.id = aa.assigned_office_id
+
       WHERE    is_archived = 'no'
       ORDER BY name
       LIMIT    $int4
