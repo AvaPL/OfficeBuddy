@@ -368,7 +368,7 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN view list office endpoint
-      | WHEN the endpoint is called with limit and offset
+      | WHEN the endpoint is called with current date and time
       | THEN 200 OK and the list of offices is returned
       |""".stripMargin
   ) {
@@ -384,12 +384,13 @@ object OfficeEndpointsSuite
         hasMoreResults = false
       )
     )
-    whenF(officeViewRepository.listOffices(any, any)) thenReturn officeListView
+    whenF(officeViewRepository.listOffices(any, any, any)) thenReturn officeListView
 
     val response = sendViewRequest(officeViewRepository) {
       basicRequest.get(
         uri"http://test.com/office/view/list"
           .withParams(
+            "now" -> "2024-10-06T12:00:00",
             "limit" -> "10",
             "offset" -> "0"
           )
@@ -402,6 +403,51 @@ object OfficeEndpointsSuite
       response.code == StatusCode.Ok,
       bodyJson(response) == ApiOfficeListView.fromDomain(officeListView).asJson
     )
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN the endpoint is called without current date and time
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
+  }
+
+  test(
+    """GIVEN view list office endpoint
+      | WHEN now is not a valid date and time
+      | THEN 400 BadRequest is returned
+      |""".stripMargin
+  ) {
+    val officeViewRepository = mock[OfficeViewRepository[IO]]
+    val response = sendViewRequest(officeViewRepository) {
+      basicRequest.get(
+        uri"http://test.com/office/view/list"
+          .withParams(
+            "now" -> "invalid",
+            "limit" -> "10",
+            "offset" -> "0"
+          )
+      )
+    }
+
+    for {
+      response <- response
+    } yield expect(response.code == StatusCode.BadRequest)
   }
 
   private def sendRequest(

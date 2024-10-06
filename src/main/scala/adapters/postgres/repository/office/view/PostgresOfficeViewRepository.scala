@@ -11,6 +11,8 @@ import domain.model.office.view.OfficeManagerView
 import domain.model.office.view.OfficeView
 import domain.model.view.Pagination
 import domain.repository.office.view.OfficeViewRepository
+
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
@@ -26,12 +28,12 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
 
   import PostgresOfficeViewRepository._
 
-  override def listOffices(limit: Int, offset: Int): F[OfficeListView] =
+  override def listOffices(now: LocalDateTime, limit: Int, offset: Int): F[OfficeListView] =
     session.use { session =>
       for {
         sql <- session.prepare(listOfficesSql)
         chunkSize = limit + 1 // Take one more element to determine if there are more elements to fetch
-        officesViews <- sql.stream((chunkSize, offset), chunkSize).compile.toList
+        officesViews <- sql.stream((now, chunkSize, offset), chunkSize).compile.toList
       } yield {
         val hasMoreResults = officesViews.size > limit
         val pagination = Pagination(limit, offset, hasMoreResults)
@@ -45,8 +47,10 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
 
 object PostgresOfficeViewRepository {
 
-  // TODO: Populate counter values
-  private lazy val listOfficesSql: Query[Int *: Int *: EmptyTuple, OfficeView] =
+  // TODO: Populate parking spots count
+  // TODO: Populate rooms count
+  // TODO: Reservations count query is invalid
+  private lazy val listOfficesSql: Query[LocalDateTime *: Int *: Int *: EmptyTuple, OfficeView] =
     sql"""
       SELECT id,
              name, 
@@ -58,10 +62,10 @@ object PostgresOfficeViewRepository {
              country,
              office_managers,
              COALESCE(assigned_accounts_count, 0),
+             COALESCE(desks_count, 0),
              0, 
              0, 
-             0, 
-             0
+             COALESCE(active_reservations_count, 0)
       FROM office
 
       -- Office managers
@@ -69,6 +73,7 @@ object PostgresOfficeViewRepository {
         SELECT office_id, ARRAY_AGG((a.id, a.first_name, a.last_name, a.email)) AS office_managers
         FROM   account_managed_office amo
         LEFT JOIN account a ON amo.account_id = a.id
+        WHERE a.is_archived = 'no'
         GROUP BY office_id
       ) AS om ON office.id = om.office_id
 
@@ -76,9 +81,34 @@ object PostgresOfficeViewRepository {
       LEFT JOIN (
         SELECT   assigned_office_id, COUNT(*)::int4 AS assigned_accounts_count
         FROM     account
-        WHERE    assigned_office_id IS NOT NULL
+        WHERE    is_archived = 'no'
+          AND    assigned_office_id IS NOT NULL
         GROUP BY assigned_office_id
       ) AS aa ON office.id = aa.assigned_office_id
+      
+      -- Desks count
+      LEFT JOIN (
+        SELECT   office_id, COUNT(*)::int4 AS desks_count
+        FROM     desk
+        WHERE    is_archived = 'no'
+        GROUP BY office_id
+      ) AS d ON office.id = d.office_id
+      
+      -- Parking spots count
+      -- To be implemented
+      
+      -- Rooms count
+      -- To be implemented
+      
+      -- Active reservations count
+      LEFT JOIN (
+        SELECT   office_id, COUNT(*)::int4 AS active_reservations_count
+        FROM     reservation
+        WHERE    is_archived = 'no'
+          AND    $timestamp <= reserved_to
+          AND    state IN ('Pending', 'Confirmed')
+        GROUP BY office_id
+      ) AS r ON office.id = r.office_id
 
       WHERE    is_archived = 'no'
       ORDER BY name

@@ -8,6 +8,7 @@ import adapters.http.PaginationInput
 import adapters.http.SecuredApiEndpoint
 import adapters.http.office.model._
 import adapters.http.office.model.view._
+
 import cats.MonadThrow
 import cats.effect.Clock
 import cats.syntax.all._
@@ -18,8 +19,11 @@ import domain.model.error.office.DuplicateOfficeName
 import domain.model.error.office.OfficeNotFound
 import domain.repository.office.view.OfficeViewRepository
 import domain.service.office.OfficeService
+
 import io.github.avapl.adapters.http.model.view.ApiPagination
 import io.github.avapl.domain.model.error.account.AccountNotFound
+
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -168,7 +172,7 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       .map(ApiOffice.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
-        case OfficeNotFound(officeId) => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
+        case OfficeNotFound(officeId)   => ApiError.NotFound(s"Office [id: $officeId] was not found").asLeft
         case AccountNotFound(accountId) => ApiError.BadRequest(s"Account [id: $accountId] was not found").asLeft
       }
 
@@ -203,6 +207,11 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
           |""".stripMargin
       )
       .in("view" / "list")
+      .in(
+        query[LocalDateTime]("now")
+          .description("Current date and time in UTC, used to determine active reservations")
+          .example(LocalDateTime.parse("2024-10-06T12:00:00")),
+      )
       .in(paginationLimitAndOffset)
       .out(
         jsonBody[ApiOfficeListView]
@@ -211,9 +220,9 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       )
       .serverLogic(_ => (officeListView _).tupled)
 
-  private def officeListView(limit: Int, offset: Int) =
+  private def officeListView(now: LocalDateTime, limit: Int, offset: Int) =
     officeViewRepository
-      .listOffices(limit, offset)
+      .listOffices(now, limit, offset)
       .map(ApiOfficeListView.fromDomain)
       .map(_.asRight[ApiError])
 
