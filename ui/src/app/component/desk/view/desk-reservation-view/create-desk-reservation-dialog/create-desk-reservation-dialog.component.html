@@ -3,7 +3,7 @@
   <mat-dialog-content>
     <mat-form-field class="reservation-date-range">
       <mat-label>Reservation date range</mat-label>
-      <mat-date-range-input [rangePicker]="picker">
+      <mat-date-range-input [min]="minDate" [rangePicker]="picker">
         <input matStartDate formControlName="reservationFrom" placeholder="Start date" required
                (dateChange)="fetchDesks()">
         <input matEndDate formControlName="reservationTo" placeholder="End date" required (dateChange)="fetchDesks()">

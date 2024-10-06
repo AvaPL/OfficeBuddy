@@ -38,11 +38,14 @@ export class CreateDeskReservationDialogComponent {
   readonly snackBar = inject(MatSnackBar);
 
   touchUiQuery: MediaQueryList;
+  minDate: Date;
 
   constructor(
     media: MediaMatcher,
   ) {
     this.touchUiQuery = media.matchMedia('(max-width: 600px)');
+    this.minDate = new Date()
+    this.minDate.setHours(0, 0, 0, 0);
   }
 
   async fetchDesks() {

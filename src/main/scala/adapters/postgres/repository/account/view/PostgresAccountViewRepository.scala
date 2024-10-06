@@ -2,7 +2,6 @@ package io.github.avapl
 package adapters.postgres.repository.account.view
 
 import adapters.postgres.repository.account.PostgresAccountRepository.PostgresAccountType
-
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.MonadCancelThrow
 import cats.effect.kernel.Resource
@@ -13,9 +12,7 @@ import domain.model.account.view.AccountView
 import domain.model.account.view.OfficeView
 import domain.model.view.Pagination
 import domain.repository.account.view.AccountViewRepository
-
 import io.circe.parser.parse
-
 import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
@@ -160,7 +157,7 @@ object PostgresAccountViewRepository {
         {
           case "(,)" => None.asRight
           case officeViewRegex(id, name) =>
-            val unquotedName = name.stripPrefix("\"").stripSuffix("\"").replaceAll("\"\"", "\"")
+            val unquotedName = name.stripPrefix("\"").stripSuffix("\"")
             Either
               .catchOnly[IllegalArgumentException](UUID.fromString(id))
               .leftMap(_.getMessage)
