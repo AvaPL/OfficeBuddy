@@ -131,7 +131,7 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
       for {
         delete <- session.prepare(deleteManagedOfficesSql)
         insert <- session.prepareIf(accountIdToOfficeId.nonEmpty)(insertOfficeManagersSql(accountIdToOfficeId))
-        _ <- session.transaction
+        _ <- session.transaction // TODO: Transactions should be handled on the service level, not repository level
           .use { _ =>
             delete.execute(officeId) *>
               insert.execute(accountIdToOfficeId)
@@ -156,7 +156,6 @@ class PostgresOfficeRepository[F[_]: MonadCancelThrow](
     """.command
 
   private def insertOfficeManagersSql(accountIdToOfficeId: List[(UUID, UUID)]): Command[accountIdToOfficeId.type] = {
-    println(s"Inserting office managers: ${accountIdToOfficeId.mkString(", ")}")
     val encoder = (uuid ~ uuid).values.list(accountIdToOfficeId)
     sql"""
       INSERT INTO account_managed_office

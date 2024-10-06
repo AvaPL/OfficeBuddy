@@ -7,14 +7,17 @@ import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import domain.model.office.view.AddressView
 import domain.model.office.view.OfficeListView
+import domain.model.office.view.OfficeManagerView
 import domain.model.office.view.OfficeView
-import domain.repository.office.view.OfficeViewRepository
 import domain.model.view.Pagination
+import domain.repository.office.view.OfficeViewRepository
+import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
 import skunk.Query
 import skunk.Session
 import skunk.codec.all._
+import skunk.data.Type
 import skunk.implicits._
 
 class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
@@ -45,8 +48,27 @@ object PostgresOfficeViewRepository {
   // TODO: Populate counter values
   private lazy val listOfficesSql: Query[Int *: Int *: EmptyTuple, OfficeView] =
     sql"""
-      SELECT   *, 0, 0, 0, 0, 0
-      FROM     office
+      SELECT id,
+             name, 
+             notes, 
+             address_line_1, 
+             address_line_2,
+             postal_code,
+             city,
+             country,
+             office_managers,
+             0, 
+             0, 
+             0, 
+             0, 
+             0
+      FROM office
+      LEFT JOIN (
+        SELECT office_id, ARRAY_AGG((a.id, a.first_name, a.last_name, a.email)) AS office_managers
+        FROM   account_managed_office amo
+        LEFT JOIN account a ON amo.account_id = a.id
+        GROUP BY office_id
+      ) AS om ON office.id = om.office_id
       WHERE    is_archived = 'no'
       ORDER BY name
       LIMIT    $int4
@@ -64,21 +86,21 @@ object PostgresOfficeViewRepository {
         varchar *: // postal_code
         varchar *: // city
         varchar *: // country
-        bool *: // is_archived
+        _officeManagerDecoder.opt *: // office_managers
         int4 *: // assigned_accounts_count
         int4 *: // desks_count
         int4 *: // parking_spots_count
         int4 *: // rooms_count
         int4 // active_reservations_count
     ).map {
-      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: _ *: assignedAccountsCount *: desksCount *: parkingSpotsCount *: roomsCount *: activeReservationsCount *: EmptyTuple =>
+      case id *: name *: notes *: addressLine1 *: addressLine2 *: postalCode *: city *: country *: officeManagers *: assignedAccountsCount *: desksCount *: parkingSpotsCount *: roomsCount *: activeReservationsCount *: EmptyTuple =>
         val address = AddressView(addressLine1, addressLine2, postalCode, city, country)
         OfficeView(
           id,
           name,
           notes.flattenTo(List),
           address,
-          officeManagers = Nil, // TODO: Return office managers
+          officeManagers.getOrElse(Nil),
           assignedAccountsCount,
           desksCount,
           parkingSpotsCount,
@@ -86,4 +108,32 @@ object PostgresOfficeViewRepository {
           activeReservationsCount
         )
     }
+
+  private lazy val _officeManagerDecoder = {
+    val officeViewRegex = "\\((?<id>.*?),(?<firstName>.*),(?<lastName>.*),(?<email>.*)\\)".r
+    Codec
+      .array[Option[OfficeManagerView]](
+        encode = _ => ???,
+        {
+          case officeViewRegex(id, firstName, lastName, email) =>
+            def unquote(string: String) = string.stripPrefix("\"").stripSuffix("\"")
+
+            Either
+              .catchOnly[IllegalArgumentException](UUID.fromString(id))
+              .leftMap(_.getMessage)
+              .map { id =>
+                OfficeManagerView(
+                  id = id,
+                  firstName = unquote(firstName),
+                  lastName = unquote(lastName),
+                  email = unquote(email)
+                ).some
+              }
+          case s => s"Invalid office view format: $s".asLeft
+        },
+        Type._record
+      )
+      .asDecoder
+      .map(_.flattenTo(List).flatten)
+  }
 }
