@@ -14,7 +14,7 @@
         <div class="office-stats">
           <div *ngIf="office.officeManagers.length" class="office-stats-item" matTooltip="Office managers">
             <mat-icon matListItemIcon>person</mat-icon>
-            <span matListItemLine class="office-managers">{{ office.officeManagers.join(", ") }}</span>
+            <span matListItemLine class="office-managers">{{ displayOfficeManagers(office.officeManagers) }}</span>
           </div>
           <div class="office-stats-item" matTooltip="Assigned accounts">
             <mat-icon matListItemIcon>supervisor_account</mat-icon>

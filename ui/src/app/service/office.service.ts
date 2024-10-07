@@ -23,18 +23,22 @@ export class OfficeService {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token)
 
-    return firstValueFrom(this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=${limit}&offset=${offset}`, {headers}));
+    const now = new Date().toISOString();
+
+    return firstValueFrom(this.http.get<OfficeListView>(`${this.baseUrl}/view/list?now=${now}&limit=${limit}&offset=${offset}`, {headers}));
   }
 
   async getCompactOffices(): Promise<OfficeCompact[]> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token)
 
+    const now = new Date().toISOString();
+
     // TODO: Introduce a dedicated endpoint that'll return only the id and name of the offices
     // return firstValueFrom(this.http.get<OfficeCompact[]>(`${this.baseUrl}/view/compact`, {headers}));
 
     const officeListView = await firstValueFrom(
-      this.http.get<OfficeListView>(`${this.baseUrl}/view/list?limit=1000&offset=0`, {headers})
+      this.http.get<OfficeListView>(`${this.baseUrl}/view/list?now=${now}&limit=1000&offset=0`, {headers})
     );
     return this.officeListViewToCompactOffices(officeListView);
   }

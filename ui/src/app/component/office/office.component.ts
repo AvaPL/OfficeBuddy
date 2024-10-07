@@ -69,11 +69,9 @@ export class OfficeComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(newManagers => {
-        if (newManagers)
-          console.log(`New managers for office ${officeId}: ${newManagers}`);
-        else
-          console.log(`Editing managers cancelled`);
+    dialogRef.afterClosed().subscribe(isAssigned => {
+        if (isAssigned)
+          this.fetchOffices(this.pagination.limit, 0)
       }
     );
   }
@@ -112,5 +110,9 @@ export class OfficeComponent implements OnInit {
 
   handlePageEvent(event: PageEvent) {
     this.fetchOffices(this.pagination.limit, event.pageIndex * this.pagination.limit)
+  }
+
+  displayOfficeManagers(officeManagers: OfficeManagerView[]) {
+    return officeManagers.map(manager => `${manager.firstName} ${manager.lastName}`).join(', ');
   }
 }
