@@ -5,6 +5,7 @@ import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.account.PostgresAccountRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
+import adapters.postgres.repository.reservation.PostgresReservationRepository
 import cats.effect.IO
 import cats.effect.Resource
 import domain.model.account.OfficeManagerAccount
@@ -12,6 +13,11 @@ import domain.model.account.UserAccount
 import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.model.reservation.DeskReservation
+import domain.model.reservation.ReservationState.Cancelled
+import domain.model.reservation.ReservationState.Confirmed
+import domain.model.reservation.ReservationState.Pending
+import domain.model.reservation.ReservationState.Rejected
 import java.time.LocalDateTime
 import java.util.UUID
 import skunk._
@@ -29,7 +35,8 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       PostgresOfficeRepository[IO],
       PostgresOfficeViewRepository[IO],
       PostgresAccountRepository[IO],
-      PostgresDeskRepository[IO]
+      PostgresDeskRepository[IO],
+      PostgresReservationRepository[IO]
     ) => IO[Expectations]
   ): Unit =
     test(name) { session =>
@@ -37,11 +44,13 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       lazy val postgresOfficeViewRepository = new PostgresOfficeViewRepository[IO](session)
       lazy val postgresAccountRepository = new PostgresAccountRepository[IO](session)
       lazy val postgresDeskRepository = new PostgresDeskRepository[IO](session)
+      lazy val postgresReservationRepository = new PostgresReservationRepository[IO](session)
       truncateTables(session) >> run(
         postgresOfficeRepository,
         postgresOfficeViewRepository,
         postgresAccountRepository,
-        postgresDeskRepository
+        postgresDeskRepository,
+        postgresReservationRepository
       )
     }
 
@@ -50,7 +59,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with no office managers
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
 
@@ -70,7 +79,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with its office managers
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office1Manager = anyOfficeManager(id = anyAccountId1, "officeManager1")
@@ -101,7 +110,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with no office managers
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
     val office = anyOffice
     val archivedOfficeManager = anyOfficeManager(id = anyAccountId1, "archivedOfficeManager")
 
@@ -123,7 +132,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with assigned accounts count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
 
@@ -143,7 +152,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with their assigned accounts count
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office1User =
@@ -173,7 +182,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with assigned accounts count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
     val office = anyOffice
     val archivedUser = anyUser(id = anyAccountId1, "archivedUser", assignedOfficeId = Some(office.id))
 
@@ -194,7 +203,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with desks count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
 
@@ -214,7 +223,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
         | WHEN listOffices is called
         | THEN return an office view with their desks count
         |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, deskRepository) =>
+  ) { (officeRepository, officeViewRepository, _, deskRepository, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office1Desk1 = anyDesk(anyDeskId1, "desk 1.1", office1.id)
@@ -236,7 +245,117 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
     )
   }
 
-  // TODO: Test reservations count
+  beforeTest(
+    """GIVEN 1 office with active reservations in the database
+      | WHEN listOffices is called
+      | THEN return an office view with active reservations count equal to the number of active reservations
+      |""".stripMargin
+  ) { (officeRepository, officeViewRepository, accountRepository, deskRepository, reservationRepository) =>
+    val office = anyOffice
+    val user = anyUser(id = anyAccountId1, "user1")
+    val desk = anyDesk(anyDeskId1, "desk 1.1", office.id)
+
+    val now = anyLocalDateTime
+    val confirmedReservationWithNowBetweenStartAndEnd = anyDeskReservation(
+      id = anyReservationId2,
+      userId = user.id,
+      deskId = desk.id
+    ).copy(
+      reservedFromDate = now.minusDays(1).toLocalDate,
+      reservedToDate = now.plusDays(1).toLocalDate,
+      state = Confirmed
+    )
+    val pendingReservationWithStartAfterNow = anyDeskReservation(
+      id = anyReservationId1,
+      userId = user.id,
+      deskId = desk.id
+    ).copy(
+      reservedFromDate = now.plusDays(2).toLocalDate,
+      reservedToDate = now.plusDays(3).toLocalDate,
+      state = Pending
+    )
+
+    for {
+      _ <- officeRepository.create(office)
+      _ <- accountRepository.create(user)
+      _ <- deskRepository.create(desk)
+      _ <- reservationRepository.createDeskReservation(confirmedReservationWithNowBetweenStartAndEnd)
+      _ <- reservationRepository.createDeskReservation(pendingReservationWithStartAfterNow)
+      officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
+    } yield expect.all(
+      officeListView.offices.exists(_.activeReservationsCount == 2),
+      officeListView.offices.size == 1,
+      !officeListView.pagination.hasMoreResults
+    )
+  }
+
+  beforeTest(
+    """GIVEN 1 office with inactive reservations in the database and 1 office with an active reservation
+      | WHEN listOffices is called
+      | THEN return an office view with active reservations count equal to 0
+      |""".stripMargin
+  ) { (officeRepository, officeViewRepository, accountRepository, deskRepository, reservationRepository) =>
+    val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
+    val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
+    val user = anyUser(id = anyAccountId1, "user1")
+    val desk1 = anyDesk(anyDeskId1, "desk 1.1", office1.id)
+    val desk2 = anyDesk(anyDeskId2, "desk 2.1", office2.id)
+
+    val now = anyLocalDateTime
+    val confirmedReservationWithEndBeforeNow = anyDeskReservation(
+      id = anyReservationId1,
+      userId = user.id,
+      deskId = desk1.id
+    ).copy(
+      reservedFromDate = now.minusDays(2).toLocalDate,
+      reservedToDate = now.minusDays(1).toLocalDate,
+      state = Confirmed
+    )
+    val rejectedReservationWithStartAfterNow = anyDeskReservation(
+      id = anyReservationId2,
+      userId = user.id,
+      deskId = desk1.id
+    ).copy(
+      reservedFromDate = now.plusDays(1).toLocalDate,
+      reservedToDate = now.plusDays(2).toLocalDate,
+      state = Rejected
+    )
+    val cancelledReservationWithStartAfterNow = anyDeskReservation(
+      id = anyReservationId3,
+      userId = user.id,
+      deskId = desk1.id
+    ).copy(
+      reservedFromDate = now.plusDays(1).toLocalDate,
+      reservedToDate = now.plusDays(2).toLocalDate,
+      state = Cancelled
+    )
+    val office2ActiveReservation = anyDeskReservation(
+      id = anyReservationId4,
+      userId = user.id,
+      deskId = desk2.id
+    ).copy(
+      reservedFromDate = now.plusDays(1).toLocalDate,
+      reservedToDate = now.plusDays(2).toLocalDate,
+      state = Confirmed
+    )
+
+    for {
+      _ <- officeRepository.create(office1)
+      _ <- officeRepository.create(office2)
+      _ <- accountRepository.create(user)
+      _ <- deskRepository.create(desk1)
+      _ <- deskRepository.create(desk2)
+      _ <- reservationRepository.createDeskReservation(confirmedReservationWithEndBeforeNow)
+      _ <- reservationRepository.createDeskReservation(rejectedReservationWithStartAfterNow)
+      _ <- reservationRepository.createDeskReservation(cancelledReservationWithStartAfterNow)
+      _ <- reservationRepository.createDeskReservation(office2ActiveReservation)
+      officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
+    } yield expect.all(
+      officeListView.offices.find(_.id == office1.id).exists(_.activeReservationsCount == 0),
+      officeListView.offices.size == 2,
+      !officeListView.pagination.hasMoreResults
+    )
+  }
 
   beforeTest(
     """
@@ -244,7 +363,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called with limit 2 and offsets 0 and 2
       | THEN return two pages of results
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office3 = anyOffice.copy(id = anyOfficeId3, name = "office3")
@@ -269,7 +388,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called with limit 1 and offset 1
       | THEN return an empty list of results
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _) =>
     val office = anyOffice
 
     for {
@@ -287,7 +406,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called with limit 1 and offset 0
       | THEN return an empty list of results
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _) =>
     val archivedOffice = anyOffice.copy(isArchived = true)
 
     for {
@@ -297,9 +416,18 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   private def truncateTables(session: Resource[IO, Session[IO]]) =
-    truncateAccountTable(session) >>
+    truncateReservationTable(session) >>
+      truncateAccountTable(session) >>
       truncateDeskTable(session) >>
       truncateOfficeTable(session)
+
+  private def truncateReservationTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE reservation CASCADE
+      """.command
+    session.use(_.execute(sql))
+  }
 
   private def truncateAccountTable(session: Resource[IO, Session[IO]]) = {
     val sql: Command[Void] =
@@ -388,4 +516,20 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
   private lazy val anyDeskId1 = UUID.fromString("cecd6ead-2d55-4eef-901e-273aaf6fb23a")
   private lazy val anyDeskId2 = UUID.fromString("4a565b76-eabf-497c-9ea9-7f935ffdfcd6")
   private lazy val anyDeskId3 = UUID.fromString("56a1eb04-5014-48f6-9241-e7f169b16177")
+
+  private def anyDeskReservation(id: UUID, userId: UUID, deskId: UUID) = DeskReservation(
+    id = id,
+    userId = userId,
+    createdAt = anyLocalDateTime,
+    deskId = deskId,
+    reservedFromDate = anyLocalDateTime.toLocalDate,
+    reservedToDate = anyLocalDateTime.toLocalDate,
+    state = Confirmed,
+    notes = ""
+  )
+
+  private lazy val anyReservationId1 = UUID.fromString("5ff6bce4-5f76-4833-880f-757eac7fb77d")
+  private lazy val anyReservationId2 = UUID.fromString("22cc01f4-e423-40fc-85b2-ef1f549ea0a5")
+  private lazy val anyReservationId3 = UUID.fromString("77a7c014-3cc7-4f47-be75-92fed50e5371")
+  private lazy val anyReservationId4 = UUID.fromString("fff2b016-d320-4d04-9e1f-762661388ff3")
 }

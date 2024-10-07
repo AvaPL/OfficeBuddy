@@ -49,7 +49,6 @@ object PostgresOfficeViewRepository {
 
   // TODO: Populate parking spots count
   // TODO: Populate rooms count
-  // TODO: Reservations count query is invalid
   private lazy val listOfficesSql: Query[LocalDateTime *: Int *: Int *: EmptyTuple, OfficeView] =
     sql"""
       SELECT id,
@@ -104,8 +103,8 @@ object PostgresOfficeViewRepository {
       LEFT JOIN (
         SELECT   office_id, COUNT(*)::int4 AS active_reservations_count
         FROM     reservation
-        WHERE    is_archived = 'no'
-          AND    $timestamp <= reserved_to
+        LEFT JOIN desk ON reservation.desk_id = desk.id
+        WHERE    $timestamp <= reserved_to
           AND    state IN ('Pending', 'Confirmed')
         GROUP BY office_id
       ) AS r ON office.id = r.office_id
