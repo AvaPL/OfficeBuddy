@@ -118,7 +118,7 @@ object Main extends IOApp.Simple {
 
       val officeEndpoints = new OfficeEndpoints[F](
         officeService,
-        officeViewRepository,
+        officeViewRepository, // TODO: Views should also be a part of services
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
