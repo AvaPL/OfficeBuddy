@@ -40,6 +40,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     volumes:
       - ./keycloak/office-buddy-realm.json:/opt/keycloak/data/import/office-buddy-realm.json
+    # TODO: Add healthcheck
     depends_on:
       postgres:
         condition: 'service_healthy'

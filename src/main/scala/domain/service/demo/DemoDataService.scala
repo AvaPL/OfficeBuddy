@@ -34,13 +34,14 @@ import util.FUUID
 
 class DemoDataService[F[_]: Clock: FUUID: MonadThrow: Parallel: Random](
   accountRepository: AccountRepository[F],
-  deskRepository: DeskRepository[F],
   officeRepository: OfficeRepository[F],
+  deskRepository: DeskRepository[F],
   reservationRepository: ReservationRepository[F]
 ) {
 
-  // TODO: Add unit tests
   // TODO: Find a way to detect if the test data is already loaded
+  // TODO: Loading demo data should be done within a transaction
+  // TODO: Add log
   def loadDemoData(): F[Unit] =
     for {
       _ <- loadOffices()
@@ -62,18 +63,18 @@ class DemoDataService[F[_]: Clock: FUUID: MonadThrow: Parallel: Random](
     for {
       startingFloor <- Random[F].betweenInt(1, 6)
       numberOfFloors <- Random[F].betweenInt(1, 4)
-      desks <- (startingFloor until startingFloor + numberOfFloors).toList.parTraverse(loadFloorDesks(officeId, _))
+      desks <- (startingFloor until startingFloor + numberOfFloors).toList.parFlatTraverse(loadFloorDesks(officeId, _))
     } yield desks
 
   private def loadFloorDesks(officeId: UUID, floor: Int): F[List[Desk]] =
     for {
-      roomsCount <- Random[F].betweenInt(5, 15)
-      desks <- (1 to roomsCount).toList.parTraverse(loadRoomDesks(officeId, floor, _))
+      roomsCount <- Random[F].betweenInt(5, 10)
+      desks <- (1 to roomsCount).toList.parFlatTraverse(loadRoomDesks(officeId, floor, _))
     } yield desks
 
   private def loadRoomDesks(officeId: UUID, floor: Int, roomIndex: Int): F[List[Desk]] =
     for {
-      desksCount <- Random[F].betweenInt(5, 20)
+      desksCount <- Random[F].betweenInt(1, 10)
       desks <- (1 to desksCount).toList.parTraverse(loadDesk(officeId, floor, roomIndex, _))
     } yield desks
 
@@ -92,7 +93,7 @@ class DemoDataService[F[_]: Clock: FUUID: MonadThrow: Parallel: Random](
 
   private def loadDeskReservations(desks: List[Desk], now: LocalDateTime): F[Unit] =
     desks.parTraverse_ { desk =>
-      Random[F].nextBoolean.map { hasReservation =>
+      Random[F].nextBoolean.flatMap { hasReservation =>
         if (hasReservation) loadDeskReservation(desk, now) else ().pure[F]
       }
     }
@@ -679,13 +680,13 @@ object DemoDataService {
   def generateDesk[F[_]: FUUID: Monad: Random](officeId: UUID, roomNumber: Int, deskNumber: Int): F[Desk] =
     for {
       id <- FUUID[F].randomUUID()
-      isAvailable <- Random[F].nextBoolean
+      isAvailable <- Random[F].betweenInt(0, 100).map(_ < 95)
       notes <- Random[F].betweenInt(0, 100).map { int =>
         if (int < 66) exampleDeskNotes(int % exampleDeskNotes.size)
         else ""
       }
       isStanding <- Random[F].nextBoolean
-      monitorsCount <- Random[F].betweenInt(0, 2)
+      monitorsCount <- Random[F].betweenInt(0, 4)
       hasPhone <- Random[F].nextBoolean
     } yield Desk(
       id = id,

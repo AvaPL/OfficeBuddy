@@ -16,17 +16,29 @@ import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
-import config.{AppConfig, HttpConfig, KeycloakConfig, PostgresConfig}
-import domain.service.account.AccountService
-import domain.service.desk.DeskService
-import domain.service.office.OfficeService
-import domain.service.reservation.ReservationService
-import util.BuildInfo
-
+import cats.Parallel
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
+import cats.effect.std.Random
 import cats.implicits._
+import config.AppConfig
+import config.HttpConfig
+import config.KeycloakConfig
+import config.PostgresConfig
+import domain.repository.account.AccountRepository
+import domain.repository.account.view.AccountViewRepository
+import domain.repository.desk.DeskRepository
+import domain.repository.desk.view.DeskViewRepository
+import domain.repository.office.OfficeRepository
+import domain.repository.office.view.OfficeViewRepository
+import domain.repository.reservation.ReservationRepository
+import domain.repository.reservation.view.ReservationViewRepository
+import domain.service.account.AccountService
+import domain.service.demo.DemoDataService
+import domain.service.desk.DeskService
+import domain.service.office.OfficeService
+import domain.service.reservation.ReservationService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -38,10 +50,13 @@ import pureconfig.module.catseffect.syntax._
 import skunk.Session
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.server.http4s.{Http4sServerInterpreter, Http4sServerOptions}
+import sttp.tapir.server.http4s.Http4sServerInterpreter
+import sttp.tapir.server.http4s.Http4sServerOptions
 import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import util.BuildInfo
+import util.FUUID
 
 object Main extends IOApp.Simple {
 
@@ -50,14 +65,15 @@ object Main extends IOApp.Simple {
 
   override def run: IO[Unit] = runF[IO]
 
-  private def runF[F[_]: Async: Console] =
+  private def runF[F[_]: Async: Console: Parallel] =
     for {
       config <- loadConfig()
       _ <- runDatabaseMigrations(config.postgres)
       session = createPostgresSessionPool(config.postgres)
       keycloak = createKeycloakClient(config.keycloak)
-      // TODO: Add an option to load initial demo data
-      endpoints <- session.use(createEndpoints(_, keycloak, config.keycloak.appRealmName))
+      repositories <- session.use(createRepositories(_, keycloak, config.keycloak.appRealmName).pure[F])
+      _ <- loadDemoData(repositories)
+      endpoints <- createEndpoints(repositories, keycloak, config.keycloak.appRealmName)
       _ <- runHttpServer(config.http, endpoints)
     } yield ()
 
@@ -92,51 +108,75 @@ object Main extends IOApp.Simple {
       config.adminClientId
     )
 
-  private def createEndpoints[F[_]: Async](
+  private def createRepositories[F[_]: Concurrent: Sync](
     session: Resource[F, Session[F]],
+    keycloak: Keycloak,
+    appRealmName: String
+  ) = {
+    val monadCancelThrow = Concurrent[F]
+    Repositories(
+      officeRepository = new PostgresOfficeRepository[F](session)(monadCancelThrow),
+      deskRepository = new PostgresDeskRepository[F](session)(monadCancelThrow),
+      reservationRepository = new PostgresReservationRepository[F](session)(monadCancelThrow),
+      accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session),
+      officeViewRepository = new PostgresOfficeViewRepository[F](session)(implicitly, monadCancelThrow),
+      deskViewRepository = new PostgresDeskViewRepository[F](session)(implicitly, monadCancelThrow),
+      reservationViewRepository = new PostgresReservationViewRepository[F](session)(implicitly, monadCancelThrow),
+      accountViewRepository = new PostgresAccountViewRepository[F](session)(implicitly, monadCancelThrow)
+    )
+  }
+
+  private def loadDemoData[F[_]: FUUID: Sync: Parallel](repositories: Repositories[F]) =
+    for {
+      random <- Random.scalaUtilRandomSeedInt(0)
+      demoDataService = {
+        implicit val r = random
+        new DemoDataService[F](
+          repositories.accountRepository,
+          repositories.officeRepository,
+          repositories.deskRepository,
+          repositories.reservationRepository
+        )
+      }
+      _ <- demoDataService.loadDemoData()
+    } yield ()
+
+  private def createEndpoints[F[_]: Async](
+    repositories: Repositories[F],
     keycloak: Keycloak,
     appRealmName: String
   ) =
     for {
       publicKeyRepository <- KeycloakPublicKeyRepository[F](keycloak, appRealmName)
     } yield {
-      val officeRepository = new PostgresOfficeRepository[F](session)
-      val deskRepository = new PostgresDeskRepository[F](session)
-      val reservationRepository = new PostgresReservationRepository[F](session)
-      val accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session)
 
-      val officeViewRepository = new PostgresOfficeViewRepository[F](session)
-      val deskViewRepository = new PostgresDeskViewRepository[F](session)
-      val reservationViewRepository = new PostgresReservationViewRepository[F](session)
-      val accountViewRepository = new PostgresAccountViewRepository[F](session)
-
-      val officeService = new OfficeService[F](officeRepository)
-      val deskService = new DeskService[F](deskRepository)
-      val reservationService = new ReservationService[F](reservationRepository)
-      val accountService = new AccountService[F](accountRepository)
+      val officeService = new OfficeService[F](repositories.officeRepository)
+      val deskService = new DeskService[F](repositories.deskRepository)
+      val reservationService = new ReservationService[F](repositories.reservationRepository)
+      val accountService = new AccountService[F](repositories.accountRepository)
       val rolesExtractorService = KeycloakClaimsExtractorService
 
       val officeEndpoints = new OfficeEndpoints[F](
         officeService,
-        officeViewRepository, // TODO: Views should also be a part of services
+        repositories.officeViewRepository, // TODO: Views should also be a part of services
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
       val deskEndpoints = new DeskEndpoints[F](
         deskService,
-        deskViewRepository,
+        repositories.deskViewRepository,
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
       val reservationEndpoints = new ReservationEndpoints[F](
         reservationService,
-        reservationViewRepository,
+        repositories.reservationViewRepository,
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
       val accountEndpoints = new AccountEndpoints[F](
         accountService,
-        accountViewRepository,
+        repositories.accountViewRepository,
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
@@ -188,4 +228,15 @@ object Main extends IOApp.Simple {
 
   private def apiErrorHandler(errorMessage: String) =
     ValuedEndpointOutput(jsonBody[ApiError.BadRequest], ApiError.BadRequest(errorMessage))
+
+  case class Repositories[F[_]](
+    officeRepository: OfficeRepository[F],
+    deskRepository: DeskRepository[F],
+    reservationRepository: ReservationRepository[F],
+    accountRepository: AccountRepository[F],
+    officeViewRepository: OfficeViewRepository[F],
+    deskViewRepository: DeskViewRepository[F],
+    reservationViewRepository: ReservationViewRepository[F],
+    accountViewRepository: AccountViewRepository[F]
+  )
 }
