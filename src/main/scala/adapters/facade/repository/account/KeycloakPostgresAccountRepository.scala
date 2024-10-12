@@ -22,6 +22,7 @@ class KeycloakPostgresAccountRepository[F[_]: MonadThrow](
   postgresAccountRepository: PostgresAccountRepository[F]
 ) extends AccountRepository[F] {
 
+  // TODO: Send an email to the user with a link to set a password
   override def create(account: Account): F[Account] =
     for {
       _ <- postgresAccountRepository.create(account)

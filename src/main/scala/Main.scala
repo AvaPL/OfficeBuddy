@@ -137,7 +137,7 @@ object Main extends IOApp.Simple {
 
   private def loadDemoData[F[_]: FUUID: Sync](repositories: Repositories[F]): F[Unit] =
     for {
-      random <- Random.scalaUtilRandomSeedInt(0)
+      random <- Random.scalaUtilRandomSeedInt(0) // Arbitrarily chosen seed to make the demo data deterministic
       demoDataService = {
         implicit val r = random
         new DemoDataService[F](
@@ -159,7 +159,6 @@ object Main extends IOApp.Simple {
     for {
       publicKeyRepository <- KeycloakPublicKeyRepository[F](keycloak, appRealmName)
     } yield {
-
       val officeService = new OfficeService[F](repositories.officeRepository)
       val deskService = new DeskService[F](repositories.deskRepository)
       val reservationService = new ReservationService[F](repositories.reservationRepository)
@@ -239,7 +238,7 @@ object Main extends IOApp.Simple {
   private def apiErrorHandler(errorMessage: String) =
     ValuedEndpointOutput(jsonBody[ApiError.BadRequest], ApiError.BadRequest(errorMessage))
 
-  case class Repositories[F[_]](
+  private case class Repositories[F[_]](
     appMetadataRepository: AppMetadataRepository[F],
     officeRepository: OfficeRepository[F],
     deskRepository: DeskRepository[F],
