@@ -4,23 +4,26 @@ package domain.service.demo
 import cats.effect.IO
 import cats.effect.std.Random
 import domain.model.account.UserAccount
+import domain.model.appmetadata.AppMetadata
+import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
+import domain.model.appmetadata.AppMetadataKey
 import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.reservation.DeskReservation
 import domain.model.reservation.ReservationState.Confirmed
 import domain.repository.account.AccountRepository
+import domain.repository.appmetadata.AppMetadataRepository
 import domain.repository.desk.DeskRepository
 import domain.repository.office.OfficeRepository
 import domain.repository.reservation.ReservationRepository
-
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
-import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
+import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver.SimpleIOSuite
 
@@ -28,10 +31,13 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
 
   test(
     """GIVEN a demo data service
-      | WHEN loadDemoData is called
+      | WHEN loadDemoData is called and no app metadata is present
       | THEN at least 1 office, 1 account, 1 desk and 1 desk reservation is created
       |""".stripMargin
   ) {
+    val appMetadataRepository = mock[AppMetadataRepository[IO]]
+    whenF(appMetadataRepository.get(any)) thenReturn Option.empty[AppMetadata]
+    whenF(appMetadataRepository.set(any)) thenAnswer [AppMetadata] identity
     val accountRepository: AccountRepository[IO] =
       whenF(mock[AccountRepository[IO]].create(any)) thenReturn anyUserAccount
     val officeRepository: OfficeRepository[IO] =
@@ -42,10 +48,11 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       whenF(mock[ReservationRepository[IO]].createDeskReservation(any)) thenReturn anyDeskReservation
 
     for {
-      random <- Random.scalaUtilRandomSeedInt[IO](0)
+      random <- random
       demoDataService = {
         implicit val r = random
         new DemoDataService[IO](
+          appMetadataRepository,
           accountRepository,
           officeRepository,
           deskRepository,
@@ -54,10 +61,90 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       }
       _ <- demoDataService.loadDemoData()
     } yield {
+      verify(appMetadataRepository, times(1)).get(AppMetadataKey.IsDemoDataLoaded)
+      verify(appMetadataRepository, times(1)).set(IsDemoDataLoaded(true))
       verify(accountRepository, atLeast(1)).create(any)
       verify(officeRepository, atLeast(1)).create(any)
       verify(deskRepository, atLeast(1)).create(any)
       verify(reservationRepository, atLeast(1)).createDeskReservation(any)
+      success
+    }
+  }
+
+  test(
+    """GIVEN a demo data service
+      | WHEN loadDemoData is called and IsDemoDataLoaded is set to false
+      | THEN at least 1 office, 1 account, 1 desk and 1 desk reservation is created
+      |""".stripMargin
+  ) {
+    val appMetadataRepository = mock[AppMetadataRepository[IO]]
+    whenF(appMetadataRepository.get(any)) thenReturn Some(IsDemoDataLoaded(false))
+    whenF(appMetadataRepository.set(any)) thenAnswer [AppMetadata] identity
+    val accountRepository: AccountRepository[IO] =
+      whenF(mock[AccountRepository[IO]].create(any)) thenReturn anyUserAccount
+    val officeRepository: OfficeRepository[IO] =
+      whenF(mock[OfficeRepository[IO]].create(any)) thenReturn anyOffice
+    val deskRepository: DeskRepository[IO] =
+      whenF(mock[DeskRepository[IO]].create(any)) thenReturn anyDesk
+    val reservationRepository: ReservationRepository[IO] =
+      whenF(mock[ReservationRepository[IO]].createDeskReservation(any)) thenReturn anyDeskReservation
+
+    for {
+      random <- random
+      demoDataService = {
+        implicit val r = random
+        new DemoDataService[IO](
+          appMetadataRepository,
+          accountRepository,
+          officeRepository,
+          deskRepository,
+          reservationRepository
+        )
+      }
+      _ <- demoDataService.loadDemoData()
+    } yield {
+      verify(appMetadataRepository, times(1)).get(AppMetadataKey.IsDemoDataLoaded)
+      verify(appMetadataRepository, times(1)).set(IsDemoDataLoaded(true))
+      verify(accountRepository, atLeast(1)).create(any)
+      verify(officeRepository, atLeast(1)).create(any)
+      verify(deskRepository, atLeast(1)).create(any)
+      verify(reservationRepository, atLeast(1)).createDeskReservation(any)
+      success
+    }
+  }
+
+  test(
+    """GIVEN a demo data service
+      | WHEN loadDemoData is called and IsDemoDataLoaded is set to true
+      | THEN no additional demo data is created
+      |""".stripMargin
+  ) {
+    val appMetadataRepository: AppMetadataRepository[IO] =
+      whenF(mock[AppMetadataRepository[IO]].get(any)) thenReturn Some(IsDemoDataLoaded(true))
+    val accountRepository = mock[AccountRepository[IO]]
+    val officeRepository = mock[OfficeRepository[IO]]
+    val deskRepository = mock[DeskRepository[IO]]
+    val reservationRepository = mock[ReservationRepository[IO]]
+
+    for {
+      random <- random
+      demoDataService = {
+        implicit val r = random
+        new DemoDataService[IO](
+          appMetadataRepository,
+          accountRepository,
+          officeRepository,
+          deskRepository,
+          reservationRepository
+        )
+      }
+      _ <- demoDataService.loadDemoData()
+    } yield {
+      verify(appMetadataRepository, only).get(AppMetadataKey.IsDemoDataLoaded)
+      verify(accountRepository, never).create(any)
+      verify(officeRepository, never).create(any)
+      verify(deskRepository, never).create(any)
+      verify(reservationRepository, never).createDeskReservation(any)
       success
     }
   }
@@ -104,6 +191,9 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
     notes = "Test notes",
     deskId = anyDesk.id
   )
+
+  private implicit lazy val random: IO[Random[IO]] =
+    Random.scalaUtilRandomSeedInt[IO](0)
 
   private implicit lazy val logger: Logger[IO] =
     Slf4jLogger.getLogger[IO]

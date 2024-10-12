@@ -3,7 +3,6 @@ package domain.service.demo
 
 import cats.Monad
 import cats.MonadThrow
-import cats.Parallel
 import cats.effect.kernel.Clock
 import cats.effect.std.Random
 import cats.syntax.all._
@@ -11,6 +10,8 @@ import domain.model.account.Account
 import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
+import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
+import domain.model.appmetadata.AppMetadataKey
 import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
@@ -20,6 +21,7 @@ import domain.model.reservation.ReservationState.Confirmed
 import domain.model.reservation.ReservationState.Pending
 import domain.model.reservation.ReservationState.Rejected
 import domain.repository.account.AccountRepository
+import domain.repository.appmetadata.AppMetadataRepository
 import domain.repository.desk.DeskRepository
 import domain.repository.office.OfficeRepository
 import domain.repository.reservation.ReservationRepository
@@ -33,52 +35,58 @@ import java.util.UUID
 import org.typelevel.log4cats.Logger
 import util.FUUID
 
-class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Parallel: Random](
+class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
+  appMetadataRepository: AppMetadataRepository[F],
   accountRepository: AccountRepository[F],
   officeRepository: OfficeRepository[F],
   deskRepository: DeskRepository[F],
   reservationRepository: ReservationRepository[F]
 ) {
 
-  // TODO: Find a way to detect if the test data is already loaded
   // TODO: Loading demo data should be done within a transaction
   def loadDemoData(): F[Unit] =
-    for {
-      offices <- loadOffices()
-      accounts <- loadAccounts()
-      desks <- loadDesks()
-      reservations <- loadDeskReservations(desks)
-      _ <- Logger[F].info(
-        s"Demo data loaded (${offices.size} offices, ${accounts.size} accounts, ${desks.size} desks, ${reservations.size} reservations)"
-      )
-    } yield ()
+    appMetadataRepository.get(AppMetadataKey.IsDemoDataLoaded).flatMap {
+      case Some(IsDemoDataLoaded(true)) =>
+        Logger[F].info("Demo data already loaded")
+      case _ =>
+        for {
+          offices <- loadOffices()
+          accounts <- loadAccounts()
+          desks <- loadDesks()
+          reservations <- loadDeskReservations(desks)
+          _ <- appMetadataRepository.set(IsDemoDataLoaded(true))
+          _ <- Logger[F].info(
+            s"Demo data loaded (${offices.size} offices, ${accounts.size} accounts, ${desks.size} desks, ${reservations.size} reservations)"
+          )
+        } yield ()
+    }
 
   private def loadOffices(): F[List[Office]] =
-    Offices.allOffices.parTraverse(officeRepository.create)
+    Offices.allOffices.traverse(officeRepository.create)
 
   private def loadAccounts(): F[List[Account]] =
-    (Accounts.allSuperAdmins ++ Accounts.allOfficeManagers ++ Accounts.allUsers).parTraverse(accountRepository.create)
+    (Accounts.allSuperAdmins ++ Accounts.allOfficeManagers ++ Accounts.allUsers).traverse(accountRepository.create)
 
   private def loadDesks(): F[List[Desk]] =
-    Offices.allOffices.map(_.id).parFlatTraverse(loadOfficeDesks)
+    Offices.allOffices.map(_.id).flatTraverse(loadOfficeDesks)
 
   private def loadOfficeDesks(officeId: UUID): F[List[Desk]] =
     for {
       startingFloor <- Random[F].betweenInt(1, 6)
       numberOfFloors <- Random[F].betweenInt(1, 4)
-      desks <- (startingFloor until startingFloor + numberOfFloors).toList.parFlatTraverse(loadFloorDesks(officeId, _))
+      desks <- (startingFloor until startingFloor + numberOfFloors).toList.flatTraverse(loadFloorDesks(officeId, _))
     } yield desks
 
   private def loadFloorDesks(officeId: UUID, floor: Int): F[List[Desk]] =
     for {
       roomsCount <- Random[F].betweenInt(5, 10)
-      desks <- (1 to roomsCount).toList.parFlatTraverse(loadRoomDesks(officeId, floor, _))
+      desks <- (1 to roomsCount).toList.flatTraverse(loadRoomDesks(officeId, floor, _))
     } yield desks
 
   private def loadRoomDesks(officeId: UUID, floor: Int, roomIndex: Int): F[List[Desk]] =
     for {
       desksCount <- Random[F].betweenInt(1, 10)
-      desks <- (1 to desksCount).toList.parTraverse(loadDesk(officeId, floor, roomIndex, _))
+      desks <- (1 to desksCount).toList.traverse(loadDesk(officeId, floor, roomIndex, _))
     } yield desks
 
   private def loadDesk(officeId: UUID, floor: Int, roomIndex: Int, deskIndex: Int): F[Desk] =
@@ -95,7 +103,7 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Parallel: Random](
     } yield reservations
 
   private def loadDeskReservations(desks: List[Desk], now: LocalDateTime): F[List[DeskReservation]] =
-    desks.parFlatTraverse { desk =>
+    desks.flatTraverse { desk =>
       Random[F].nextBoolean.flatMap { hasReservation =>
         if (hasReservation)
           loadDeskReservation(desk, now).map(List(_))

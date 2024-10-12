@@ -10,13 +10,13 @@ import adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
 import adapters.keycloak.auth.service.KeycloakClaimsExtractorService
 import adapters.postgres.migration.FlywayMigration
 import adapters.postgres.repository.account.view.PostgresAccountViewRepository
+import adapters.postgres.repository.appmetadata.PostgresAppMetadataRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.desk.view.PostgresDeskViewRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
-import cats.Parallel
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
@@ -28,6 +28,7 @@ import config.KeycloakConfig
 import config.PostgresConfig
 import domain.repository.account.AccountRepository
 import domain.repository.account.view.AccountViewRepository
+import domain.repository.appmetadata.AppMetadataRepository
 import domain.repository.desk.DeskRepository
 import domain.repository.desk.view.DeskViewRepository
 import domain.repository.office.OfficeRepository
@@ -65,14 +66,14 @@ object Main extends IOApp.Simple {
 
   override def run: IO[Unit] = runF[IO]
 
-  private def runF[F[_]: Async: Console: Parallel] =
+  private def runF[F[_]: Async: Console] =
     for {
       config <- loadConfig()
       _ <- runDatabaseMigrations(config.postgres)
       session = createPostgresSessionPool(config.postgres)
       keycloak = createKeycloakClient(config.keycloak)
       repositories <- session.use(createRepositories(_, keycloak, config.keycloak.appRealmName).pure[F])
-      _ <- loadDemoData(repositories)
+      _ <- loadDemoData(repositories, config.demoDataEnabled)
       endpoints <- createEndpoints(repositories, keycloak, config.keycloak.appRealmName)
       _ <- runHttpServer(config.http, endpoints)
     } yield ()
@@ -115,6 +116,7 @@ object Main extends IOApp.Simple {
   ) = {
     val monadCancelThrow = Concurrent[F]
     Repositories(
+      appMetadataRepository = new PostgresAppMetadataRepository[F](session)(monadCancelThrow),
       officeRepository = new PostgresOfficeRepository[F](session)(monadCancelThrow),
       deskRepository = new PostgresDeskRepository[F](session)(monadCancelThrow),
       reservationRepository = new PostgresReservationRepository[F](session)(monadCancelThrow),
@@ -126,12 +128,20 @@ object Main extends IOApp.Simple {
     )
   }
 
-  private def loadDemoData[F[_]: FUUID: Sync: Parallel](repositories: Repositories[F]) =
+  private def loadDemoData[F[_]: FUUID: Sync](
+    repositories: Repositories[F],
+    demoDataEnabled: Boolean
+  ): F[Unit] =
+    if (demoDataEnabled) loadDemoData(repositories)
+    else ().pure[F]
+
+  private def loadDemoData[F[_]: FUUID: Sync](repositories: Repositories[F]): F[Unit] =
     for {
       random <- Random.scalaUtilRandomSeedInt(0)
       demoDataService = {
         implicit val r = random
         new DemoDataService[F](
+          repositories.appMetadataRepository,
           repositories.accountRepository,
           repositories.officeRepository,
           repositories.deskRepository,
@@ -230,6 +240,7 @@ object Main extends IOApp.Simple {
     ValuedEndpointOutput(jsonBody[ApiError.BadRequest], ApiError.BadRequest(errorMessage))
 
   case class Repositories[F[_]](
+    appMetadataRepository: AppMetadataRepository[F],
     officeRepository: OfficeRepository[F],
     deskRepository: DeskRepository[F],
     reservationRepository: ReservationRepository[F],
