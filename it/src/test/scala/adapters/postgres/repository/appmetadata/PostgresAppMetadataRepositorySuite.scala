@@ -4,8 +4,9 @@ package adapters.postgres.repository.appmetadata
 import adapters.postgres.fixture.PostgresFixture
 import cats.effect.IO
 import cats.effect.Resource
+import cats.syntax.all._
+import domain.model.appmetadata.AppMetadata
 import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
-import domain.model.appmetadata.AppMetadataKey
 import skunk._
 import skunk.implicits._
 import weaver.Expectations
@@ -27,10 +28,8 @@ object PostgresAppMetadataRepositorySuite extends IOSuite with PostgresFixture {
       | THEN the result should be empty
       |""".stripMargin
   ) { appMetadataRepository =>
-    val appMetadataKey = AppMetadataKey.IsDemoDataLoaded
-
     for {
-      readAppMetadata <- appMetadataRepository.get(appMetadataKey)
+      readAppMetadata <- appMetadataRepository.get[IsDemoDataLoaded]
     } yield expect(readAppMetadata.isEmpty)
   }
 
@@ -44,7 +43,7 @@ object PostgresAppMetadataRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- appMetadataRepository.set(appMetadata)
-      readAppMetadata <- appMetadataRepository.get(appMetadata.key)
+      readAppMetadata <- appMetadataRepository.get[IsDemoDataLoaded]
     } yield expect(readAppMetadata.contains(appMetadata))
   }
 
@@ -60,8 +59,21 @@ object PostgresAppMetadataRepositorySuite extends IOSuite with PostgresFixture {
     for {
       _ <- appMetadataRepository.set(appMetadata)
       _ <- appMetadataRepository.set(updatedAppMetadata)
-      readAppMetadata <- appMetadataRepository.get(appMetadata.key)
+      readAppMetadata <- appMetadataRepository.get[IsDemoDataLoaded]
     } yield expect(readAppMetadata.contains(updatedAppMetadata))
+  }
+
+  beforeTest(
+    """GIVEN a list of app metadata
+      | WHEN get is called for every type
+      | THEN no call should fail because of missing decoder
+      |""".stripMargin
+  ) { appMetadataRepository =>
+    List[AppMetadata](
+      IsDemoDataLoaded(true)
+    ).traverse { // ^ add an element to the list each time a new AppMetadata is added
+      case IsDemoDataLoaded(_) => appMetadataRepository.get[IsDemoDataLoaded]
+    }.as(success)
   }
 
   private def truncateAppMetadataTable(session: Resource[IO, Session[IO]]) = {

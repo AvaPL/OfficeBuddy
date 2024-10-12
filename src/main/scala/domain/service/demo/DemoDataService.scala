@@ -11,7 +11,6 @@ import domain.model.account.OfficeManagerAccount
 import domain.model.account.SuperAdminAccount
 import domain.model.account.UserAccount
 import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
-import domain.model.appmetadata.AppMetadataKey
 import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
@@ -45,7 +44,7 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
 
   // TODO: Loading demo data should be done within a transaction
   def loadDemoData(): F[Unit] =
-    appMetadataRepository.get(AppMetadataKey.IsDemoDataLoaded).flatMap {
+    appMetadataRepository.get[IsDemoDataLoaded].flatMap {
       case Some(IsDemoDataLoaded(true)) =>
         Logger[F].info("Demo data already loaded")
       case _ =>

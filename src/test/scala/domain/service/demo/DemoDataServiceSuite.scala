@@ -6,7 +6,6 @@ import cats.effect.std.Random
 import domain.model.account.UserAccount
 import domain.model.appmetadata.AppMetadata
 import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
-import domain.model.appmetadata.AppMetadataKey
 import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
@@ -36,7 +35,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       |""".stripMargin
   ) {
     val appMetadataRepository = mock[AppMetadataRepository[IO]]
-    whenF(appMetadataRepository.get(any)) thenReturn Option.empty[AppMetadata]
+    whenF(appMetadataRepository.get[IsDemoDataLoaded](any)) thenReturn Option.empty[IsDemoDataLoaded]
     whenF(appMetadataRepository.set(any)) thenAnswer [AppMetadata] identity
     val accountRepository: AccountRepository[IO] =
       whenF(mock[AccountRepository[IO]].create(any)) thenReturn anyUserAccount
@@ -61,7 +60,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       }
       _ <- demoDataService.loadDemoData()
     } yield {
-      verify(appMetadataRepository, times(1)).get(AppMetadataKey.IsDemoDataLoaded)
+      verify(appMetadataRepository, times(1)).get[IsDemoDataLoaded]
       verify(appMetadataRepository, times(1)).set(IsDemoDataLoaded(true))
       verify(accountRepository, atLeast(1)).create(any)
       verify(officeRepository, atLeast(1)).create(any)
@@ -78,7 +77,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       |""".stripMargin
   ) {
     val appMetadataRepository = mock[AppMetadataRepository[IO]]
-    whenF(appMetadataRepository.get(any)) thenReturn Some(IsDemoDataLoaded(false))
+    whenF(appMetadataRepository.get[IsDemoDataLoaded]) thenReturn Some(IsDemoDataLoaded(false))
     whenF(appMetadataRepository.set(any)) thenAnswer [AppMetadata] identity
     val accountRepository: AccountRepository[IO] =
       whenF(mock[AccountRepository[IO]].create(any)) thenReturn anyUserAccount
@@ -103,7 +102,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       }
       _ <- demoDataService.loadDemoData()
     } yield {
-      verify(appMetadataRepository, times(1)).get(AppMetadataKey.IsDemoDataLoaded)
+      verify(appMetadataRepository, times(1)).get[IsDemoDataLoaded]
       verify(appMetadataRepository, times(1)).set(IsDemoDataLoaded(true))
       verify(accountRepository, atLeast(1)).create(any)
       verify(officeRepository, atLeast(1)).create(any)
@@ -120,7 +119,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       |""".stripMargin
   ) {
     val appMetadataRepository: AppMetadataRepository[IO] =
-      whenF(mock[AppMetadataRepository[IO]].get(any)) thenReturn Some(IsDemoDataLoaded(true))
+      whenF(mock[AppMetadataRepository[IO]].get[IsDemoDataLoaded]) thenReturn Some(IsDemoDataLoaded(true))
     val accountRepository = mock[AccountRepository[IO]]
     val officeRepository = mock[OfficeRepository[IO]]
     val deskRepository = mock[DeskRepository[IO]]
@@ -140,7 +139,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       }
       _ <- demoDataService.loadDemoData()
     } yield {
-      verify(appMetadataRepository, only).get(AppMetadataKey.IsDemoDataLoaded)
+      verify(appMetadataRepository, only).get[IsDemoDataLoaded]
       verify(accountRepository, never).create(any)
       verify(officeRepository, never).create(any)
       verify(deskRepository, never).create(any)

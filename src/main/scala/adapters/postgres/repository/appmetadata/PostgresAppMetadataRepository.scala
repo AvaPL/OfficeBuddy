@@ -5,9 +5,9 @@ import cats.effect.kernel.MonadCancelThrow
 import cats.effect.kernel.Resource
 import cats.syntax.all._
 import domain.model.appmetadata.AppMetadata
-import domain.model.appmetadata.AppMetadataKey
+import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
 import domain.repository.appmetadata.AppMetadataRepository
-import io.circe.Json
+import scala.reflect.ClassTag
 import skunk._
 import skunk.circe.codec.all._
 import skunk.codec.all._
@@ -19,22 +19,29 @@ class PostgresAppMetadataRepository[F[_]: MonadCancelThrow](
 
   import PostgresAppMetadataRepository._
 
-  override def get(key: AppMetadataKey): F[Option[AppMetadata]] =
+  override def get[M <: AppMetadata](implicit classTag: ClassTag[M]): F[Option[M]] = {
+    val (key, decoder) = getKeyAndDecoder[M]
     session.use { session =>
       for {
-        sql <- session.prepare(getSql)
+        sql <- session.prepare(getSql(decoder))
         appMetadata <- sql.option(key)
       } yield appMetadata
     }
+  }
 
-  private lazy val getSql: Query[AppMetadataKey, AppMetadata] = {
-    val sql: Query[String, AppMetadata] = sql"""
-      SELECT key, value
+  private def getKeyAndDecoder[M <: AppMetadata](implicit classTag: ClassTag[M]): (String, Decoder[M]) = {
+    val decoders = Map[Class[_], (String, Decoder[_])](
+      classOf[IsDemoDataLoaded] -> (IsDemoDataLoaded.key, isDemoDataLoadedDecoder)
+    )
+    decoders(classTag.runtimeClass).map(_.asInstanceOf[Decoder[M]])
+  }
+
+  private def getSql[M <: AppMetadata](decoder: Decoder[M]): Query[String, M] =
+    sql"""
+      SELECT value
       FROM app_metadata
       WHERE key = $varchar
-    """.query(appMetadataDecoder)
-    sql.contramap(_.value)
-  }
+    """.query(decoder)
 
   override def set(appMetadata: AppMetadata): F[AppMetadata] =
     session.use { session =>
@@ -60,32 +67,15 @@ object PostgresAppMetadataRepository {
       varchar *: // key
         jsonb // value
     ).contramap[AppMetadata] { appMetadata =>
-      appMetadata.key.value *:
+      appMetadata.key *:
         appMetadata.valueJson *:
         EmptyTuple
     }
 
-  private lazy val appMetadataDecoder: Decoder[AppMetadata] =
-    (
-      varchar *: // key
-        jsonb // value
-    ).emap {
-      case key *: valueJson *: EmptyTuple =>
-        for {
-          key <- parseKey(key)
-          appMetadata <- parseValue(key, valueJson)
-        } yield appMetadata
-    }
-
-  private def parseKey(key: String) =
-    AppMetadataKey.withValueEither(key).leftMap(_.getMessage)
-
-  private def parseValue(key: AppMetadataKey, valueJson: Json) =
-    key match {
-      case AppMetadataKey.IsDemoDataLoaded =>
-        valueJson
-          .as[Boolean]
-          .map(AppMetadata.IsDemoDataLoaded)
-          .leftMap(_.message)
+  private lazy val isDemoDataLoadedDecoder: Decoder[IsDemoDataLoaded] =
+    jsonb.emap {
+      _.as[Boolean]
+        .map(IsDemoDataLoaded(_))
+        .leftMap(_.message)
     }
 }
