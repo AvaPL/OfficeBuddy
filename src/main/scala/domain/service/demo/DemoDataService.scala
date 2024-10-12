@@ -23,16 +23,17 @@ import domain.repository.account.AccountRepository
 import domain.repository.desk.DeskRepository
 import domain.repository.office.OfficeRepository
 import domain.repository.reservation.ReservationRepository
+import domain.service.demo.DemoDataService.Accounts
 import domain.service.demo.DemoDataService.Offices
-import domain.service.demo.DemoDataService.Users
 import domain.service.demo.DemoDataService.generateDesk
 import domain.service.demo.DemoDataService.generateDeskReservation
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import org.typelevel.log4cats.Logger
 import util.FUUID
 
-class DemoDataService[F[_]: Clock: FUUID: MonadThrow: Parallel: Random](
+class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Parallel: Random](
   accountRepository: AccountRepository[F],
   officeRepository: OfficeRepository[F],
   deskRepository: DeskRepository[F],
@@ -41,20 +42,22 @@ class DemoDataService[F[_]: Clock: FUUID: MonadThrow: Parallel: Random](
 
   // TODO: Find a way to detect if the test data is already loaded
   // TODO: Loading demo data should be done within a transaction
-  // TODO: Add log
   def loadDemoData(): F[Unit] =
     for {
-      _ <- loadOffices()
-      _ <- loadUsers()
+      offices <- loadOffices()
+      accounts <- loadAccounts()
       desks <- loadDesks()
-      _ <- loadDeskReservations(desks)
+      reservations <- loadDeskReservations(desks)
+      _ <- Logger[F].info(
+        s"Demo data loaded (${offices.size} offices, ${accounts.size} accounts, ${desks.size} desks, ${reservations.size} reservations)"
+      )
     } yield ()
 
-  private def loadOffices(): F[Unit] =
-    Offices.allOffices.parTraverse_(officeRepository.create)
+  private def loadOffices(): F[List[Office]] =
+    Offices.allOffices.parTraverse(officeRepository.create)
 
-  private def loadUsers(): F[Unit] =
-    (Users.allSuperAdmins ++ Users.allOfficeManagers ++ Users.allUsers).parTraverse_(accountRepository.create)
+  private def loadAccounts(): F[List[Account]] =
+    (Accounts.allSuperAdmins ++ Accounts.allOfficeManagers ++ Accounts.allUsers).parTraverse(accountRepository.create)
 
   private def loadDesks(): F[List[Desk]] =
     Offices.allOffices.map(_.id).parFlatTraverse(loadOfficeDesks)
@@ -85,24 +88,27 @@ class DemoDataService[F[_]: Clock: FUUID: MonadThrow: Parallel: Random](
       deskNumber = deskIndex
     ).flatMap(deskRepository.create)
 
-  private def loadDeskReservations(desks: List[Desk]): F[Unit] =
+  private def loadDeskReservations(desks: List[Desk]): F[List[DeskReservation]] =
     for {
       now <- Clock[F].realTimeInstant.map(LocalDateTime.ofInstant(_, ZoneOffset.UTC))
-      _ <- loadDeskReservations(desks, now)
-    } yield ()
+      reservations <- loadDeskReservations(desks, now)
+    } yield reservations
 
-  private def loadDeskReservations(desks: List[Desk], now: LocalDateTime): F[Unit] =
-    desks.parTraverse_ { desk =>
+  private def loadDeskReservations(desks: List[Desk], now: LocalDateTime): F[List[DeskReservation]] =
+    desks.parFlatTraverse { desk =>
       Random[F].nextBoolean.flatMap { hasReservation =>
-        if (hasReservation) loadDeskReservation(desk, now) else ().pure[F]
+        if (hasReservation)
+          loadDeskReservation(desk, now).map(List(_))
+        else
+          List.empty[DeskReservation].pure[F]
       }
     }
 
-  private def loadDeskReservation(desk: Desk, now: LocalDateTime): F[Unit] =
+  private def loadDeskReservation(desk: Desk, now: LocalDateTime): F[DeskReservation] =
     for {
-      user <- Random[F].elementOf(Users.allUsers ++ Users.allOfficeManagers)
-      _ <- loadDeskReservation(user, desk, now)
-    } yield ()
+      user <- Random[F].elementOf(Accounts.allUsers ++ Accounts.allOfficeManagers)
+      reservation <- loadDeskReservation(user, desk, now)
+    } yield reservation
 
   private def loadDeskReservation(user: Account, desk: Desk, now: LocalDateTime): F[DeskReservation] =
     generateDeskReservation(user.id, desk.id, now)
@@ -297,7 +303,7 @@ object DemoDataService {
     )
   }
 
-  object Users {
+  object Accounts {
 
     lazy val superAdmin1: SuperAdminAccount = SuperAdminAccount(
       id = UUID.fromString("00000000-0000-0000-0000-200000000001"),

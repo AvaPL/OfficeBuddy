@@ -13,12 +13,15 @@ import domain.repository.account.AccountRepository
 import domain.repository.desk.DeskRepository
 import domain.repository.office.OfficeRepository
 import domain.repository.reservation.ReservationRepository
+
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
+import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver.SimpleIOSuite
 
 object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
@@ -101,4 +104,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
     notes = "Test notes",
     deskId = anyDesk.id
   )
+
+  private implicit lazy val logger: Logger[IO] =
+    Slf4jLogger.getLogger[IO]
 }

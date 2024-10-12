@@ -54,6 +54,7 @@ lazy val root = (project in file("."))
       "com.github.pureconfig" %% "pureconfig-cats" % pureconfigVersion,
       "com.github.pureconfig" %% "pureconfig-cats-effect" % pureconfigVersion,
       "com.github.pureconfig" %% "pureconfig-ip4s" % pureconfigVersion,
+      "org.tpolecat" %% "skunk-circe" % skunkVersion,
       "org.tpolecat" %% "skunk-core" % skunkVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-enumeratum" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
