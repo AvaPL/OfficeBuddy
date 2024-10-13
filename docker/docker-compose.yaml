@@ -24,6 +24,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  mailpit:
+    container_name: office_buddy_mailpit
+    restart: always
+    image: axllent/mailpit:v1.20
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   keycloak:
     container_name: office_buddy_keycloak
     restart: always
@@ -48,4 +60,6 @@ services:
       retries: 10
     depends_on:
       postgres:
+        condition: 'service_healthy'
+      mailpit:
         condition: 'service_healthy'
