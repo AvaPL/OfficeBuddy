@@ -39,11 +39,11 @@
             </div>
           </div>
         </div>
-        <button mat-icon-button [matMenuTriggerFor]="menu">
-          <mat-icon>more_vert</mat-icon>
+        <button [disabled]="!authService.hasOfficeManagerRole()" mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon *ngIf="authService.hasOfficeManagerRole()">more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="editOffice( {
+          <button *ngIf="authService.hasSuperAdminRole()" mat-menu-item (click)="editOffice( {
             id: office.id,
             name: office.name,
             address: {
@@ -61,11 +61,11 @@
             <mat-icon>person_add</mat-icon>
             <span>Assign user</span>
           </button>
-          <button mat-menu-item (click)="editManagers(office.id, office.name, office.officeManagers)">
+          <button *ngIf="authService.hasSuperAdminRole()" mat-menu-item (click)="editManagers(office.id, office.name, office.officeManagers)">
             <mat-icon>manage_accounts</mat-icon>
             <span>Edit managers</span>
           </button>
-          <button mat-menu-item (click)="deleteOffice(office.id, office.name)">
+          <button *ngIf="authService.hasSuperAdminRole()" mat-menu-item (click)="deleteOffice(office.id, office.name)">
             <mat-icon>highlight_remove</mat-icon>
             <span>Delete office</span>
           </button>
@@ -80,7 +80,7 @@
     (page)="handlePageEvent($event)"
     hidePageSize>
   </mat-paginator>
-  <button mat-fab class="add-button" color="primary" (click)="createOffice()" matTooltip="Add new office"
+  <button *ngIf="authService.hasSuperAdminRole()" mat-fab class="add-button" color="primary" (click)="createOffice()" matTooltip="Add new office"
           matTooltipPosition="above">
     <mat-icon>add</mat-icon>
   </button>

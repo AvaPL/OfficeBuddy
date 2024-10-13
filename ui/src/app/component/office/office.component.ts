@@ -12,6 +12,7 @@ import {Pagination} from "../../service/model/pagination/pagination.model";
 import {OfficeService} from "../../service/office.service";
 import {AssignUserDialogComponent} from "./assign-user-dialog/assign-user-dialog.component";
 import {EditManagersDialogComponent} from "./edit-managers-dialog/edit-managers-dialog.component";
+import {AuthService} from "../../service/auth.service";
 
 @Component({
   selector: 'app-office',
@@ -35,7 +36,7 @@ export class OfficeComponent implements OnInit {
     hasMoreResults: false
   };
 
-  constructor(private officeService: OfficeService) {
+  constructor(private officeService: OfficeService, protected authService: AuthService) {
   }
 
   ngOnInit() {
