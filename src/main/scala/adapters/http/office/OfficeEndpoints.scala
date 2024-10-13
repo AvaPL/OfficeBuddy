@@ -50,9 +50,9 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       Nil
 
   private lazy val createOfficeEndpoint =
-    securedEndpoint(requiredRole = OfficeManager).post
+    securedEndpoint(requiredRole = SuperAdmin).post
       .summary("Create an office")
-      .description("Required role: office manager")
+      .description("Required role: super admin")
       .in(
         jsonBody[ApiCreateOffice]
           .example(apiCreateOfficeExample)
@@ -107,9 +107,9 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       }
 
   private lazy val updateOfficeEndpoint =
-    securedEndpoint(requiredRole = OfficeManager).patch
+    securedEndpoint(requiredRole = SuperAdmin).patch
       .summary("Update an office")
-      .description("Required role: office manager")
+      .description("Required role: super admin")
       .in(
         path[UUID]("officeId") and jsonBody[ApiUpdateOffice]
           .example(apiUpdateOfficeExample)
@@ -177,12 +177,12 @@ class OfficeEndpoints[F[_]: Clock: MonadThrow](
       }
 
   private lazy val archiveOfficeEndpoint =
-    securedEndpoint(requiredRole = OfficeManager).delete
+    securedEndpoint(requiredRole = SuperAdmin).delete
       .summary("Archive an office")
       .description(
         """Archives an office. The office is NOT deleted. The operation is idempotent ie. if the office doesn't exist, the operation doesn't fail.
           |
-          |Required role: office manager
+          |Required role: super admin
           |""".stripMargin
       )
       .in(path[UUID]("officeId"))

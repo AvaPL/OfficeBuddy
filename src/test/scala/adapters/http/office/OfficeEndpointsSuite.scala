@@ -39,7 +39,7 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN create office endpoint
-      | WHEN an office is POSTed and created by an office manager
+      | WHEN an office is POSTed and created by a super admin
       | THEN 201 Created and the created office is returned
       |""".stripMargin
   ) {
@@ -47,7 +47,7 @@ object OfficeEndpointsSuite
     val office = Office(anyOfficeId1, officeToCreate.name, officeToCreate.notes, officeToCreate.address.toDomain)
     val officeService = whenF(mock[OfficeService[IO]].createOffice(any)) thenReturn office
 
-    val response = sendRequest(officeService, role = OfficeManager) {
+    val response = sendRequest(officeService, role = SuperAdmin) {
       basicRequest
         .post(uri"http://test.com/office")
         .body(officeToCreate)
@@ -63,14 +63,14 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN create office endpoint
-      | WHEN there is an attempt to create an office by a user
+      | WHEN there is an attempt to create an office by an office manager
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
     val officeToCreate = anyApiCreateOffice
     val officeService = mock[OfficeService[IO]]
 
-    val response = sendRequest(officeService, role = User) {
+    val response = sendRequest(officeService, role = OfficeManager) {
       basicRequest
         .post(uri"http://test.com/office")
         .body(officeToCreate)
@@ -145,7 +145,7 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN update office endpoint
-      | WHEN an office is PATCHed and updated by an office manager
+      | WHEN an office is PATCHed and updated by a super admin
       | THEN 200 OK and the updated office is returned
       |""".stripMargin
   ) {
@@ -161,7 +161,7 @@ object OfficeEndpointsSuite
     val office = Office(officeId, officeToUpdate.name.get, officeToUpdate.notes.get, address)
     val officeService = whenF(mock[OfficeService[IO]].updateOffice(any, any)) thenReturn office
 
-    val response = sendRequest(officeService, role = OfficeManager) {
+    val response = sendRequest(officeService, role = SuperAdmin) {
       basicRequest
         .patch(uri"http://test.com/office/$officeId")
         .body(officeToUpdate)
@@ -177,7 +177,7 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN update office endpoint
-      | WHEN there is an attempt to update an office by a user
+      | WHEN there is an attempt to update an office by an office manager
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
@@ -185,7 +185,7 @@ object OfficeEndpointsSuite
     val officeId = anyOfficeId1
     val officeService = mock[OfficeService[IO]]
 
-    val response = sendRequest(officeService, role = User) {
+    val response = sendRequest(officeService, role = OfficeManager) {
       basicRequest
         .patch(uri"http://test.com/office/$officeId")
         .body(officeToUpdate)
@@ -331,13 +331,13 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN archive office endpoint
-      | WHEN an existing office is archived by an office manager
+      | WHEN an existing office is archived by a super admin
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
     val officeService = whenF(mock[OfficeService[IO]].archiveOffice(any)) thenReturn ()
 
-    val response = sendRequest(officeService, role = OfficeManager) {
+    val response = sendRequest(officeService, role = SuperAdmin) {
       basicRequest.delete(uri"http://test.com/office/$anyOfficeId1")
     }
 
@@ -348,7 +348,7 @@ object OfficeEndpointsSuite
 
   test(
     """GIVEN archive office endpoint
-      | WHEN there is an attempt to archive an office by a user
+      | WHEN there is an attempt to archive an office by an office manager
       | THEN 403 Forbidden is returned
       |""".stripMargin
   ) {
