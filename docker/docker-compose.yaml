@@ -51,6 +51,8 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: true
+      OB_SMTP_SERVER_HOST: mailpit
+      OB_SMTP_SERVER_PORT: 1025
     volumes:
       - ./keycloak/office-buddy-realm.json:/opt/keycloak/data/import/office-buddy-realm.json
     healthcheck:
