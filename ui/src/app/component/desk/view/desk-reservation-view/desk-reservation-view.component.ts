@@ -38,6 +38,8 @@ export class DeskReservationViewComponent implements OnInit {
   readonly createDeskReservationDialog = inject(MatDialog);
   protected readonly ReservationState = ReservationState;
 
+  currentUserId: string = ""
+
   notesTooltipQuery: MediaQueryList;
 
   offices: OfficeCompact[] = []
@@ -66,6 +68,7 @@ export class DeskReservationViewComponent implements OnInit {
   async ngOnInit() {
     await this.fetchOffices()
     await this.fetchReservations(this.pagination.limit, this.pagination.offset)
+    this.currentUserId = await this.authService.getAccountId()
   }
 
   async fetchOffices() {
@@ -250,5 +253,25 @@ export class DeskReservationViewComponent implements OnInit {
         this.fetchReservations(this.pagination.limit, 0)
       }
     });
+  }
+
+  canConfirmReservation(reservation: DeskReservationView) {
+    return reservation.state === ReservationState.PENDING &&
+      this.authService.hasOfficeManagerRole()
+  }
+
+  canRejectConfirmedReservation(reservation: DeskReservationView) {
+    return reservation.state === ReservationState.CONFIRMED &&
+      this.authService.hasOfficeManagerRole()
+  }
+
+  canRejectPendingReservation(reservation: DeskReservationView) {
+    return reservation.state === ReservationState.PENDING &&
+      this.authService.hasOfficeManagerRole()
+  }
+
+  canCancelReservation(reservation: DeskReservationView) {
+    return (reservation.state === ReservationState.PENDING || reservation.state === ReservationState.CONFIRMED) &&
+      reservation.user.id === this.currentUserId
   }
 }

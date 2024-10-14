@@ -11,6 +11,7 @@ import {OfficeService} from "../../../../service/office.service";
 import {DeskService} from "../../../../service/desk.service";
 import {DeskView} from "../../../../service/model/desk/desk-view.model";
 import {Pagination} from "../../../../service/model/pagination/pagination.model";
+import {AuthService} from "../../../../service/auth.service";
 
 @Component({
   selector: 'app-desk-list-view',
@@ -40,7 +41,7 @@ export class DeskListViewComponent implements OnInit {
     hasMoreResults: false
   };
 
-  constructor(private officeService: OfficeService, private deskService: DeskService) {
+  constructor(private officeService: OfficeService, private deskService: DeskService, protected authService: AuthService) {
   }
 
   async ngOnInit() {

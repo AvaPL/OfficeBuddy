@@ -27,7 +27,7 @@
           <mat-icon *ngIf="desk.isStanding" class="desk-stats-item standing-icon" matTooltip="Standing">boy</mat-icon>
           <mat-icon *ngIf="desk.hasPhone" class="desk-stats-item" matTooltip="Phone">phone</mat-icon>
         </mat-card-subtitle>
-        <button mat-icon-button [matMenuTriggerFor]="menu">
+        <button *ngIf="authService.hasOfficeManagerRole()" mat-icon-button [matMenuTriggerFor]="menu">
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
@@ -68,7 +68,7 @@
   (page)="handlePageEvent($event)"
   hidePageSize>
 </mat-paginator>
-<button *ngIf="selectedOffice" mat-fab class="add-button" color="primary"
+<button *ngIf="selectedOffice && authService.hasOfficeManagerRole()" mat-fab class="add-button" color="primary"
         (click)="createDesk(selectedOffice.id, selectedOffice.name)"
         matTooltip="Add new desk"
         matTooltipPosition="above">

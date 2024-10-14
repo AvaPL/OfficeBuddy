@@ -40,23 +40,23 @@
             </div>
           </div>
           <div class="buttons-row">
-            <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button"
+            <button *ngIf="canConfirmReservation(reservation)" mat-icon-button class="reservation-button"
                     matTooltip="Confirm"
                     (click)="confirmReservation(reservation.id, reservation.desk, reservation.user, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>check_circle</mat-icon>
             </button>
-            <button *ngIf="reservation.state === ReservationState.CONFIRMED" mat-icon-button class="reservation-button"
+            <button *ngIf="canRejectConfirmedReservation(reservation)" mat-icon-button class="reservation-button"
                     matTooltip="Reject"
                     (click)="rejectReservation(reservation.id, reservation.desk, reservation.user, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>unpublished</mat-icon>
             </button>
-            <button *ngIf="reservation.state === ReservationState.PENDING" mat-icon-button class="reservation-button"
+            <button *ngIf="canRejectPendingReservation(reservation)" mat-icon-button class="reservation-button"
                     matTooltip="Reject"
                     (click)="rejectReservation(reservation.id, reservation.desk, reservation.user, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>do_not_disturb_on</mat-icon>
             </button>
             <button
-              *ngIf="reservation.state === ReservationState.PENDING || reservation.state === ReservationState.CONFIRMED"
+              *ngIf="canCancelReservation(reservation)"
               mat-icon-button class="reservation-button"
               matTooltip="Cancel"
               (click)="cancelReservation(reservation.id, reservation.desk, reservation.reservedFromDate, reservation.reservedToDate)">
