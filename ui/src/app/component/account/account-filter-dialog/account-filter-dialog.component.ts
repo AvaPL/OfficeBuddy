@@ -1,6 +1,7 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
+import {displayName} from "../util/account-display-name.util";
+import {AccountRole} from "../../../service/model/account/account-role.enum";
 
 export interface AccountFilterDialogData {
   offices: { id: string, name: string }[],
@@ -34,5 +35,5 @@ export class AccountFilterDialogComponent {
 
   protected readonly AccountRole = AccountRole;
   protected readonly Object = Object;
-  protected readonly AccountRoleCompanion = AccountRoleCompanion;
+  protected readonly displayName = displayName;
 }

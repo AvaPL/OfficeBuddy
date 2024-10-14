@@ -20,7 +20,7 @@
         <mat-card-title>
           <span class="account-name">{{ account.firstName }} {{ account.lastName }}</span>
           <span class="mat-body account-role"
-                [style.background-color]="roleChipBackgroundColor(account.role)">{{ AccountRoleCompanion.displayName(account.role) }}</span>
+                [style.background-color]="roleChipBackgroundColor(account.role)">{{ displayName(account.role) }}</span>
         </mat-card-title>
         <mat-card-subtitle class="account-subtitle-line" matTooltip="Email">
           <mat-icon matListItemIcon>email</mat-icon>
@@ -37,15 +37,17 @@
           <mat-icon matListItemIcon>person</mat-icon>
           <span matListItemLine>{{ joinWithComma(account.managedOffices) }}</span>
         </mat-card-subtitle>
-        <button mat-icon-button [matMenuTriggerFor]="menu">
+        <button *ngIf="canDeleteAccount(account.role)" mat-icon-button [matMenuTriggerFor]="menu">
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="changeRole(account.id, account.firstName, account.lastName, account.role)">
+          <button *ngIf="authService.hasSuperAdminRole()" mat-menu-item
+                  (click)="changeRole(account.id, account.firstName, account.lastName, account.role)">
             <mat-icon>admin_panel_settings</mat-icon>
             <span>Change role</span>
           </button>
-          <button mat-menu-item (click)="deleteAccount(account.id, account.firstName, account.lastName, account.email)">
+          <button *ngIf="canDeleteAccount(account.role)" mat-menu-item
+                  (click)="deleteAccount(account.id, account.firstName, account.lastName, account.email)">
             <mat-icon>highlight_remove</mat-icon>
             <span>Delete account</span>
           </button>
@@ -61,7 +63,8 @@
   (page)="handlePageEvent($event)"
   hidePageSize>
 </mat-paginator>
-<button mat-fab class="add-button" color="primary" matTooltip="Add new account" matTooltipPosition="above"
+<button *ngIf="authService.hasOfficeManagerRole()" mat-fab class="add-button" color="primary"
+        matTooltip="Add new account" matTooltipPosition="above"
         (click)="createAccount()">
   <mat-icon>add</mat-icon>
 </button>

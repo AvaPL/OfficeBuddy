@@ -1,8 +1,9 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {AccountRole, AccountRoleCompanion} from "../model/account-role.enum";
+import {displayName} from "../util/account-display-name.util";
 import {AccountService} from "../../../service/account.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {AccountRole} from "../../../service/model/account/account-role.enum";
 
 export interface ChangeAccountRoleDialogData {
   accountId: string
@@ -28,7 +29,7 @@ export class ChangeAccountRoleDialogComponent {
   async onConfirm() {
     try {
       await this.accountService.updateRole(this.data.accountId, this.selectedRole);
-      const displayRole = AccountRoleCompanion.displayName(this.selectedRole);
+      const displayRole = displayName(this.selectedRole);
       this.snackbar.open(`${this.data.firstName} ${this.data.lastName}'s role updated to ${displayRole}`);
       this.dialogRef.close({selectedRole: this.selectedRole});
     } catch (error) {
@@ -43,5 +44,5 @@ export class ChangeAccountRoleDialogComponent {
 
   protected readonly Object = Object;
   protected readonly AccountRole = AccountRole;
-  protected readonly AccountRoleCompanion = AccountRoleCompanion;
+  protected readonly displayName = displayName;
 }

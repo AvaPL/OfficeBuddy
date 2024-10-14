@@ -1,6 +1,5 @@
 import {Component, ElementRef, inject, OnInit, ViewChild} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
-import {AccountRole, AccountRoleCompanion} from "./model/account-role.enum";
 import {FormControl} from "@angular/forms";
 import {DeleteAccountDialogComponent} from "./delete-account-dialog/delete-account-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
@@ -12,6 +11,9 @@ import {Pagination} from "../../service/model/pagination/pagination.model";
 import {AccountService} from "../../service/account.service";
 import {OfficeCompact} from "../../service/model/office/office-compact.model";
 import {OfficeService} from "../../service/office.service";
+import {AuthService} from "../../service/auth.service";
+import {AccountRole} from "../../service/model/account/account-role.enum";
+import {displayName} from "./util/account-display-name.util";
 
 @Component({
   selector: 'app-account',
@@ -41,7 +43,7 @@ export class AccountComponent implements OnInit {
 
   searchControl = new FormControl('');
 
-  constructor(private officeService: OfficeService, private accountService: AccountService) {
+  constructor(private officeService: OfficeService, private accountService: AccountService, protected authService: AuthService) {
   }
 
   ngOnInit() {
@@ -157,6 +159,12 @@ export class AccountComponent implements OnInit {
     });
   }
 
-  protected readonly AccountRole = AccountRole;
-  protected readonly AccountRoleCompanion = AccountRoleCompanion;
+  canDeleteAccount(role: AccountRole) {
+    if (role === AccountRole.SUPER_ADMIN || role === AccountRole.OFFICE_MANAGER)
+      return this.authService.hasSuperAdminRole()
+    else
+      return this.authService.hasOfficeManagerRole()
+  }
+
+  protected readonly displayName = displayName;
 }

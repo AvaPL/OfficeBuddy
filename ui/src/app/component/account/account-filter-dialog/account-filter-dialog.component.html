@@ -13,7 +13,7 @@
     <mat-label>Account roles</mat-label>
     <mat-select [(value)]="accountRoles" multiple>
       @for (role of Object.values(AccountRole); track role) {
-        <mat-option [value]="role">{{ AccountRoleCompanion.displayName(role) }}</mat-option>
+        <mat-option [value]="role">{{ displayName(role) }}</mat-option>
       }
     </mat-select>
   </mat-form-field>

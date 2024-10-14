@@ -1,7 +1,7 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {FormBuilder} from "@angular/forms";
-import {AccountRoleCompanion} from "../model/account-role.enum";
+import {displayName} from "../util/account-display-name.util";
 import {AccountFilterDialogData} from "../account-filter-dialog/account-filter-dialog.component";
 import {AccountService} from "../../../service/account.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
@@ -60,6 +60,6 @@ export class CreateAccountDialogComponent {
   }
 
   protected readonly AccountRole = AccountRole;
-  protected readonly AccountRoleCompanion = AccountRoleCompanion;
   protected readonly Object = Object;
+  protected readonly displayName = displayName;
 }
