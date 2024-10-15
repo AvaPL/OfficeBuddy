@@ -258,6 +258,31 @@ object KeycloakPostgresAccountRepositorySuite
     } yield success
   }
 
+  test(
+    """GIVEN an account ID and a temporary password
+      | WHEN setTemporaryPassword is called
+      | THEN the password should be set in Keycloak
+      |""".stripMargin
+  ) {
+    val user = anyUserAccount
+    val temporaryPassword = "temporaryPassword"
+
+    val postgresAccountRepository = mock[PostgresAccountRepository[IO]]
+    whenF(postgresAccountRepository.readAccountEmail(any)) thenReturn user.email
+    val keycloakUserRepository = mock[KeycloakUserRepository[IO]]
+    whenF(keycloakUserRepository.setTemporaryPassword(any, any)) thenReturn KeycloakUser.fromDomainAccount(user)
+    val keycloakPostgresAccountRepository =
+      new KeycloakPostgresAccountRepository(keycloakUserRepository, postgresAccountRepository)
+
+    for {
+      _ <- keycloakPostgresAccountRepository.setTemporaryPassword(user.id, temporaryPassword)
+    } yield {
+      verify(postgresAccountRepository, only).readAccountEmail(user.id)
+      verify(keycloakUserRepository, only).setTemporaryPassword(eqTo(user.email), eqTo(temporaryPassword))
+      success
+    }
+  }
+
   private lazy val anyUserAccount = UserAccount(
     id = anyAccountId,
     firstName = "Test",

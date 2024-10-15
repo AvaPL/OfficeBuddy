@@ -5,9 +5,11 @@ import cats.ApplicativeThrow
 import cats.effect.Sync
 import cats.syntax.all._
 import domain.model.error.account.DuplicateAccountEmail
+import io.github.avapl.domain.repository.account.TemporaryPasswordRepository
 import jakarta.ws.rs.core.Response
 import org.keycloak.admin.client.Keycloak
 import org.keycloak.admin.client.resource.UserResource
+import org.keycloak.representations.idm.CredentialRepresentation
 import org.keycloak.representations.idm.RoleRepresentation
 import org.keycloak.representations.idm.UserRepresentation
 import scala.jdk.CollectionConverters._
@@ -44,7 +46,7 @@ class KeycloakUserRepository[F[_]: Sync](
     safeFindUserByEmail(email)
       .map(KeycloakUser.fromUserRepresentation)
 
-  private def safeFindUserByEmail(email: String) =
+  private[account] def safeFindUserByEmail(email: String) =
     for {
       foundUserRepresentations <- safeGetUserRepresentations(email)
       userRepresentation <- toSingleUser(email, foundUserRepresentations)
@@ -148,5 +150,20 @@ class KeycloakUserRepository[F[_]: Sync](
     } yield KeycloakUser.fromUserRepresentation(userRepresentation)
   }.void.recover {
     case KeycloakUserNotFound(_) => ()
+  }
+
+  def setTemporaryPassword(email: String, temporaryPassword: String): F[KeycloakUser] =
+    for {
+      userRepresentation <- safeFindUserByEmail(email)
+      userResource <- safeGetUserResource(userRepresentation)
+      _ = userRepresentation.setCredentials(List(toKeycloakCredential(temporaryPassword)).asJava)
+      _ <- safeUpdateUser(userResource, userRepresentation)
+    } yield KeycloakUser.fromUserRepresentation(userRepresentation)
+
+  private def toKeycloakCredential(temporaryPassword: String) = {
+    val credential = new CredentialRepresentation
+    credential.setValue(temporaryPassword)
+    credential.setTemporary(true)
+    credential
   }
 }

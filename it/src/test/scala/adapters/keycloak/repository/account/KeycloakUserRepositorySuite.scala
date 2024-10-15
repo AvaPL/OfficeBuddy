@@ -182,6 +182,37 @@ object KeycloakUserRepositorySuite extends IOSuite with KeycloakFixture {
     } yield success
   }
 
+  beforeTest(
+    """GIVEN an existing user
+      | WHEN setTemporaryPassword is called
+      | THEN the user's password is set in Keycloak
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val user = anyUser
+    val temporaryPassword = "temporaryPassword"
+
+    for {
+      _ <- keycloakAccountRepository.createUser(user)
+      _ <- keycloakAccountRepository.setTemporaryPassword(user.email, temporaryPassword)
+    } yield success // no way to retrieve the password
+  }
+
+  beforeTest(
+    """WHEN setTemporaryPassword is called with non-existent user email
+      | THEN the call should fail with KeycloakUserNotFound
+      |""".stripMargin
+  ) { keycloakAccountRepository =>
+    val email = anyEmail
+
+    for {
+      result <- keycloakAccountRepository.setTemporaryPassword(email, "temporaryPassword").attempt
+    } yield matches(result) {
+      case Left(throwable) =>
+        val keycloakUserNotFound = KeycloakUserNotFound(email)
+        expect(throwable == keycloakUserNotFound)
+    }
+  }
+
   private def deleteAllUsers(keycloak: Keycloak) =
     for {
       existingUserIds <- getAllUserIds(keycloak)

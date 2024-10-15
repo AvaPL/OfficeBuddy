@@ -3,11 +3,7 @@ package adapters.keycloak.repository.account
 
 import adapters.keycloak.repository.account.KeycloakAttribute.AccountId
 import adapters.keycloak.repository.account.KeycloakAttributeKey.AccountIdKey
-import adapters.keycloak.repository.account.KeycloakRole.OfficeManager
-import adapters.keycloak.repository.account.KeycloakRole.SuperAdmin
 import domain.model.account.Account
-import domain.model.account.OfficeManagerAccount
-import domain.model.account.SuperAdminAccount
 import java.util.UUID
 import org.keycloak.representations.idm.UserRepresentation
 import scala.jdk.CollectionConverters._
