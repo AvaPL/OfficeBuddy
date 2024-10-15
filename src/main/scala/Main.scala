@@ -17,6 +17,7 @@ import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
+import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
@@ -27,6 +28,7 @@ import config.HttpConfig
 import config.KeycloakConfig
 import config.PostgresConfig
 import domain.repository.account.AccountRepository
+import domain.repository.account.TemporaryPasswordRepository
 import domain.repository.account.view.AccountViewRepository
 import domain.repository.appmetadata.AppMetadataRepository
 import domain.repository.desk.DeskRepository
@@ -36,6 +38,7 @@ import domain.repository.office.view.OfficeViewRepository
 import domain.repository.reservation.ReservationRepository
 import domain.repository.reservation.view.ReservationViewRepository
 import domain.service.account.AccountService
+import domain.service.account.SuperAdminInitService
 import domain.service.demo.DemoDataService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
@@ -73,6 +76,7 @@ object Main extends IOApp.Simple {
       session = createPostgresSessionPool(config.postgres)
       keycloak = createKeycloakClient(config.keycloak)
       repositories <- session.use(createRepositories(_, keycloak, config.keycloak.appRealmName).pure[F])
+      _ <- loadInitialSuperAdmin(repositories.accountRepository)
       _ <- loadDemoData(repositories, config.demoDataEnabled)
       endpoints <- createEndpoints(repositories, keycloak, config.keycloak.appRealmName)
       _ <- runHttpServer(config.http, endpoints)
@@ -127,6 +131,11 @@ object Main extends IOApp.Simple {
       accountViewRepository = new PostgresAccountViewRepository[F](session)(implicitly, monadCancelThrow)
     )
   }
+
+  private def loadInitialSuperAdmin[F[_]: Sync](
+    accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F]
+  ) =
+    new SuperAdminInitService[F](accountRepository).initSuperAdmin()
 
   private def loadDemoData[F[_]: FUUID: Sync](
     repositories: Repositories[F],
@@ -243,7 +252,7 @@ object Main extends IOApp.Simple {
     officeRepository: OfficeRepository[F],
     deskRepository: DeskRepository[F],
     reservationRepository: ReservationRepository[F],
-    accountRepository: AccountRepository[F],
+    accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F],
     officeViewRepository: OfficeViewRepository[F],
     deskViewRepository: DeskViewRepository[F],
     reservationViewRepository: ReservationViewRepository[F],

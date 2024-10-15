@@ -157,13 +157,15 @@ class KeycloakUserRepository[F[_]: Sync](
       userRepresentation <- safeFindUserByEmail(email)
       userResource <- safeGetUserResource(userRepresentation)
       _ = userRepresentation.setCredentials(List(toKeycloakCredential(temporaryPassword)).asJava)
+      _ = userRepresentation.setRequiredActions(List(updatePasswordRequiredAction).asJava)
       _ <- safeUpdateUser(userResource, userRepresentation)
     } yield KeycloakUser.fromUserRepresentation(userRepresentation)
 
   private def toKeycloakCredential(temporaryPassword: String) = {
     val credential = new CredentialRepresentation
     credential.setValue(temporaryPassword)
-    credential.setTemporary(true)
     credential
   }
+
+  private lazy val updatePasswordRequiredAction = "UPDATE_PASSWORD"
 }

@@ -10,8 +10,9 @@ import domain.repository.account.AccountRepository
 import domain.repository.account.TemporaryPasswordRepository
 import domain.service.account.SuperAdminInitService.initialSuperAdminPassword
 import java.util.UUID
+import org.typelevel.log4cats.Logger
 
-class SuperAdminInitService[F[_]: MonadThrow](
+class SuperAdminInitService[F[_]: Logger: MonadThrow](
   accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F]
 ) {
 
@@ -21,8 +22,10 @@ class SuperAdminInitService[F[_]: MonadThrow](
     for {
       currentSuperAdminAccount <- readSuperAdminAccount()
       superAdminAccount <- currentSuperAdminAccount match {
-        case Some(superAdminAccount) => superAdminAccount.pure[F]
-        case None                    => createSuperAdminAccount()
+        case Some(superAdminAccount) =>
+          superAdminAccount.pure[F] <* Logger[F].info("Initial super admin account already exists")
+        case None =>
+          createSuperAdminAccount() <* Logger[F].info("Initial super admin account created")
       }
     } yield superAdminAccount
 

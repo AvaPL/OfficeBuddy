@@ -396,33 +396,6 @@
   "webAuthnPolicyPasswordlessCreateTimeout" : 0,
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister" : false,
   "webAuthnPolicyPasswordlessAcceptableAaguids" : [ ],
-  "users" : [ {
-    "id" : "e4b2a15f-9b85-4fd4-8449-0dd38c950dd3",
-    "createdTimestamp" : 1722015795128,
-    "username" : "superadmin@officebuddy.com",
-    "enabled" : true,
-    "totp" : false,
-    "emailVerified" : false,
-    "firstName" : "superadmin",
-    "lastName" : "superadmin",
-    "email" : "superadmin@officebuddy.com",
-    "attributes" : {
-      "account_id" : [ "00000000-0000-0000-0000-000000000000" ]
-    },
-    "credentials" : [ {
-      "id" : "f820a751-7b74-43d3-a3cb-4dd03c30d104",
-      "type" : "password",
-      "userLabel" : "My password",
-      "createdDate" : 1722016051139,
-      "secretData" : "{\"value\":\"3Bceiq4pA0g/nwjPHEDtXWIQ1SXMjV2piRY+6k4xnU0=\",\"salt\":\"pQLkhZcMgrar1hegNAe4lw==\",\"additionalParameters\":{}}",
-      "credentialData" : "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
-    } ],
-    "disableableCredentialTypes" : [ ],
-    "requiredActions" : [ "UPDATE_PASSWORD" ],
-    "realmRoles" : [ "office_buddy_super_admin", "default-roles-office-buddy" ],
-    "notBefore" : 0,
-    "groups" : [ ]
-  } ],
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
     "roles" : [ "offline_access" ]
