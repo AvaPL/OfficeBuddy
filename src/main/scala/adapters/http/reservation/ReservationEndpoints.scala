@@ -14,6 +14,7 @@ import adapters.http.reservation.model.view.ApiDeskReservationListView
 import adapters.http.reservation.model.view.ApiDeskReservationView
 import adapters.http.reservation.model.view.ApiDeskView
 import adapters.http.reservation.model.view.ApiUserView
+
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.effect.Clock
@@ -26,6 +27,9 @@ import domain.model.error.reservation._
 import domain.model.error.user.UserNotFound
 import domain.repository.reservation.view.ReservationViewRepository
 import domain.service.reservation.DeskReservationService
+
+import io.github.avapl.domain.model.reservation.view.DeskReservationListView
+
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -38,7 +42,7 @@ import sttp.tapir.server.ServerEndpoint
 
 class ReservationEndpoints[F[_]: Clock: MonadThrow](
   reservationService: DeskReservationService[F],
-  reservationViewRepository: ReservationViewRepository[F],
+  reservationViewRepository: ReservationViewRepository[F, DeskReservationListView],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val claimsExtractor: ClaimsExtractorService
 ) extends SecuredApiEndpoint[F]
@@ -315,7 +319,7 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
       case Delimited(apiReservationStates) if apiReservationStates.nonEmpty => apiReservationStates.map(_.toDomain)
     }
     reservationViewRepository
-      .listDeskReservations(officeId, reservedFrom, domainReservationStates, userId, limit, offset)
+      .listReservations(officeId, reservedFrom, domainReservationStates, userId, limit, offset)
       .map(ApiDeskReservationListView.fromDomain)
       .map(_.asRight[ApiError])
   }

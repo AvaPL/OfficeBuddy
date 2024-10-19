@@ -17,7 +17,6 @@ import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
-
 import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect._
@@ -43,8 +42,10 @@ import domain.service.account.SuperAdminInitService
 import domain.service.demo.DemoDataService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
-import domain.service.reservation.{DeskReservationService, ReservationService}
-
+import domain.service.reservation.DeskReservationService
+import domain.service.reservation.ReservationService
+import io.github.avapl.domain.model.reservation.DeskReservation
+import io.github.avapl.domain.model.reservation.view.DeskReservationListView
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -63,8 +64,6 @@ import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import util.BuildInfo
 import util.FUUID
-
-import io.github.avapl.domain.model.reservation.DeskReservation
 
 object Main extends IOApp.Simple {
 
@@ -131,7 +130,7 @@ object Main extends IOApp.Simple {
       accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session),
       officeViewRepository = new PostgresOfficeViewRepository[F](session)(implicitly, monadCancelThrow),
       deskViewRepository = new PostgresDeskViewRepository[F](session)(implicitly, monadCancelThrow),
-      reservationViewRepository = new PostgresReservationViewRepository[F](session)(implicitly, monadCancelThrow),
+      deskReservationViewRepository = new PostgresReservationViewRepository[F](session)(implicitly, monadCancelThrow),
       accountViewRepository = new PostgresAccountViewRepository[F](session)(implicitly, monadCancelThrow)
     )
   }
@@ -192,7 +191,7 @@ object Main extends IOApp.Simple {
       ).endpoints
       val deskReservationEndpoints = new ReservationEndpoints[F](
         deskReservationService,
-        repositories.reservationViewRepository,
+        repositories.deskReservationViewRepository,
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
@@ -259,7 +258,7 @@ object Main extends IOApp.Simple {
     accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F],
     officeViewRepository: OfficeViewRepository[F],
     deskViewRepository: DeskViewRepository[F],
-    reservationViewRepository: ReservationViewRepository[F],
+    deskReservationViewRepository: ReservationViewRepository[F, DeskReservationListView],
     accountViewRepository: AccountViewRepository[F]
   )
 }

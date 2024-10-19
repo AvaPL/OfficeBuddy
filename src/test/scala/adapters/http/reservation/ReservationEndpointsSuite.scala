@@ -7,7 +7,6 @@ import adapters.http.reservation.model.ApiCreateDeskReservation
 import adapters.http.reservation.model.ApiDeskReservation
 import adapters.http.reservation.model.ApiReservationState
 import adapters.http.reservation.model.view.ApiDeskReservationListView
-
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -26,11 +25,9 @@ import domain.model.reservation.view.DeskView
 import domain.model.reservation.view.UserView
 import domain.model.view.Pagination
 import domain.repository.reservation.view.ReservationViewRepository
-import domain.service.reservation.{DeskReservationService, ReservationService}
-
+import domain.service.reservation.DeskReservationService
 import io.circe.parser._
 import io.circe.syntax._
-
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -533,7 +530,7 @@ object ReservationEndpointsSuite
       | THEN 200 OK and the list of reservations is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val deskReservationListView = DeskReservationListView(
       reservations = List(
         anyDeskReservationView.copy(id = anyReservationId1),
@@ -546,7 +543,7 @@ object ReservationEndpointsSuite
       )
     )
     whenF(
-      reservationViewRepository.listDeskReservations(any, any, any, any, any, any)
+      reservationViewRepository.listReservations(any, any, any, any, any, any)
     ) thenReturn deskReservationListView
 
     val response = sendViewRequest(reservationViewRepository) {
@@ -579,7 +576,7 @@ object ReservationEndpointsSuite
       | THEN 200 OK and the list of reservations is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val deskReservationListView = DeskReservationListView(
       reservations = List(
         anyDeskReservationView.copy(id = anyReservationId1),
@@ -592,7 +589,7 @@ object ReservationEndpointsSuite
       )
     )
     whenF(
-      reservationViewRepository.listDeskReservations(any, any, any, any, any, any)
+      reservationViewRepository.listReservations(any, any, any, any, any, any)
     ) thenReturn deskReservationListView
 
     val response = sendViewRequest(reservationViewRepository) {
@@ -621,7 +618,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val response = sendViewRequest(reservationViewRepository) {
       basicRequest.get(
         uri"http://test.com/reservation/desk/view/list"
@@ -644,7 +641,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val response = sendViewRequest(reservationViewRepository) {
       basicRequest.get(
         uri"http://test.com/reservation/desk/view/list"
@@ -668,7 +665,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val response = sendViewRequest(reservationViewRepository) {
       basicRequest.get(
         uri"http://test.com/reservation/desk/view/list"
@@ -691,7 +688,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val response = sendViewRequest(reservationViewRepository) {
       basicRequest.get(
         uri"http://test.com/reservation/desk/view/list"
@@ -715,7 +712,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val response = sendViewRequest(reservationViewRepository) {
       basicRequest.get(
         uri"http://test.com/reservation/desk/view/list"
@@ -740,7 +737,7 @@ object ReservationEndpointsSuite
       | THEN 400 BadRequest is returned
       |""".stripMargin
   ) {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     val response = sendViewRequest(reservationViewRepository) {
       basicRequest.get(
         uri"http://test.com/reservation/desk/view/list"
@@ -766,7 +763,7 @@ object ReservationEndpointsSuite
   )(
     request: Request[Either[String, String], Any]
   ) = {
-    val reservationViewRepository = mock[ReservationViewRepository[IO]]
+    val reservationViewRepository = mock[ReservationViewRepository[IO, DeskReservationListView]]
     sendSecuredApiEndpointRequest(request, role, requesterAccountId) { claimsExtractorService =>
       new ReservationEndpoints[IO](
         reservationService,
@@ -778,7 +775,7 @@ object ReservationEndpointsSuite
   }
 
   private def sendViewRequest(
-    reservationViewRepository: ReservationViewRepository[IO]
+    reservationViewRepository: ReservationViewRepository[IO, DeskReservationListView]
   )(
     request: Request[Either[String, String], Any]
   ): IO[Response[Either[PublicKey, PublicKey]]] = {

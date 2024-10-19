@@ -24,11 +24,11 @@ import skunk.implicits._
 
 class PostgresReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
   session: Resource[F, Session[F]]
-) extends ReservationViewRepository[F] {
+) extends ReservationViewRepository[F, DeskReservationListView] {
 
   import PostgresReservationViewRepository._
 
-  override def listDeskReservations(
+  override def listReservations(
     officeId: UUID,
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]],

@@ -2,11 +2,14 @@ package io.github.avapl
 package domain.repository.reservation.view
 
 import domain.model.reservation.ReservationState
-import domain.model.reservation.view.DeskReservationListView
 import java.time.LocalDate
 import java.util.UUID
 
-trait ReservationViewRepository[F[_]] {
+/**
+ * @tparam V
+ *   view type
+ */
+trait ReservationViewRepository[F[_], V] {
 
   /**
    * @param officeId
@@ -18,12 +21,12 @@ trait ReservationViewRepository[F[_]] {
    * @param userId
    *   reservation's assigned user ID
    */
-  def listDeskReservations(
+  def listReservations(
     officeId: UUID,
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]] = None,
     userId: Option[UUID] = None,
     limit: Int,
     offset: Int
-  ): F[DeskReservationListView]
+  ): F[V]
 }
