@@ -17,7 +17,6 @@ import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
-import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
@@ -27,6 +26,8 @@ import config.AppConfig
 import config.HttpConfig
 import config.KeycloakConfig
 import config.PostgresConfig
+import domain.model.reservation.DeskReservation
+import domain.model.reservation.view.DeskReservationListView
 import domain.repository.account.AccountRepository
 import domain.repository.account.TemporaryPasswordRepository
 import domain.repository.account.view.AccountViewRepository
@@ -43,9 +44,6 @@ import domain.service.demo.DemoDataService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.DeskReservationService
-import domain.service.reservation.ReservationService
-import io.github.avapl.domain.model.reservation.DeskReservation
-import io.github.avapl.domain.model.reservation.view.DeskReservationListView
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router

@@ -28,7 +28,7 @@ trait ReservationEndpoints[
   implicit protected def clock: Clock[F]
   implicit protected def monadThrow: MonadThrow[F]
 
-  protected def reservationEntityPathName: String
+  protected def reservationEntityPathName: String // TODO: Include in the Swagger tag
   protected def reservationEntityEndpoints: List[ServerEndpoint[Any, F]]
 
   override protected val apiEndpointName: String = "reservation"
