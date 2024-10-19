@@ -16,7 +16,7 @@ import adapters.postgres.repository.desk.view.PostgresDeskViewRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
-import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
+import adapters.postgres.repository.reservation.view.PostgresDeskReservationViewRepository
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.std.Console
@@ -128,7 +128,7 @@ object Main extends IOApp.Simple {
       accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session),
       officeViewRepository = new PostgresOfficeViewRepository[F](session)(implicitly, monadCancelThrow),
       deskViewRepository = new PostgresDeskViewRepository[F](session)(implicitly, monadCancelThrow),
-      deskReservationViewRepository = new PostgresReservationViewRepository[F](session)(implicitly, monadCancelThrow),
+      deskReservationViewRepository = new PostgresDeskReservationViewRepository[F](session)(implicitly, monadCancelThrow),
       accountViewRepository = new PostgresAccountViewRepository[F](session)(implicitly, monadCancelThrow)
     )
   }

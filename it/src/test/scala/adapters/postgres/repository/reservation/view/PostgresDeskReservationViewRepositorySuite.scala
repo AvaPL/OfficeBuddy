@@ -32,14 +32,14 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixture {
+object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresFixture {
 
   private def beforeTest(
     name: TestName
-  )(run: (PostgresDeskReservationRepository[IO], PostgresReservationViewRepository[IO]) => IO[Expectations]): Unit =
+  )(run: (PostgresDeskReservationRepository[IO], PostgresDeskReservationViewRepository[IO]) => IO[Expectations]): Unit =
     test(name) { session =>
       lazy val postgresReservationRepository = new PostgresDeskReservationRepository[IO](session)
-      lazy val postgresReservationViewRepository = new PostgresReservationViewRepository[IO](session)
+      lazy val postgresReservationViewRepository = new PostgresDeskReservationViewRepository[IO](session)
       truncateTables(session) >>
         insertOffices(session) >>
         insertDesks(session) >>

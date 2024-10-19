@@ -1,34 +1,30 @@
 package io.github.avapl
 package adapters.postgres.repository.reservation.view
 
-import adapters.postgres.repository.reservation.{PostgresDeskReservationRepository, reservationStateCodec}
-
+import adapters.postgres.repository.reservation.reservationStateCodec
 import cats.effect.Resource
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import domain.model.reservation.ReservationState
-import domain.model.reservation.view.DeskReservationListView
-import domain.model.reservation.view.DeskReservationView
-import domain.model.reservation.view.DeskView
+import domain.model.reservation.view.ParkingSpotReservationListView
+import domain.model.reservation.view.ParkingSpotReservationView
+import domain.model.reservation.view.ParkingSpotView
 import domain.model.reservation.view.UserView
 import domain.model.view.Pagination
 import domain.repository.reservation.view.ReservationViewRepository
-
 import java.time.LocalDate
 import java.util.UUID
 import scala.annotation.nowarn
-import scala.util.chaining._
 import skunk._
 import skunk.codec.all._
-import skunk.data._
 import skunk.implicits._
 
-class PostgresReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
+class PostgresParkingSpotReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
   session: Resource[F, Session[F]]
-) extends ReservationViewRepository[F, DeskReservationListView] {
+) extends ReservationViewRepository[F, ParkingSpotReservationListView] {
 
-  import PostgresReservationViewRepository._
+  import PostgresParkingSpotReservationViewRepository._
 
   override def listReservations(
     officeId: UUID,
@@ -37,19 +33,19 @@ class PostgresReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
     userId: Option[UUID],
     limit: Int,
     offset: Int
-  ): F[DeskReservationListView] = {
+  ): F[ParkingSpotReservationListView] = {
     val chunkSize = limit + 1 // Take one more element to determine if there are more elements to fetch
     val appliedFragment =
-      listDeskReservationsSql(officeId, reservationFrom, reservationStates, userId, chunkSize, offset)
+      listParkingSpotReservationsSql(officeId, reservationFrom, reservationStates, userId, chunkSize, offset)
     session.use { session =>
       for {
-        sql <- session.prepare(appliedFragment.fragment.query(deskReservationViewDecoder))
-        deskReservationsViews <- sql.stream(appliedFragment.argument, chunkSize).compile.toList
+        sql <- session.prepare(appliedFragment.fragment.query(parkingSpotReservationViewDecoder))
+        parkingSpotReservationsViews <- sql.stream(appliedFragment.argument, chunkSize).compile.toList
       } yield {
-        val hasMoreResults = deskReservationsViews.size > limit
+        val hasMoreResults = parkingSpotReservationsViews.size > limit
         val pagination = Pagination(limit, offset, hasMoreResults)
-        DeskReservationListView(
-          reservations = deskReservationsViews.take(limit),
+        ParkingSpotReservationListView(
+          reservations = parkingSpotReservationsViews.take(limit),
           pagination = pagination
         )
       }
@@ -57,9 +53,9 @@ class PostgresReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
   }
 }
 
-object PostgresReservationViewRepository {
+object PostgresParkingSpotReservationViewRepository {
 
-  private def listDeskReservationsSql(
+  private def listParkingSpotReservationsSql(
     officeId: UUID,
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]],
@@ -77,14 +73,15 @@ object PostgresReservationViewRepository {
              a.first_name AS user_first_name,
              a.last_name AS user_last_name,
              a.email AS user_email,
-             d.id AS desk_id,
-             d.name AS desk_name
+             p.id AS parking_spot_id,
+             p.name AS parking_spot_name,
+             r.plate_number
       FROM reservation r
-      LEFT JOIN desk d ON desk_id = d.id
+      LEFT JOIN parking_spot p ON parking_spot_id = p.id
       LEFT JOIN account a ON user_id = a.id
-      WHERE desk_id IN (
+      WHERE parking_spot_id IN (
         SELECT id
-        FROM   desk
+        FROM   parking_spot
         WHERE  office_id = $uuid
       )
       AND $timestamp <= reserved_to
@@ -99,7 +96,7 @@ object PostgresReservationViewRepository {
     ).flatten.fold(AppliedFragment.empty)(_ |+| _)
 
     val orderByLimitOffset = sql"""
-      ORDER BY reserved_from, reserved_to, desk_name
+      ORDER BY reserved_from, reserved_to, plate_number
       LIMIT    $int4
       OFFSET   $int4
     """
@@ -107,11 +104,8 @@ object PostgresReservationViewRepository {
     select(officeId, reservationFrom.atStartOfDay()) |+| appliedFilters |+| orderByLimitOffset(limit, offset)
   }
 
-  private lazy val _reservationStatesEncoder: Encoder[List[ReservationState]] =
-    _varchar.asEncoder.contramap[List[ReservationState]](_.map(_.entryName).pipe(Arr(_: _*)))
-
   @nowarn("msg=match may not be exhaustive")
-  private lazy val deskReservationViewDecoder: Decoder[DeskReservationView] =
+  private lazy val parkingSpotReservationViewDecoder: Decoder[ParkingSpotReservationView] =
     (
       uuid *: // id
         timestamp *: // reserved_from
@@ -122,11 +116,12 @@ object PostgresReservationViewRepository {
         varchar *: // user_first_name
         varchar *: // user_last_name
         varchar *: // user_email
-        uuid *: // desk_id
-        varchar // desk_name
+        uuid *: // parking_spot_id
+        varchar *: // parking_spot_name
+        varchar // plate_number
     ).map {
-      case id *: reservedFrom *: reservedTo *: state *: notes *: userId *: userFirstName *: userLastName *: userEmail *: deskId *: deskName *: EmptyTuple =>
-        DeskReservationView(
+      case id *: reservedFrom *: reservedTo *: state *: notes *: userId *: userFirstName *: userLastName *: userEmail *: parkingSpotId *: parkingSpotName *: plateNumber *: EmptyTuple =>
+        ParkingSpotReservationView(
           id = id,
           reservedFromDate = reservedFrom.toLocalDate,
           reservedToDate = reservedTo.toLocalDate,
@@ -138,10 +133,11 @@ object PostgresReservationViewRepository {
             lastName = userLastName,
             email = userEmail
           ),
-          desk = DeskView(
-            id = deskId,
-            name = deskName
-          )
+          parkingSpot = ParkingSpotView(
+            id = parkingSpotId,
+            name = parkingSpotName
+          ),
+          plateNumber = plateNumber
         )
     }
 }
