@@ -1,7 +1,8 @@
 package io.github.avapl
 package adapters.postgres.repository.reservation.view
 
-import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
+import adapters.postgres.repository.reservation.{PostgresDeskReservationRepository, reservationStateCodec}
+
 import cats.effect.Resource
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.MonadCancelThrow
@@ -13,6 +14,7 @@ import domain.model.reservation.view.DeskView
 import domain.model.reservation.view.UserView
 import domain.model.view.Pagination
 import domain.repository.reservation.view.ReservationViewRepository
+
 import java.time.LocalDate
 import java.util.UUID
 import scala.annotation.nowarn
@@ -114,7 +116,7 @@ object PostgresReservationViewRepository {
       uuid *: // id
         timestamp *: // reserved_from
         timestamp *: // reserved_to
-        PostgresDeskReservationRepository.reservationStateCodec *: // state
+        reservationStateCodec *: // state
         varchar *: // notes
         uuid *: // user_id
         varchar *: // user_first_name

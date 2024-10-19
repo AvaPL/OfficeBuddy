@@ -35,7 +35,7 @@ class PostgresDeskReservationRepository[F[_]: MonadCancelThrow](
               DeskNotFound(deskReservation.deskId).raiseError
             case SqlState.ForeignKeyViolation(e) if e.constraintName.contains("reservation_user_id_fkey") =>
               UserNotFound(deskReservation.userId).raiseError
-            case SqlState.ExclusionViolation(e) if e.constraintName.contains("reservation_overlap_excl") =>
+            case SqlState.ExclusionViolation(e) if e.constraintName.contains("desk_reservation_overlap_excl") =>
               OverlappingReservations.raiseError
           }
       } yield deskReservation
@@ -43,7 +43,7 @@ class PostgresDeskReservationRepository[F[_]: MonadCancelThrow](
 
   private lazy val createDeskReservationSql: Command[DeskReservation] =
     sql"""
-      INSERT INTO reservation
+      INSERT INTO reservation (id, user_id, created_at, reserved_from, reserved_to, state, notes, type, desk_id)
       VALUES      ($deskReservationEncoder)
     """.command
 
@@ -57,7 +57,7 @@ class PostgresDeskReservationRepository[F[_]: MonadCancelThrow](
 
   private lazy val readDeskReservationSql: Query[UUID, DeskReservation] =
     sql"""
-      SELECT *
+      SELECT id, user_id, created_at, reserved_from, reserved_to, state, notes, desk_id
       FROM   reservation
       WHERE  id = $uuid AND
              type = 'Desk'
@@ -71,7 +71,7 @@ class PostgresDeskReservationRepository[F[_]: MonadCancelThrow](
           .execute(reservationId *: newState *: EmptyTuple)
           .ensureOr {
             case Completion.Update(0) => ReservationNotFound(reservationId)
-            case completion           => new RuntimeException(s"Expected 1 updated office, but got: $completion")
+            case completion           => new RuntimeException(s"Expected 1 updated desk reservation, but got: $completion")
           }(_ == Completion.Update(1))
       } yield ()
     }
@@ -140,13 +140,9 @@ object PostgresDeskReservationRepository {
         timestamp *: // reserved_to
         reservationStateCodec *: // state
         varchar *: // notes
-        varchar *: // type
         uuid // desk_id
     ).map {
-      case id *: userId *: createdAt *: reservedFrom *: reservedTo *: state *: notes *: _ *: deskId *: EmptyTuple =>
+      case id *: userId *: createdAt *: reservedFrom *: reservedTo *: state *: notes *: deskId *: EmptyTuple =>
         DeskReservation(id, userId, createdAt, reservedFrom.toLocalDate, reservedTo.toLocalDate, state, notes, deskId)
     }
-
-  lazy val reservationStateCodec: Codec[ReservationState] =
-    varchar.imap[ReservationState](ReservationState.withNameInsensitive)(_.entryName)
 }
