@@ -5,7 +5,7 @@ import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.account.PostgresAccountRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
-import adapters.postgres.repository.reservation.PostgresReservationRepository
+import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all._
@@ -35,13 +35,13 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
     run: (
       PostgresDeskRepository[IO],
       PostgresDeskViewRepository[IO],
-      PostgresReservationRepository[IO]
+      PostgresDeskReservationRepository[IO]
     ) => IO[Expectations]
   ): Unit =
     test(name) { session =>
       lazy val postgresDeskRepository = new PostgresDeskRepository[IO](session)
       lazy val postgresDeskViewRepository = new PostgresDeskViewRepository[IO](session)
-      lazy val postgresReservationRepository = new PostgresReservationRepository[IO](session)
+      lazy val postgresReservationRepository = new PostgresDeskReservationRepository[IO](session)
       truncateTables(session) >>
         insertOffices(session) >>
         insertUsers(session) >>
@@ -234,10 +234,10 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
       _ <- deskRepository.create(reservedDesk3)
       _ <- deskRepository.create(reservedDesk4)
       _ <- deskRepository.create(freeDesk)
-      _ <- reservationRepository.createDeskReservation(reservationDesk1)
-      _ <- reservationRepository.createDeskReservation(reservationDesk2)
-      _ <- reservationRepository.createDeskReservation(reservationDesk3)
-      _ <- reservationRepository.createDeskReservation(reservationDesk4)
+      _ <- reservationRepository.createReservation(reservationDesk1)
+      _ <- reservationRepository.createReservation(reservationDesk2)
+      _ <- reservationRepository.createReservation(reservationDesk3)
+      _ <- reservationRepository.createReservation(reservationDesk4)
       reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId, reservationFrom, reservationTo)
     } yield expect(reservableDesks.map(_.id) == List(freeDesk.id))
   }
@@ -279,9 +279,9 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
       _ <- deskRepository.create(desk1)
       _ <- deskRepository.create(desk2)
       _ <- deskRepository.create(desk3)
-      _ <- reservationRepository.createDeskReservation(overlappingReservationDesk1)
-      _ <- reservationRepository.createDeskReservation(overlappingReservationDesk2)
-      _ <- reservationRepository.createDeskReservation(nonOverlappingReservationDesk3)
+      _ <- reservationRepository.createReservation(overlappingReservationDesk1)
+      _ <- reservationRepository.createReservation(overlappingReservationDesk2)
+      _ <- reservationRepository.createReservation(nonOverlappingReservationDesk3)
       reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId, reservationFrom, reservationTo)
     } yield expect(reservableDesks.map(_.id) == List(desk3.id))
   }
@@ -308,7 +308,7 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
     for {
       _ <- deskRepository.create(office1Desk)
       _ <- deskRepository.create(office2Desk)
-      _ <- reservationRepository.createDeskReservation(office2DeskReservation)
+      _ <- reservationRepository.createReservation(office2DeskReservation)
       reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId1, reservationFrom, reservationTo)
     } yield expect(reservableDesks.map(_.id) == List(office1Desk.id))
   }
@@ -334,7 +334,7 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- deskRepository.create(desk)
-      _ <- reservationRepository.createDeskReservation(pendingReservation)
+      _ <- reservationRepository.createReservation(pendingReservation)
       reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId1, reservationFrom, reservationTo)
     } yield expect(reservableDesks.isEmpty)
   }
@@ -363,8 +363,8 @@ object PostgresDeskViewRepositorySuite extends IOSuite with PostgresFixture {
 
     for {
       _ <- deskRepository.create(desk)
-      _ <- reservationRepository.createDeskReservation(cancelledReservation)
-      _ <- reservationRepository.createDeskReservation(rejectedReservation)
+      _ <- reservationRepository.createReservation(cancelledReservation)
+      _ <- reservationRepository.createReservation(rejectedReservation)
       reservableDesks <- deskViewRepository.listDesksAvailableForReservation(officeId1, reservationFrom, reservationTo)
     } yield expect(reservableDesks.map(_.id) == List(desk.id))
   }

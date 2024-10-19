@@ -30,11 +30,11 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
+object PostgresDeskReservationRepositorySuite$ extends IOSuite with PostgresFixture {
 
-  private def beforeTest(name: TestName)(run: PostgresReservationRepository[IO] => IO[Expectations]): Unit =
+  private def beforeTest(name: TestName)(run: PostgresDeskReservationRepository[IO] => IO[Expectations]): Unit =
     test(name) { session =>
-      lazy val postgresReservationRepository = new PostgresReservationRepository[IO](session)
+      lazy val postgresReservationRepository = new PostgresDeskReservationRepository[IO](session)
       truncateTables(session) >>
         insertOffices(session) >>
         insertUsers(session) >>
@@ -51,8 +51,8 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     val deskReservation = anyDeskReservation
 
     for {
-      _ <- reservationRepository.createDeskReservation(deskReservation)
-      readDeskReservation <- reservationRepository.readDeskReservation(deskReservation.id)
+      _ <- reservationRepository.createReservation(deskReservation)
+      readDeskReservation <- reservationRepository.readReservation(deskReservation.id)
     } yield expect(readDeskReservation == deskReservation)
   }
 
@@ -66,7 +66,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     val deskReservation = anyDeskReservation.copy(deskId = deskId)
 
     for {
-      result <- reservationRepository.createDeskReservation(deskReservation).attempt
+      result <- reservationRepository.createReservation(deskReservation).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val deskNotFound = DeskNotFound(deskId)
@@ -84,7 +84,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     val deskReservation = anyDeskReservation.copy(userId = userId)
 
     for {
-      result <- reservationRepository.createDeskReservation(deskReservation).attempt
+      result <- reservationRepository.createReservation(deskReservation).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val userNotFound = UserNotFound(userId)
@@ -128,14 +128,14 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
       .setTo(deskReservation.reservedToDate)
 
     for {
-      _ <- reservationRepository.createDeskReservation(deskReservation)
+      _ <- reservationRepository.createReservation(deskReservation)
       results <- List(
         overlappingDeskReservation1,
         overlappingDeskReservation2,
         overlappingDeskReservation3,
         overlappingDeskReservation4,
         overlappingDeskReservation5
-      ).traverse(reservationRepository.createDeskReservation(_).attempt)
+      ).traverse(reservationRepository.createReservation(_).attempt)
     } yield forEach(results) { result =>
       matches(result) {
         case Left(throwable) =>
@@ -162,8 +162,8 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(deskReservation1)
-      _ <- reservationRepository.createDeskReservation(deskReservation2)
+      _ <- reservationRepository.createReservation(deskReservation1)
+      _ <- reservationRepository.createReservation(deskReservation2)
     } yield success
   }
 
@@ -180,8 +180,8 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(deskReservation1)
-      _ <- reservationRepository.createDeskReservation(deskReservation2)
+      _ <- reservationRepository.createReservation(deskReservation1)
+      _ <- reservationRepository.createReservation(deskReservation2)
     } yield success
   }
 
@@ -194,7 +194,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     val reservationId = anyReservationId
 
     for {
-      result <- reservationRepository.readDeskReservation(reservationId).attempt
+      result <- reservationRepository.readReservation(reservationId).attempt
     } yield matches(result) {
       case Left(throwable) =>
         val reservationNotFound = ReservationNotFound(reservationId)
@@ -229,7 +229,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     val newState = ReservationState.Confirmed
 
     for {
-      _ <- reservationRepository.createDeskReservation(deskReservation)
+      _ <- reservationRepository.createReservation(deskReservation)
       _ <- reservationRepository.updateReservationState(deskReservation.id, newState)
       readState <- reservationRepository.readReservationState(deskReservation.id)
     } yield expect(readState == newState)
@@ -244,7 +244,7 @@ object PostgresReservationRepositorySuite extends IOSuite with PostgresFixture {
     val deskReservation = anyDeskReservation
 
     for {
-      _ <- reservationRepository.createDeskReservation(deskReservation)
+      _ <- reservationRepository.createReservation(deskReservation)
       _ <- reservationRepository.updateReservationState(deskReservation.id, deskReservation.state)
     } yield success
   }

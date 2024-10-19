@@ -7,6 +7,7 @@ import adapters.http.reservation.model.ApiCreateDeskReservation
 import adapters.http.reservation.model.ApiDeskReservation
 import adapters.http.reservation.model.ApiReservationState
 import adapters.http.reservation.model.view.ApiDeskReservationListView
+
 import cats.effect.IO
 import domain.model.account.Role
 import domain.model.account.Role.OfficeManager
@@ -25,9 +26,11 @@ import domain.model.reservation.view.DeskView
 import domain.model.reservation.view.UserView
 import domain.model.view.Pagination
 import domain.repository.reservation.view.ReservationViewRepository
-import domain.service.reservation.ReservationService
+import domain.service.reservation.{DeskReservationService, ReservationService}
+
 import io.circe.parser._
 import io.circe.syntax._
+
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -63,7 +66,7 @@ object ReservationEndpointsSuite
       notes = reservationToCreate.notes,
       deskId = reservationToCreate.deskId
     )
-    val reservationService = whenF(mock[ReservationService[IO]].reserveDesk(any)) thenReturn reservation
+    val reservationService = whenF(mock[DeskReservationService[IO]].reserve(any)) thenReturn reservation
 
     val response = sendRequest(
       reservationService,
@@ -100,7 +103,7 @@ object ReservationEndpointsSuite
       notes = reservationToCreate.notes,
       deskId = reservationToCreate.deskId
     )
-    val reservationService = whenF(mock[ReservationService[IO]].reserveDesk(any)) thenReturn reservation
+    val reservationService = whenF(mock[DeskReservationService[IO]].reserve(any)) thenReturn reservation
 
     val response = sendRequest(
       reservationService,
@@ -129,7 +132,7 @@ object ReservationEndpointsSuite
     val requesterId = UUID.fromString("10edac56-4725-4c06-92bb-0e8fee647426")
     val reservationUserId = UUID.fromString("a8907e2a-621b-494b-ba56-bd0bdc02aa15")
     val reservationToCreate = anyApiCreateDeskReservation.copy(userId = reservationUserId)
-    val reservationService = mock[ReservationService[IO]]
+    val reservationService = mock[DeskReservationService[IO]]
 
     val response = sendRequest(
       reservationService,
@@ -144,7 +147,7 @@ object ReservationEndpointsSuite
     for {
       response <- response
     } yield {
-      verify(reservationService, never).reserveDesk(any)
+      verify(reservationService, never).reserve(any)
       expect(response.code == StatusCode.Forbidden)
     }
   }
@@ -156,7 +159,7 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationService =
-      whenF(mock[ReservationService[IO]].reserveDesk(any)) thenFailWith DeskNotFound(anyDeskId)
+      whenF(mock[DeskReservationService[IO]].reserve(any)) thenFailWith DeskNotFound(anyDeskId)
 
     val response = sendRequest(reservationService) {
       basicRequest
@@ -176,7 +179,7 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationService =
-      whenF(mock[ReservationService[IO]].reserveDesk(any)) thenFailWith UserNotFound(anyUserId)
+      whenF(mock[DeskReservationService[IO]].reserve(any)) thenFailWith UserNotFound(anyUserId)
 
     val response = sendRequest(reservationService) {
       basicRequest
@@ -196,7 +199,7 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationService =
-      whenF(mock[ReservationService[IO]].reserveDesk(any)) thenFailWith OverlappingReservations
+      whenF(mock[DeskReservationService[IO]].reserve(any)) thenFailWith OverlappingReservations
 
     val response = sendRequest(reservationService) {
       basicRequest
@@ -217,7 +220,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservation = anyDeskReservation.copy(id = reservationId)
-    val reservationService = whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenReturn reservation
+    val reservationService = whenF(mock[DeskReservationService[IO]].readReservation(any)) thenReturn reservation
 
     val response = sendRequest(reservationService, role = User) {
       basicRequest.get(uri"http://test.com/reservation/desk/$reservationId")
@@ -239,7 +242,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenFailWith ReservationNotFound(reservationId)
+      whenF(mock[DeskReservationService[IO]].readReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
     val response = sendRequest(reservationService) {
       basicRequest.get(uri"http://test.com/reservation/desk/$reservationId")
@@ -258,8 +261,8 @@ object ReservationEndpointsSuite
   ) {
     val userId = anyUserId
     val reservation = anyDeskReservation.copy(userId = userId)
-    val reservationService = mock[ReservationService[IO]]
-    whenF(reservationService.readDeskReservation(any)) thenReturn reservation
+    val reservationService = mock[DeskReservationService[IO]]
+    whenF(reservationService.readReservation(any)) thenReturn reservation
     whenF(reservationService.cancelReservation(any)) thenReturn ()
 
     val response = sendRequest(
@@ -281,8 +284,8 @@ object ReservationEndpointsSuite
       | THEN 204 NoContent is returned
       |""".stripMargin
   ) {
-    val reservationService = mock[ReservationService[IO]]
-    whenF(reservationService.readDeskReservation(any)) thenReturn anyDeskReservation
+    val reservationService = mock[DeskReservationService[IO]]
+    whenF(reservationService.readReservation(any)) thenReturn anyDeskReservation
     whenF(reservationService.cancelReservation(any)) thenReturn ()
 
     val response = sendRequest(
@@ -306,8 +309,8 @@ object ReservationEndpointsSuite
   ) {
     val reservationOwnerId = UUID.fromString("fd704d6b-d56d-426b-9972-c5ed1027f578")
     val reservation = anyDeskReservation.copy(userId = reservationOwnerId)
-    val reservationService = mock[ReservationService[IO]]
-    whenF(reservationService.readDeskReservation(any)) thenReturn reservation
+    val reservationService = mock[DeskReservationService[IO]]
+    whenF(reservationService.readReservation(any)) thenReturn reservation
 
     val requesterUserId = UUID.fromString("5df2a865-8dde-44b1-aeff-f80d86d8fd6d")
     val response = sendRequest(
@@ -333,8 +336,8 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationId = anyReservationId1
-    val reservationService = mock[ReservationService[IO]]
-    whenF(reservationService.readDeskReservation(any)) thenReturn anyDeskReservation
+    val reservationService = mock[DeskReservationService[IO]]
+    whenF(reservationService.readReservation(any)) thenReturn anyDeskReservation
     whenF(reservationService.cancelReservation(any)) thenFailWith
       InvalidStateTransition(reservationId, ReservationState.Rejected, ReservationState.Cancelled)
 
@@ -355,7 +358,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].readDeskReservation(any)) thenFailWith ReservationNotFound(reservationId)
+      whenF(mock[DeskReservationService[IO]].readReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
     val response = sendRequest(reservationService) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/cancel")
@@ -374,7 +377,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].confirmReservation(any)) thenReturn ()
+      whenF(mock[DeskReservationService[IO]].confirmReservation(any)) thenReturn ()
 
     val response = sendRequest(reservationService, role = OfficeManager) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/confirm")
@@ -392,7 +395,7 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationId = anyReservationId1
-    val reservationService = mock[ReservationService[IO]]
+    val reservationService = mock[DeskReservationService[IO]]
 
     val response = sendRequest(reservationService, role = User) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/confirm")
@@ -414,7 +417,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].confirmReservation(any)) thenFailWith
+      whenF(mock[DeskReservationService[IO]].confirmReservation(any)) thenFailWith
         InvalidStateTransition(reservationId, ReservationState.Rejected, ReservationState.Confirmed)
 
     val response = sendRequest(reservationService) {
@@ -434,7 +437,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].confirmReservation(any)) thenFailWith ReservationNotFound(reservationId)
+      whenF(mock[DeskReservationService[IO]].confirmReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
     val response = sendRequest(reservationService) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/confirm")
@@ -453,7 +456,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].rejectReservation(any)) thenReturn ()
+      whenF(mock[DeskReservationService[IO]].rejectReservation(any)) thenReturn ()
 
     val response = sendRequest(reservationService, role = OfficeManager) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/reject")
@@ -471,7 +474,7 @@ object ReservationEndpointsSuite
       |""".stripMargin
   ) {
     val reservationId = anyReservationId1
-    val reservationService = mock[ReservationService[IO]]
+    val reservationService = mock[DeskReservationService[IO]]
 
     val response = sendRequest(reservationService, role = User) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/reject")
@@ -493,7 +496,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].rejectReservation(any)) thenFailWith
+      whenF(mock[DeskReservationService[IO]].rejectReservation(any)) thenFailWith
         InvalidStateTransition(reservationId, ReservationState.Cancelled, ReservationState.Rejected)
 
     val response = sendRequest(reservationService) {
@@ -513,7 +516,7 @@ object ReservationEndpointsSuite
   ) {
     val reservationId = anyReservationId1
     val reservationService =
-      whenF(mock[ReservationService[IO]].rejectReservation(any)) thenFailWith ReservationNotFound(reservationId)
+      whenF(mock[DeskReservationService[IO]].rejectReservation(any)) thenFailWith ReservationNotFound(reservationId)
 
     val response = sendRequest(reservationService) {
       basicRequest.put(uri"http://test.com/reservation/$reservationId/reject")
@@ -757,7 +760,7 @@ object ReservationEndpointsSuite
   }
 
   private def sendRequest(
-    reservationService: ReservationService[IO],
+    reservationService: DeskReservationService[IO],
     role: Role = SuperAdmin,
     requesterAccountId: UUID = anySuperAdminId
   )(
@@ -779,7 +782,7 @@ object ReservationEndpointsSuite
   )(
     request: Request[Either[String, String], Any]
   ): IO[Response[Either[PublicKey, PublicKey]]] = {
-    val reservationService = mock[ReservationService[IO]]
+    val reservationService = mock[DeskReservationService[IO]]
     sendSecuredApiEndpointRequest(request, role = User, accountId = anyUserId) { claimsExtractorService =>
       new ReservationEndpoints[IO](
         reservationService,

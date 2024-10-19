@@ -5,7 +5,7 @@ import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.account.PostgresAccountRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
-import adapters.postgres.repository.reservation.PostgresReservationRepository
+import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import cats.effect.IO
 import cats.effect.Resource
 import domain.model.account.OfficeManagerAccount
@@ -36,7 +36,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       PostgresOfficeViewRepository[IO],
       PostgresAccountRepository[IO],
       PostgresDeskRepository[IO],
-      PostgresReservationRepository[IO]
+      PostgresDeskReservationRepository[IO]
     ) => IO[Expectations]
   ): Unit =
     test(name) { session =>
@@ -44,7 +44,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       lazy val postgresOfficeViewRepository = new PostgresOfficeViewRepository[IO](session)
       lazy val postgresAccountRepository = new PostgresAccountRepository[IO](session)
       lazy val postgresDeskRepository = new PostgresDeskRepository[IO](session)
-      lazy val postgresReservationRepository = new PostgresReservationRepository[IO](session)
+      lazy val postgresReservationRepository = new PostgresDeskReservationRepository[IO](session)
       truncateTables(session) >> run(
         postgresOfficeRepository,
         postgresOfficeViewRepository,
@@ -279,8 +279,8 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       _ <- officeRepository.create(office)
       _ <- accountRepository.create(user)
       _ <- deskRepository.create(desk)
-      _ <- reservationRepository.createDeskReservation(confirmedReservationWithNowBetweenStartAndEnd)
-      _ <- reservationRepository.createDeskReservation(pendingReservationWithStartAfterNow)
+      _ <- reservationRepository.createReservation(confirmedReservationWithNowBetweenStartAndEnd)
+      _ <- reservationRepository.createReservation(pendingReservationWithStartAfterNow)
       officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
     } yield expect.all(
       officeListView.offices.exists(_.activeReservationsCount == 2),
@@ -345,10 +345,10 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       _ <- accountRepository.create(user)
       _ <- deskRepository.create(desk1)
       _ <- deskRepository.create(desk2)
-      _ <- reservationRepository.createDeskReservation(confirmedReservationWithEndBeforeNow)
-      _ <- reservationRepository.createDeskReservation(rejectedReservationWithStartAfterNow)
-      _ <- reservationRepository.createDeskReservation(cancelledReservationWithStartAfterNow)
-      _ <- reservationRepository.createDeskReservation(office2ActiveReservation)
+      _ <- reservationRepository.createReservation(confirmedReservationWithEndBeforeNow)
+      _ <- reservationRepository.createReservation(rejectedReservationWithStartAfterNow)
+      _ <- reservationRepository.createReservation(cancelledReservationWithStartAfterNow)
+      _ <- reservationRepository.createReservation(office2ActiveReservation)
       officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
     } yield expect.all(
       officeListView.offices.find(_.id == office1.id).exists(_.activeReservationsCount == 0),

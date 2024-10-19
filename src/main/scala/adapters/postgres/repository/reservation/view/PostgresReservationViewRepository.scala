@@ -1,7 +1,7 @@
 package io.github.avapl
 package adapters.postgres.repository.reservation.view
 
-import adapters.postgres.repository.reservation.PostgresReservationRepository
+import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import cats.effect.Resource
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.MonadCancelThrow
@@ -114,7 +114,7 @@ object PostgresReservationViewRepository {
       uuid *: // id
         timestamp *: // reserved_from
         timestamp *: // reserved_to
-        PostgresReservationRepository.reservationStateCodec *: // state
+        PostgresDeskReservationRepository.reservationStateCodec *: // state
         varchar *: // notes
         uuid *: // user_id
         varchar *: // user_first_name

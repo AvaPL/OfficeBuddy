@@ -18,13 +18,13 @@ import skunk.codec.all._
 import skunk.data.Completion
 import skunk.implicits._
 
-class PostgresReservationRepository[F[_]: MonadCancelThrow](
+class PostgresDeskReservationRepository[F[_]: MonadCancelThrow](
   session: Resource[F, Session[F]]
-) extends ReservationRepository[F] {
+) extends ReservationRepository[F, DeskReservation] {
 
-  import PostgresReservationRepository._
+  import PostgresDeskReservationRepository._
 
-  override def createDeskReservation(deskReservation: DeskReservation): F[DeskReservation] =
+  override def createReservation(deskReservation: DeskReservation): F[DeskReservation] =
     session.use { session =>
       for {
         sql <- session.prepare(createDeskReservationSql)
@@ -43,11 +43,11 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
 
   private lazy val createDeskReservationSql: Command[DeskReservation] =
     sql"""
-      INSERT INTO reservation   
+      INSERT INTO reservation
       VALUES      ($deskReservationEncoder)
     """.command
 
-  override def readDeskReservation(reservationId: UUID): F[DeskReservation] =
+  override def readReservation(reservationId: UUID): F[DeskReservation] =
     session.use { session =>
       for {
         sql <- session.prepare(readDeskReservationSql)
@@ -104,7 +104,7 @@ class PostgresReservationRepository[F[_]: MonadCancelThrow](
       }
 }
 
-object PostgresReservationRepository {
+object PostgresDeskReservationRepository {
 
   private lazy val deskReservationEncoder: Encoder[DeskReservation] =
     (

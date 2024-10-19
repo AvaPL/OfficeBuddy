@@ -6,6 +6,7 @@ import adapters.auth.service.ClaimsExtractorService
 import adapters.http.ApiError
 import adapters.http.PaginationInput
 import adapters.http.SecuredApiEndpoint
+import adapters.http.model.view.ApiPagination
 import adapters.http.reservation.model.ApiCreateDeskReservation
 import adapters.http.reservation.model.ApiDeskReservation
 import adapters.http.reservation.model.ApiReservationState
@@ -24,8 +25,7 @@ import domain.model.error.desk.DeskNotFound
 import domain.model.error.reservation._
 import domain.model.error.user.UserNotFound
 import domain.repository.reservation.view.ReservationViewRepository
-import domain.service.reservation.ReservationService
-import io.github.avapl.adapters.http.model.view.ApiPagination
+import domain.service.reservation.DeskReservationService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -37,7 +37,7 @@ import sttp.tapir.model.Delimited
 import sttp.tapir.server.ServerEndpoint
 
 class ReservationEndpoints[F[_]: Clock: MonadThrow](
-  reservationService: ReservationService[F],
+  reservationService: DeskReservationService[F],
   reservationViewRepository: ReservationViewRepository[F],
   override val publicKeyRepository: PublicKeyRepository[F],
   override val claimsExtractor: ClaimsExtractorService
@@ -99,7 +99,7 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
 
   private def reserveDesk(apiCreateDeskReservation: ApiCreateDeskReservation): F[Either[ApiError, ApiDeskReservation]] =
     reservationService
-      .reserveDesk(apiCreateDeskReservation.toDomain)
+      .reserve(apiCreateDeskReservation.toDomain)
       .map(ApiDeskReservation.fromDomain)
       .map(_.asRight[ApiError])
       .recover {
@@ -130,7 +130,7 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
 
   private def readDeskReservation(reservationId: UUID) =
     reservationService
-      .readDeskReservation(reservationId)
+      .readReservation(reservationId)
       .map(ApiDeskReservation.fromDomain)
       .map(_.asRight[ApiError])
       .recover(recoverOnNotFound)
@@ -187,7 +187,7 @@ class ReservationEndpoints[F[_]: Clock: MonadThrow](
 
   private def ownsReservation(reservationId: UUID, accountId: UUID) = EitherT {
     reservationService
-      .readDeskReservation(reservationId)
+      .readReservation(reservationId)
       .map(_.userId)
       .map(_ == accountId)
       .map(_.asRight[ApiError])

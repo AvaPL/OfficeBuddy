@@ -43,8 +43,8 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       whenF(mock[OfficeRepository[IO]].create(any)) thenReturn anyOffice
     val deskRepository: DeskRepository[IO] =
       whenF(mock[DeskRepository[IO]].create(any)) thenReturn anyDesk
-    val reservationRepository: ReservationRepository[IO] =
-      whenF(mock[ReservationRepository[IO]].createDeskReservation(any)) thenReturn anyDeskReservation
+    val deskReservationRepository: ReservationRepository[IO, DeskReservation] =
+      whenF(mock[ReservationRepository[IO, DeskReservation]].createReservation(any)) thenReturn anyDeskReservation
 
     for {
       random <- random
@@ -55,7 +55,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
           accountRepository,
           officeRepository,
           deskRepository,
-          reservationRepository
+          deskReservationRepository
         )
       }
       _ <- demoDataService.loadDemoData()
@@ -65,7 +65,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       verify(accountRepository, atLeast(1)).create(any)
       verify(officeRepository, atLeast(1)).create(any)
       verify(deskRepository, atLeast(1)).create(any)
-      verify(reservationRepository, atLeast(1)).createDeskReservation(any)
+      verify(deskReservationRepository, atLeast(1)).createReservation(any)
       success
     }
   }
@@ -85,8 +85,8 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       whenF(mock[OfficeRepository[IO]].create(any)) thenReturn anyOffice
     val deskRepository: DeskRepository[IO] =
       whenF(mock[DeskRepository[IO]].create(any)) thenReturn anyDesk
-    val reservationRepository: ReservationRepository[IO] =
-      whenF(mock[ReservationRepository[IO]].createDeskReservation(any)) thenReturn anyDeskReservation
+    val deskReservationRepository: ReservationRepository[IO, DeskReservation] =
+      whenF(mock[ReservationRepository[IO, DeskReservation]].createReservation(any)) thenReturn anyDeskReservation
 
     for {
       random <- random
@@ -97,7 +97,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
           accountRepository,
           officeRepository,
           deskRepository,
-          reservationRepository
+          deskReservationRepository
         )
       }
       _ <- demoDataService.loadDemoData()
@@ -107,7 +107,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       verify(accountRepository, atLeast(1)).create(any)
       verify(officeRepository, atLeast(1)).create(any)
       verify(deskRepository, atLeast(1)).create(any)
-      verify(reservationRepository, atLeast(1)).createDeskReservation(any)
+      verify(deskReservationRepository, atLeast(1)).createReservation(any)
       success
     }
   }
@@ -123,7 +123,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
     val accountRepository = mock[AccountRepository[IO]]
     val officeRepository = mock[OfficeRepository[IO]]
     val deskRepository = mock[DeskRepository[IO]]
-    val reservationRepository = mock[ReservationRepository[IO]]
+    val deskReservationRepository = mock[ReservationRepository[IO, DeskReservation]]
 
     for {
       random <- random
@@ -134,7 +134,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
           accountRepository,
           officeRepository,
           deskRepository,
-          reservationRepository
+          deskReservationRepository
         )
       }
       _ <- demoDataService.loadDemoData()
@@ -143,7 +143,7 @@ object DemoDataServiceSuite extends SimpleIOSuite with MockitoSugar with Argumen
       verify(accountRepository, never).create(any)
       verify(officeRepository, never).create(any)
       verify(deskRepository, never).create(any)
-      verify(reservationRepository, never).createDeskReservation(any)
+      verify(deskReservationRepository, never).createReservation(any)
       success
     }
   }

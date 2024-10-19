@@ -8,6 +8,7 @@ import cats.syntax.all._
 import domain.model.error.reservation.InvalidStateTransition
 import domain.model.reservation.CreateDeskReservation
 import domain.model.reservation.DeskReservation
+import domain.model.reservation.Reservation
 import domain.model.reservation.ReservationState
 import domain.repository.reservation.ReservationRepository
 import java.time.LocalDateTime
@@ -15,23 +16,23 @@ import java.time.ZoneOffset
 import java.util.UUID
 import util.FUUID
 
-class ReservationService[F[_]: MonadThrow: Clock: FUUID](
-  reservationRepository: ReservationRepository[F]
+sealed abstract class ReservationService[
+  F[_]: MonadThrow,
+  R <: Reservation
+](
+  reservationRepository: ReservationRepository[F, R]
 ) {
 
-  def reserveDesk(createDeskReservation: CreateDeskReservation): F[DeskReservation] =
+  protected def toReservation(createReservation: R#CreateReservation): F[R]
+
+  def reserve(createReservation: R#CreateReservation): F[R] =
     for {
-      reservationId <- FUUID[F].randomUUID()
-      createdAt <- nowUtc
-      reservation = createDeskReservation.toDeskReservation(reservationId, createdAt)
-      createdReservation <- reservationRepository.createDeskReservation(reservation)
+      reservation <- toReservation(createReservation)
+      createdReservation <- reservationRepository.createReservation(reservation)
     } yield createdReservation
 
-  private lazy val nowUtc =
-    Clock[F].realTimeInstant.map(LocalDateTime.ofInstant(_, ZoneOffset.UTC))
-
-  def readDeskReservation(reservationId: UUID): F[DeskReservation] =
-    reservationRepository.readDeskReservation(reservationId)
+  def readReservation(reservationId: UUID): F[R] =
+    reservationRepository.readReservation(reservationId)
 
   def cancelReservation(reservationId: UUID): F[Unit] =
     updateReservationState(reservationId, ReservationState.Cancelled)
@@ -68,4 +69,18 @@ class ReservationService[F[_]: MonadThrow: Clock: FUUID](
 
   def rejectReservation(reservationId: UUID): F[Unit] =
     updateReservationState(reservationId, ReservationState.Rejected)
+}
+
+class DeskReservationService[F[_]: Clock: FUUID: MonadThrow](
+  reservationRepository: ReservationRepository[F, DeskReservation]
+) extends ReservationService[F, DeskReservation](reservationRepository) {
+
+  override protected def toReservation(createReservation: CreateDeskReservation): F[DeskReservation] =
+    for {
+      reservationId <- FUUID[F].randomUUID()
+      createdAt <- nowUtc
+    } yield createReservation.toDeskReservation(reservationId, createdAt)
+
+  private lazy val nowUtc =
+    Clock[F].realTimeInstant.map(LocalDateTime.ofInstant(_, ZoneOffset.UTC))
 }

@@ -15,8 +15,9 @@ import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.desk.view.PostgresDeskViewRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
-import adapters.postgres.repository.reservation.PostgresReservationRepository
+import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresReservationViewRepository
+
 import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect._
@@ -42,7 +43,8 @@ import domain.service.account.SuperAdminInitService
 import domain.service.demo.DemoDataService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
-import domain.service.reservation.ReservationService
+import domain.service.reservation.{DeskReservationService, ReservationService}
+
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -61,6 +63,8 @@ import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import util.BuildInfo
 import util.FUUID
+
+import io.github.avapl.domain.model.reservation.DeskReservation
 
 object Main extends IOApp.Simple {
 
@@ -123,7 +127,7 @@ object Main extends IOApp.Simple {
       appMetadataRepository = new PostgresAppMetadataRepository[F](session)(monadCancelThrow),
       officeRepository = new PostgresOfficeRepository[F](session)(monadCancelThrow),
       deskRepository = new PostgresDeskRepository[F](session)(monadCancelThrow),
-      reservationRepository = new PostgresReservationRepository[F](session)(monadCancelThrow),
+      deskReservationRepository = new PostgresDeskReservationRepository[F](session)(monadCancelThrow),
       accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session),
       officeViewRepository = new PostgresOfficeViewRepository[F](session)(implicitly, monadCancelThrow),
       deskViewRepository = new PostgresDeskViewRepository[F](session)(implicitly, monadCancelThrow),
@@ -154,7 +158,7 @@ object Main extends IOApp.Simple {
           repositories.accountRepository,
           repositories.officeRepository,
           repositories.deskRepository,
-          repositories.reservationRepository
+          repositories.deskReservationRepository
         )
       }
       _ <- demoDataService.loadDemoData()
@@ -170,7 +174,7 @@ object Main extends IOApp.Simple {
     } yield {
       val officeService = new OfficeService[F](repositories.officeRepository)
       val deskService = new DeskService[F](repositories.deskRepository)
-      val reservationService = new ReservationService[F](repositories.reservationRepository)
+      val deskReservationService = new DeskReservationService[F](repositories.deskReservationRepository)
       val accountService = new AccountService[F](repositories.accountRepository)
       val rolesExtractorService = KeycloakClaimsExtractorService
 
@@ -186,8 +190,8 @@ object Main extends IOApp.Simple {
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
-      val reservationEndpoints = new ReservationEndpoints[F](
-        reservationService,
+      val deskReservationEndpoints = new ReservationEndpoints[F](
+        deskReservationService,
         repositories.reservationViewRepository,
         publicKeyRepository,
         rolesExtractorService
@@ -199,7 +203,7 @@ object Main extends IOApp.Simple {
         rolesExtractorService
       ).endpoints
 
-      officeEndpoints <+> deskEndpoints <+> reservationEndpoints <+> accountEndpoints
+      officeEndpoints <+> deskEndpoints <+> deskReservationEndpoints <+> accountEndpoints
     }
 
   private def runHttpServer[F[_]: Async](
@@ -251,7 +255,7 @@ object Main extends IOApp.Simple {
     appMetadataRepository: AppMetadataRepository[F],
     officeRepository: OfficeRepository[F],
     deskRepository: DeskRepository[F],
-    reservationRepository: ReservationRepository[F],
+    deskReservationRepository: ReservationRepository[F, DeskReservation],
     accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F],
     officeViewRepository: OfficeViewRepository[F],
     deskViewRepository: DeskViewRepository[F],

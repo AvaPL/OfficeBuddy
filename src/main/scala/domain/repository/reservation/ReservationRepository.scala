@@ -1,14 +1,14 @@
 package io.github.avapl
 package domain.repository.reservation
 
-import domain.model.reservation.{DeskReservation, ReservationState}
+import domain.model.reservation.{DeskReservation, Reservation, ReservationState}
 
 import java.util.UUID
 
-trait ReservationRepository[F[_]] {
+trait ReservationRepository[F[_], R <: Reservation] {
 
-  def createDeskReservation(deskReservation: DeskReservation): F[DeskReservation]
-  def readDeskReservation(reservationId: UUID): F[DeskReservation]
+  def createReservation(deskReservation: R): F[R]
+  def readReservation(reservationId: UUID): F[R]
 
   def readReservationState(reservationId: UUID): F[ReservationState]
   def updateReservationState(reservationId: UUID, newState: ReservationState): F[Unit] // TODO: Return the updated reservation?

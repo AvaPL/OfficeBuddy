@@ -15,6 +15,8 @@ import java.util.UUID
  */
 sealed trait Reservation {
 
+  type CreateReservation
+
   def id: UUID
   def userId: UUID
   def createdAt: LocalDateTime
@@ -35,6 +37,8 @@ case class DeskReservation(
   //
   deskId: UUID
 ) extends Reservation {
+
+  override type CreateReservation = CreateDeskReservation
 
   override lazy val reservedFrom: LocalDateTime = reservedFromDate.atStartOfDay()
   override lazy val reservedTo: LocalDateTime = reservedToDate.atTime(LocalTime.MAX)

@@ -7,9 +7,12 @@ import domain.repository.account.AccountRepository
 import domain.repository.account.TemporaryPasswordRepository
 import domain.service.account.SuperAdminInitService.initialSuperAdminAccount
 import domain.service.account.SuperAdminInitService.initialSuperAdminPassword
+
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar
 import org.mockito.cats.MockitoCats
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver.SimpleIOSuite
 
 object SuperAdminInitServiceSuite extends SimpleIOSuite with MockitoSugar with ArgumentMatchersSugar with MockitoCats {
@@ -53,4 +56,7 @@ object SuperAdminInitServiceSuite extends SimpleIOSuite with MockitoSugar with A
       expect(superAdminAccount == initialSuperAdminAccount)
     }
   }
+
+  private implicit lazy val logger: Logger[IO] =
+    Slf4jLogger.getLogger[IO]
 }

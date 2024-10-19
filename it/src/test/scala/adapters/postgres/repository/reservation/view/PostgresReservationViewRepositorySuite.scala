@@ -5,7 +5,7 @@ import adapters.postgres.fixture.PostgresFixture
 import adapters.postgres.repository.account.PostgresAccountRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
-import adapters.postgres.repository.reservation.PostgresReservationRepository
+import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all._
@@ -36,9 +36,9 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
 
   private def beforeTest(
     name: TestName
-  )(run: (PostgresReservationRepository[IO], PostgresReservationViewRepository[IO]) => IO[Expectations]): Unit =
+  )(run: (PostgresDeskReservationRepository[IO], PostgresReservationViewRepository[IO]) => IO[Expectations]): Unit =
     test(name) { session =>
-      lazy val postgresReservationRepository = new PostgresReservationRepository[IO](session)
+      lazy val postgresReservationRepository = new PostgresDeskReservationRepository[IO](session)
       lazy val postgresReservationViewRepository = new PostgresReservationViewRepository[IO](session)
       truncateTables(session) >>
         insertOffices(session) >>
@@ -57,7 +57,7 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
       val reservation = anyDeskReservation.copy(id = anyDeskReservationId1, deskId = office1DeskId1)
 
       for {
-        _ <- reservationRepository.createDeskReservation(reservation)
+        _ <- reservationRepository.createReservation(reservation)
         reservationListView <- reservationViewRepository.listDeskReservations(
           officeId1,
           reservation.reservedFromDate,
@@ -93,9 +93,9 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     val reservation3 = createDeskReservation(anyDeskReservationId3, deskId = office1DeskId3)
 
     for {
-      _ <- reservationRepository.createDeskReservation(reservation1)
-      _ <- reservationRepository.createDeskReservation(reservation2)
-      _ <- reservationRepository.createDeskReservation(reservation3)
+      _ <- reservationRepository.createReservation(reservation1)
+      _ <- reservationRepository.createReservation(reservation2)
+      _ <- reservationRepository.createReservation(reservation3)
       reservationListView1 <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,
@@ -125,7 +125,7 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     val reservation = anyDeskReservation.copy(id = anyDeskReservationId1, deskId = office1DeskId1)
 
     for {
-      _ <- reservationRepository.createDeskReservation(reservation)
+      _ <- reservationRepository.createReservation(reservation)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservation.reservedFromDate,
@@ -160,9 +160,9 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     val notMatchingReservation = createDeskReservation(anyDeskReservationId3, deskId = office2DeskId1)
 
     for {
-      _ <- reservationRepository.createDeskReservation(matchingReservation1)
-      _ <- reservationRepository.createDeskReservation(matchingReservation2)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation)
+      _ <- reservationRepository.createReservation(matchingReservation1)
+      _ <- reservationRepository.createReservation(matchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,
@@ -201,9 +201,9 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation)
-      _ <- reservationRepository.createDeskReservation(matchingReservation1)
-      _ <- reservationRepository.createDeskReservation(matchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation)
+      _ <- reservationRepository.createReservation(matchingReservation1)
+      _ <- reservationRepository.createReservation(matchingReservation2)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = LocalDate.parse("2024-09-25"),
@@ -231,7 +231,7 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
       )
 
       for {
-        _ <- reservationRepository.createDeskReservation(reservation)
+        _ <- reservationRepository.createReservation(reservation)
         reservationListView <- reservationViewRepository.listDeskReservations(
           officeId1,
           reservationFrom = LocalDate.parse("2024-09-25"),
@@ -272,10 +272,10 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(matchingReservation1)
-      _ <- reservationRepository.createDeskReservation(matchingReservation2)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation1)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation2)
+      _ <- reservationRepository.createReservation(matchingReservation1)
+      _ <- reservationRepository.createReservation(matchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation1)
+      _ <- reservationRepository.createReservation(notMatchingReservation2)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = LocalDate.EPOCH,
@@ -312,9 +312,9 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(matchingReservation1)
-      _ <- reservationRepository.createDeskReservation(matchingReservation2)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation)
+      _ <- reservationRepository.createReservation(matchingReservation1)
+      _ <- reservationRepository.createReservation(matchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = LocalDate.EPOCH,
@@ -365,11 +365,11 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(matchingReservation)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation1)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation2)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation3)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation4)
+      _ <- reservationRepository.createReservation(matchingReservation)
+      _ <- reservationRepository.createReservation(notMatchingReservation1)
+      _ <- reservationRepository.createReservation(notMatchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation3)
+      _ <- reservationRepository.createReservation(notMatchingReservation4)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = matchingReservation.reservedFromDate,
@@ -421,10 +421,10 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation1)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation2)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation3)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation4)
+      _ <- reservationRepository.createReservation(notMatchingReservation1)
+      _ <- reservationRepository.createReservation(notMatchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation3)
+      _ <- reservationRepository.createReservation(notMatchingReservation4)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = matchingReservation.reservedFromDate,
@@ -470,9 +470,9 @@ object PostgresReservationViewRepositorySuite extends IOSuite with PostgresFixtu
     )
 
     for {
-      _ <- reservationRepository.createDeskReservation(matchingReservation1)
-      _ <- reservationRepository.createDeskReservation(matchingReservation2)
-      _ <- reservationRepository.createDeskReservation(notMatchingReservation)
+      _ <- reservationRepository.createReservation(matchingReservation1)
+      _ <- reservationRepository.createReservation(matchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation)
       reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,

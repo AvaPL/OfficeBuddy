@@ -39,7 +39,7 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
   accountRepository: AccountRepository[F],
   officeRepository: OfficeRepository[F],
   deskRepository: DeskRepository[F],
-  reservationRepository: ReservationRepository[F]
+  deskReservationRepository: ReservationRepository[F, DeskReservation]
 ) {
 
   // TODO: Loading demo data should be done within a transaction
@@ -119,7 +119,7 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
 
   private def loadDeskReservation(user: Account, desk: Desk, now: LocalDateTime): F[DeskReservation] =
     generateDeskReservation(user.id, desk.id, now)
-      .flatMap(reservationRepository.createDeskReservation)
+      .flatMap(deskReservationRepository.createReservation)
 }
 
 object DemoDataService {
