@@ -5,7 +5,7 @@ import adapters.http.ApiError
 import adapters.http.account.AccountEndpoints
 import adapters.http.desk.DeskEndpoints
 import adapters.http.office.OfficeEndpoints
-import adapters.http.reservation.ReservationEndpoints
+import adapters.http.reservation.DeskReservationEndpoints
 import adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
 import adapters.keycloak.auth.service.KeycloakClaimsExtractorService
 import adapters.postgres.migration.FlywayMigration
@@ -189,7 +189,7 @@ object Main extends IOApp.Simple {
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
-      val deskReservationEndpoints = new ReservationEndpoints[F](
+      val deskReservationEndpoints = new DeskReservationEndpoints[F](
         deskReservationService,
         repositories.deskReservationViewRepository,
         publicKeyRepository,

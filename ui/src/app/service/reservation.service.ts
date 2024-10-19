@@ -48,20 +48,20 @@ export class ReservationService {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token);
 
-    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${reservationId}/confirm`, null, {headers}));
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/confirm`, null, {headers}));
   }
 
   async rejectDeskReservation(reservationId: string): Promise<void> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token);
 
-    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${reservationId}/reject`, null, {headers}));
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/reject`, null, {headers}));
   }
 
   async cancelDeskReservation(reservationId: string): Promise<void> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token);
 
-    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${reservationId}/cancel`, null, {headers}));
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/cancel`, null, {headers}));
   }
 }

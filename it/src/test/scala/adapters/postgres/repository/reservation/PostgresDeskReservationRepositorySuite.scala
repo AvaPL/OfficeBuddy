@@ -30,7 +30,7 @@ import weaver.Expectations
 import weaver.IOSuite
 import weaver.TestName
 
-object PostgresDeskReservationRepositorySuite$ extends IOSuite with PostgresFixture {
+object PostgresDeskReservationRepositorySuite extends IOSuite with PostgresFixture {
 
   private def beforeTest(name: TestName)(run: PostgresDeskReservationRepository[IO] => IO[Expectations]): Unit =
     test(name) { session =>
