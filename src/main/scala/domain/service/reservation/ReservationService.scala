@@ -16,7 +16,7 @@ import java.time.ZoneOffset
 import java.util.UUID
 import util.FUUID
 
-sealed abstract class ReservationService[
+abstract class ReservationService[
   F[_]: MonadThrow,
   R <: Reservation
 ](
@@ -69,18 +69,4 @@ sealed abstract class ReservationService[
 
   def rejectReservation(reservationId: UUID): F[Unit] =
     updateReservationState(reservationId, ReservationState.Rejected)
-}
-
-class DeskReservationService[F[_]: Clock: FUUID: MonadThrow](
-  reservationRepository: ReservationRepository[F, DeskReservation]
-) extends ReservationService[F, DeskReservation](reservationRepository) {
-
-  override protected def toReservation(createReservation: CreateDeskReservation): F[DeskReservation] =
-    for {
-      reservationId <- FUUID[F].randomUUID()
-      createdAt <- nowUtc
-    } yield createReservation.toDeskReservation(reservationId, createdAt)
-
-  private lazy val nowUtc =
-    Clock[F].realTimeInstant.map(LocalDateTime.ofInstant(_, ZoneOffset.UTC))
 }
