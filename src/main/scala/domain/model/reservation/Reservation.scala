@@ -68,14 +68,41 @@ case class ParkingSpotReservation(
   id: UUID,
   userId: UUID,
   createdAt: LocalDateTime,
-  reservedFrom: LocalDateTime,
-  reservedTo: LocalDateTime,
+  reservedFromDate: LocalDate,
+  reservedToDate: LocalDate,
   state: ReservationState,
   notes: String,
   //
   parkingSpotId: UUID,
   plateNumber: String
-) extends Reservation
+) extends Reservation {
+
+  override type CreateReservation = CreateParkingSpotReservation
+
+  override lazy val reservedFrom: LocalDateTime = reservedFromDate.atStartOfDay()
+  override lazy val reservedTo: LocalDateTime = reservedToDate.atTime(LocalTime.MAX)
+}
+
+case class CreateParkingSpotReservation(
+  userId: UUID,
+  reservedFrom: LocalDate,
+  reservedTo: LocalDate,
+  notes: String,
+  //
+  parkingSpotId: UUID,
+  plateNumber: String
+) {
+
+  def toParkingSpotReservation(reservationId: UUID, createdAt: LocalDateTime): ParkingSpotReservation =
+    this
+      .into[ParkingSpotReservation]
+      .withFieldConst(_.id, reservationId)
+      .withFieldConst(_.createdAt, createdAt)
+      .withFieldComputed(_.reservedFromDate, _.reservedFrom)
+      .withFieldComputed(_.reservedToDate, _.reservedTo)
+      .withFieldConst(_.state, ReservationState.Pending)
+      .transform
+}
 
 case class MeetingRoomReservation(
   id: UUID,
