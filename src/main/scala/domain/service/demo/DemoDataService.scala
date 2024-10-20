@@ -34,6 +34,7 @@ import java.util.UUID
 import org.typelevel.log4cats.Logger
 import util.FUUID
 
+// TODO: Add parking spots and reservations for them
 class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
   appMetadataRepository: AppMetadataRepository[F],
   accountRepository: AccountRepository[F],
