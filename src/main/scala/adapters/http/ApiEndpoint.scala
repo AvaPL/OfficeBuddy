@@ -39,15 +39,19 @@ sealed trait ApiEndpoint {
 
 trait PublicApiEndpoint extends ApiEndpoint {
 
+  protected def tag: String = apiEndpointName
+
   protected[http] lazy val publicEndpoint: Endpoint[Unit, Unit, ApiError, Unit, Any] =
     endpointBase
-      .withTag(apiEndpointName)
+      .withTag(tag)
 }
 
 trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
 
   protected def claimsExtractor: ClaimsExtractorService
   protected def publicKeyRepository: PublicKeyRepository[F]
+
+  protected def tag: String = s"$apiEndpointName (secured)"
 
   protected[http] def securedEndpoint(
     requiredRole: Role
@@ -56,7 +60,7 @@ trait SecuredApiEndpoint[F[_]] extends ApiEndpoint {
     monadThrow: MonadThrow[F]
   ): PartialServerEndpoint[String, AccessToken, Unit, ApiError, Unit, Any, F] =
     endpointBase
-      .withTag(s"$apiEndpointName (secured)")
+      .withTag(tag)
       .securityIn(auth.bearer[String]())
       .serverSecurityLogic(authorize(_, requiredRole))
       .errorOutVariantPrepend(
