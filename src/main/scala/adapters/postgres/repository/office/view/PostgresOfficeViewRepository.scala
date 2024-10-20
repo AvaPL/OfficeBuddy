@@ -98,7 +98,7 @@ object PostgresOfficeViewRepository {
         FROM     parking_spot
         WHERE    is_archived = 'no'
         GROUP BY office_id
-      ) AS p ON office.id = p.office_id
+      ) AS ps ON office.id = ps.office_id
 
       -- Meeting rooms count
       -- To be implemented
