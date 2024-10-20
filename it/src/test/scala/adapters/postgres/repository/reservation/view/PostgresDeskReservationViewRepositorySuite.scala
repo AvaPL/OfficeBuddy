@@ -58,7 +58,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
 
       for {
         _ <- reservationRepository.createReservation(reservation)
-        reservationListView <- reservationViewRepository.listReservations(
+        reservationListView <- reservationViewRepository.listDeskReservations(
           officeId1,
           reservation.reservedFromDate,
           limit = 10,
@@ -96,13 +96,13 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(reservation1)
       _ <- reservationRepository.createReservation(reservation2)
       _ <- reservationRepository.createReservation(reservation3)
-      reservationListView1 <- reservationViewRepository.listReservations(
+      reservationListView1 <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,
         limit = 2,
         offset = 0
       )
-      reservationListView2 <- reservationViewRepository.listReservations(
+      reservationListView2 <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,
         limit = 2,
@@ -126,7 +126,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
 
     for {
       _ <- reservationRepository.createReservation(reservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservation.reservedFromDate,
         limit = 1,
@@ -163,7 +163,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,
         limit = 10,
@@ -204,7 +204,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(notMatchingReservation)
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = LocalDate.parse("2024-09-25"),
         limit = 10,
@@ -232,7 +232,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
 
       for {
         _ <- reservationRepository.createReservation(reservation)
-        reservationListView <- reservationViewRepository.listReservations(
+        reservationListView <- reservationViewRepository.listDeskReservations(
           officeId1,
           reservationFrom = LocalDate.parse("2024-09-25"),
           limit = 10,
@@ -276,7 +276,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation1)
       _ <- reservationRepository.createReservation(notMatchingReservation2)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = LocalDate.EPOCH,
         reservationStates = Some(List(Pending, Confirmed)),
@@ -315,7 +315,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = LocalDate.EPOCH,
         userId = Some(userId1),
@@ -370,7 +370,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(notMatchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation3)
       _ <- reservationRepository.createReservation(notMatchingReservation4)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = matchingReservation.reservedFromDate,
         reservationStates = Some(List(matchingReservation.state)),
@@ -425,7 +425,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(notMatchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation3)
       _ <- reservationRepository.createReservation(notMatchingReservation4)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom = matchingReservation.reservedFromDate,
         reservationStates = Some(List(matchingReservation.state)),
@@ -473,7 +473,7 @@ object PostgresDeskReservationViewRepositorySuite extends IOSuite with PostgresF
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listDeskReservations(
         officeId1,
         reservationFrom,
         limit = 1,

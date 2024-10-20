@@ -37,7 +37,7 @@ import domain.repository.desk.view.DeskViewRepository
 import domain.repository.office.OfficeRepository
 import domain.repository.office.view.OfficeViewRepository
 import domain.repository.reservation.ReservationRepository
-import domain.repository.reservation.view.ReservationViewRepository
+import domain.repository.reservation.view.DeskReservationViewRepository
 import domain.service.account.AccountService
 import domain.service.account.SuperAdminInitService
 import domain.service.demo.DemoDataService
@@ -128,7 +128,8 @@ object Main extends IOApp.Simple {
       accountRepository = KeycloakPostgresAccountRepository[F](keycloak, appRealmName, session),
       officeViewRepository = new PostgresOfficeViewRepository[F](session)(implicitly, monadCancelThrow),
       deskViewRepository = new PostgresDeskViewRepository[F](session)(implicitly, monadCancelThrow),
-      deskReservationViewRepository = new PostgresDeskReservationViewRepository[F](session)(implicitly, monadCancelThrow),
+      deskReservationViewRepository =
+        new PostgresDeskReservationViewRepository[F](session)(implicitly, monadCancelThrow),
       accountViewRepository = new PostgresAccountViewRepository[F](session)(implicitly, monadCancelThrow)
     )
   }
@@ -256,7 +257,7 @@ object Main extends IOApp.Simple {
     accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F],
     officeViewRepository: OfficeViewRepository[F],
     deskViewRepository: DeskViewRepository[F],
-    deskReservationViewRepository: ReservationViewRepository[F, DeskReservationListView],
+    deskReservationViewRepository: DeskReservationViewRepository[F],
     accountViewRepository: AccountViewRepository[F]
   )
 }

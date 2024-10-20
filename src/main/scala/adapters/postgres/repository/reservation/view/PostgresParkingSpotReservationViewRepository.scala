@@ -12,7 +12,7 @@ import domain.model.reservation.view.ParkingSpotReservationView
 import domain.model.reservation.view.ParkingSpotView
 import domain.model.reservation.view.UserView
 import domain.model.view.Pagination
-import domain.repository.reservation.view.ReservationViewRepository
+import domain.repository.reservation.view.ParkingSpotReservationViewRepository
 import java.time.LocalDate
 import java.util.UUID
 import scala.annotation.nowarn
@@ -22,21 +22,29 @@ import skunk.implicits._
 
 class PostgresParkingSpotReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
   session: Resource[F, Session[F]]
-) extends ReservationViewRepository[F, ParkingSpotReservationListView] {
+) extends ParkingSpotReservationViewRepository[F] {
 
   import PostgresParkingSpotReservationViewRepository._
 
-  override def listReservations(
+  override def listParkingSpotReservations(
     officeId: UUID,
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]],
     userId: Option[UUID],
+    plateNumber: Option[String],
     limit: Int,
     offset: Int
   ): F[ParkingSpotReservationListView] = {
     val chunkSize = limit + 1 // Take one more element to determine if there are more elements to fetch
-    val appliedFragment =
-      listParkingSpotReservationsSql(officeId, reservationFrom, reservationStates, userId, chunkSize, offset)
+    val appliedFragment = listParkingSpotReservationsSql(
+      officeId,
+      reservationFrom,
+      reservationStates,
+      userId,
+      plateNumber,
+      chunkSize,
+      offset
+    )
     session.use { session =>
       for {
         sql <- session.prepare(appliedFragment.fragment.query(parkingSpotReservationViewDecoder))
@@ -60,6 +68,7 @@ object PostgresParkingSpotReservationViewRepository {
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]],
     userId: Option[UUID],
+    plateNumber: Option[String],
     limit: Int,
     offset: Int
   ): AppliedFragment = {
@@ -89,14 +98,16 @@ object PostgresParkingSpotReservationViewRepository {
 
     val statesFilter = sql""" AND state = ANY(${_reservationStatesEncoder})"""
     val userIdFilter = sql""" AND user_id = $uuid"""
+    val plateNumberFilter = sql""" AND plate_number = $varchar"""
 
     val appliedFilters = List(
       reservationStates.map(statesFilter),
-      userId.map(userIdFilter)
+      userId.map(userIdFilter),
+      plateNumber.map(plateNumberFilter)
     ).flatten.fold(AppliedFragment.empty)(_ |+| _)
 
     val orderByLimitOffset = sql"""
-      ORDER BY reserved_from, reserved_to, plate_number
+      ORDER BY reserved_from, reserved_to, parking_spot_name, plate_number
       LIMIT    $int4
       OFFSET   $int4
     """

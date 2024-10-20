@@ -61,7 +61,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
 
       for {
         _ <- reservationRepository.createReservation(reservation)
-        reservationListView <- reservationViewRepository.listReservations(
+        reservationListView <- reservationViewRepository.listParkingSpotReservations(
           officeId1,
           reservation.reservedFromDate,
           limit = 10,
@@ -103,13 +103,13 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(reservation1)
       _ <- reservationRepository.createReservation(reservation2)
       _ <- reservationRepository.createReservation(reservation3)
-      reservationListView1 <- reservationViewRepository.listReservations(
+      reservationListView1 <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom,
         limit = 2,
         offset = 0
       )
-      reservationListView2 <- reservationViewRepository.listReservations(
+      reservationListView2 <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom,
         limit = 2,
@@ -134,7 +134,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
 
     for {
       _ <- reservationRepository.createReservation(reservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservation.reservedFromDate,
         limit = 1,
@@ -174,7 +174,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom,
         limit = 10,
@@ -215,7 +215,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(notMatchingReservation)
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         LocalDate.parse("2024-09-25"),
         limit = 10,
@@ -243,7 +243,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
 
       for {
         _ <- reservationRepository.createReservation(reservation)
-        reservationListView <- reservationViewRepository.listReservations(
+        reservationListView <- reservationViewRepository.listParkingSpotReservations(
           officeId1,
           LocalDate.parse("2024-09-25"),
           limit = 10,
@@ -287,7 +287,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation1)
       _ <- reservationRepository.createReservation(notMatchingReservation2)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom = LocalDate.EPOCH,
         reservationStates = Some(List(Pending, Confirmed)),
@@ -326,7 +326,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom = LocalDate.EPOCH,
         userId = Some(userId1),
@@ -340,8 +340,47 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
   }
 
   beforeTest(
-    """GIVEN 5 reservations in the database
-      | WHEN listParkingSpotReservations is called with officeId, reservationFrom, reservationStates, and userId matching 1 reservation
+    """GIVEN 4 reservations in the database in one office
+        | WHEN listParkingSpotReservations is called with plateNumber matching 2 reservations
+        | THEN return matching reservations
+        |""".stripMargin
+  ) { (reservationRepository, reservationViewRepository) =>
+    val matchingReservation1 = anyParkingSpotReservation.copy(
+      id = anyParkingSpotReservationId1,
+      parkingSpotId = office1ParkingSpotId1,
+      plateNumber = "ABC 123"
+    )
+    val matchingReservation2 = anyParkingSpotReservation.copy(
+      id = anyParkingSpotReservationId2,
+      parkingSpotId = office1ParkingSpotId2,
+      plateNumber = "ABC 123"
+    )
+    val notMatchingReservation = anyParkingSpotReservation.copy(
+      id = anyParkingSpotReservationId3,
+      parkingSpotId = office1ParkingSpotId3,
+      plateNumber = "XYZ 789"
+    )
+
+    for {
+      _ <- reservationRepository.createReservation(matchingReservation1)
+      _ <- reservationRepository.createReservation(matchingReservation2)
+      _ <- reservationRepository.createReservation(notMatchingReservation)
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
+        officeId1,
+        reservationFrom = LocalDate.EPOCH,
+        plateNumber = Some("ABC 123"),
+        limit = 10,
+        offset = 0
+      )
+    } yield expect.all(
+      reservationListView.reservations.map(_.id) == List(matchingReservation1.id, matchingReservation2.id),
+      !reservationListView.pagination.hasMoreResults
+    )
+  }
+
+  beforeTest(
+    """GIVEN 6 reservations in the database
+      | WHEN listParkingSpotReservations is called with officeId, reservationFrom, reservationStates, userId, and plateNumber matching 1 reservation
       | THEN return the matching reservation
       |""".stripMargin
   ) { (reservationRepository, reservationViewRepository) =>
@@ -351,7 +390,8 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       reservedFromDate = LocalDate.parse("2024-09-24"),
       reservedToDate = LocalDate.parse("2024-09-27"),
       state = Confirmed,
-      userId = userId1
+      userId = userId1,
+      plateNumber = "ABC 123"
     )
     val notMatchingReservation1 = matchingReservation.copy(
       id = anyParkingSpotReservationId2,
@@ -374,6 +414,11 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       parkingSpotId = office1ParkingSpotId4,
       userId = userId2 // not matching userId
     )
+    val notMatchingReservation5 = matchingReservation.copy(
+      id = anyParkingSpotReservationId6,
+      parkingSpotId = office1ParkingSpotId5,
+      plateNumber = "XYZ 789" // not matching plateNumber
+    )
 
     for {
       _ <- reservationRepository.createReservation(matchingReservation)
@@ -381,11 +426,13 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(notMatchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation3)
       _ <- reservationRepository.createReservation(notMatchingReservation4)
-      reservationListView <- reservationViewRepository.listReservations(
+      _ <- reservationRepository.createReservation(notMatchingReservation5)
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom = matchingReservation.reservedFromDate,
         reservationStates = Some(List(matchingReservation.state)),
         userId = Some(matchingReservation.userId),
+        plateNumber = Some(matchingReservation.plateNumber),
         limit = 10,
         offset = 0
       )
@@ -396,8 +443,8 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
   }
 
   beforeTest(
-    """GIVEN 4 reservations in the database
-      | WHEN listParkingSpotReservations is called with officeId, reservationFrom, reservationStates, and userId not matching any reservation
+    """GIVEN 5 reservations in the database
+      | WHEN listParkingSpotReservations is called with officeId, reservationFrom, reservationStates, userId, and plateNumber not matching any reservation
       | THEN return an empty list of results
       |""".stripMargin
   ) { (reservationRepository, reservationViewRepository) =>
@@ -407,7 +454,8 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       reservedFromDate = LocalDate.parse("2024-09-24"),
       reservedToDate = LocalDate.parse("2024-09-27"),
       state = Confirmed,
-      userId = userId1
+      userId = userId1,
+      plateNumber = "ABC 123"
     )
     val notMatchingReservation1 = matchingReservation.copy(
       id = anyParkingSpotReservationId2,
@@ -430,17 +478,24 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       parkingSpotId = office1ParkingSpotId4,
       userId = userId2 // not matching userId
     )
+    val notMatchingReservation5 = matchingReservation.copy(
+      id = anyParkingSpotReservationId6,
+      parkingSpotId = office1ParkingSpotId5,
+      plateNumber = "XYZ 789" // not matching plateNumber
+    )
 
     for {
       _ <- reservationRepository.createReservation(notMatchingReservation1)
       _ <- reservationRepository.createReservation(notMatchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation3)
       _ <- reservationRepository.createReservation(notMatchingReservation4)
-      reservationListView <- reservationViewRepository.listReservations(
+      _ <- reservationRepository.createReservation(notMatchingReservation5)
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom = matchingReservation.reservedFromDate,
         reservationStates = Some(List(matchingReservation.state)),
         userId = Some(matchingReservation.userId),
+        plateNumber = Some(matchingReservation.plateNumber),
         limit = 10,
         offset = 0
       )
@@ -484,7 +539,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
       _ <- reservationRepository.createReservation(matchingReservation1)
       _ <- reservationRepository.createReservation(matchingReservation2)
       _ <- reservationRepository.createReservation(notMatchingReservation)
-      reservationListView <- reservationViewRepository.listReservations(
+      reservationListView <- reservationViewRepository.listParkingSpotReservations(
         officeId1,
         reservationFrom,
         limit = 1,
@@ -560,8 +615,16 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
     val office1ParkingSpot2 = anyParkingSpot(office1ParkingSpotId2, office1ParkingSpotName2, officeId1)
     val office1ParkingSpot3 = anyParkingSpot(office1ParkingSpotId3, office1ParkingSpotName3, officeId1)
     val office1ParkingSpot4 = anyParkingSpot(office1ParkingSpotId4, office1ParkingSpotName4, officeId1)
+    val office1ParkingSpot5 = anyParkingSpot(office1ParkingSpotId5, office1ParkingSpotName5, officeId1)
     val office2ParkingSpot1 = anyParkingSpot(office2ParkingSpotId1, office2ParkingSpotName1, officeId2)
-    List(office1ParkingSpot1, office1ParkingSpot2, office1ParkingSpot3, office1ParkingSpot4, office2ParkingSpot1)
+    List(
+      office1ParkingSpot1,
+      office1ParkingSpot2,
+      office1ParkingSpot3,
+      office1ParkingSpot4,
+      office1ParkingSpot5,
+      office2ParkingSpot1
+    )
       .parTraverse_(parkingSpotRepository.create)
   }
 
@@ -593,6 +656,8 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
   private lazy val office1ParkingSpotName3 = "parking spot 1.3"
   private lazy val office1ParkingSpotId4 = UUID.fromString("038b6c3e-c810-4dad-8b2c-81f86258e70f")
   private lazy val office1ParkingSpotName4 = "parking spot 1.4"
+  private lazy val office1ParkingSpotId5 = UUID.fromString("b5aa5680-a750-46ff-a9f5-0eb70f22fa9f")
+  private lazy val office1ParkingSpotName5 = "parking spot 1.5"
   private lazy val office2ParkingSpotId1 = UUID.fromString("a64882be-c0e5-4d20-bda0-59182ac1c7fa")
   private lazy val office2ParkingSpotName1 = "parking spot 2.1"
 
@@ -614,7 +679,7 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
     state = Confirmed,
     notes = "Test notes",
     parkingSpotId = office1ParkingSpotId1,
-    plateNumber = "ABC123"
+    plateNumber = "ABC 123"
   )
 
   private lazy val anyParkingSpotReservationId1 = UUID.fromString("eb2cc050-de32-4087-87e3-cac25dc64a92")
@@ -622,4 +687,5 @@ object PostgresParkingSpotReservationViewRepositorySuite extends IOSuite with Po
   private lazy val anyParkingSpotReservationId3 = UUID.fromString("c16737f6-b5ae-45a9-9ea0-9e3e7fb2568d")
   private lazy val anyParkingSpotReservationId4 = UUID.fromString("547d7782-cf8b-44ea-95cc-9aa9dac63553")
   private lazy val anyParkingSpotReservationId5 = UUID.fromString("aa1531a7-c47c-450a-bfb9-5c70188b76a1")
+  private lazy val anyParkingSpotReservationId6 = UUID.fromString("9580eb24-aa84-408d-8ef8-516ec8627d03")
 }

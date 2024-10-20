@@ -2,14 +2,11 @@ package io.github.avapl
 package domain.repository.reservation.view
 
 import domain.model.reservation.ReservationState
+import io.github.avapl.domain.model.reservation.view.ParkingSpotReservationListView
 import java.time.LocalDate
 import java.util.UUID
 
-/**
- * @tparam V
- *   view type
- */
-trait ReservationViewRepository[F[_], V] {
+trait ParkingSpotReservationViewRepository[F[_]] {
 
   /**
    * @param officeId
@@ -20,13 +17,16 @@ trait ReservationViewRepository[F[_], V] {
    *   list of allowed reservation states
    * @param userId
    *   reservation's assigned user ID
+   * @param plateNumber
+   *   vehicle's plate number
    */
-  def listReservations(
+  def listParkingSpotReservations(
     officeId: UUID,
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]] = None,
     userId: Option[UUID] = None,
+    plateNumber: Option[String] = None,
     limit: Int,
     offset: Int
-  ): F[V]
+  ): F[ParkingSpotReservationListView]
 }

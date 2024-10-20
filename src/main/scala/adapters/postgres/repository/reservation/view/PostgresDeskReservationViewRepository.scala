@@ -12,7 +12,7 @@ import domain.model.reservation.view.DeskReservationView
 import domain.model.reservation.view.DeskView
 import domain.model.reservation.view.UserView
 import domain.model.view.Pagination
-import domain.repository.reservation.view.ReservationViewRepository
+import domain.repository.reservation.view.DeskReservationViewRepository
 import java.time.LocalDate
 import java.util.UUID
 import scala.annotation.nowarn
@@ -22,11 +22,11 @@ import skunk.implicits._
 
 class PostgresDeskReservationViewRepository[F[_]: Concurrent: MonadCancelThrow](
   session: Resource[F, Session[F]]
-) extends ReservationViewRepository[F, DeskReservationListView] {
+) extends DeskReservationViewRepository[F] {
 
   import PostgresDeskReservationViewRepository._
 
-  override def listReservations(
+  override def listDeskReservations(
     officeId: UUID,
     reservationFrom: LocalDate,
     reservationStates: Option[List[ReservationState]],
