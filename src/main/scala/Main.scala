@@ -51,6 +51,8 @@ import domain.service.desk.DeskService
 import domain.service.office.OfficeService
 import domain.service.reservation.DeskReservationService
 import domain.service.reservation.ParkingSpotReservationService
+import io.github.avapl.adapters.http.parkingspot.ParkingSpotEndpoints
+import io.github.avapl.domain.repository.parkingspot.view.ParkingSpotViewRepository
 import io.github.avapl.domain.service.parkingspot.ParkingSpotService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
@@ -209,7 +211,7 @@ object Main extends IOApp.Simple {
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
-//      val parkingSpotEndpoints = new ParkingSpotEndpoints[F]( // TODO: Add
+//      val parkingSpotEndpoints = new ParkingSpotEndpoints[F](
 //        parkingSpotService,
 //        repositories.parkingSpotViewRepository,
 //        publicKeyRepository,
@@ -228,7 +230,7 @@ object Main extends IOApp.Simple {
         rolesExtractorService
       ).endpoints
 
-      officeEndpoints <+> deskEndpoints <+> deskReservationEndpoints <+> parkingSpotReservationEndpoints <+> accountEndpoints
+      officeEndpoints <+> deskEndpoints <+> deskReservationEndpoints <+> /*parkingSpotEndpoints <+>*/ parkingSpotReservationEndpoints <+> accountEndpoints
     }
 
   private def runHttpServer[F[_]: Async](
@@ -285,7 +287,7 @@ object Main extends IOApp.Simple {
     deskReservationRepository: ReservationRepository[F, DeskReservation],
     deskReservationViewRepository: DeskReservationViewRepository[F],
     parkingSpotRepository: ParkingSpotRepository[F],
-//    parkingSpotViewRepository: ParkingSpotViewRepository[F], // TODO: Add
+//    parkingSpotViewRepository: ParkingSpotViewRepository[F],
     parkingSpotReservationRepository: ReservationRepository[F, ParkingSpotReservation],
     parkingSpotReservationViewRepository: ParkingSpotReservationViewRepository[F],
     accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F],
