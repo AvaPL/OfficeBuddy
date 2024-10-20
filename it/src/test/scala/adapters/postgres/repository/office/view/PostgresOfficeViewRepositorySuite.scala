@@ -6,6 +6,7 @@ import adapters.postgres.repository.account.PostgresAccountRepository
 import adapters.postgres.repository.desk.PostgresDeskRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
+import adapters.postgres.repository.reservation.PostgresParkingSpotReservationRepository
 import cats.effect.IO
 import cats.effect.Resource
 import domain.model.account.OfficeManagerAccount
@@ -14,10 +15,13 @@ import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
 import domain.model.reservation.DeskReservation
+import domain.model.reservation.ParkingSpotReservation
 import domain.model.reservation.ReservationState.Cancelled
 import domain.model.reservation.ReservationState.Confirmed
 import domain.model.reservation.ReservationState.Pending
 import domain.model.reservation.ReservationState.Rejected
+import io.github.avapl.adapters.postgres.repository.parkingspot.PostgresParkingSpotRepository
+import io.github.avapl.domain.model.parkingspot.ParkingSpot
 import java.time.LocalDateTime
 import java.util.UUID
 import skunk._
@@ -36,7 +40,9 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       PostgresOfficeViewRepository[IO],
       PostgresAccountRepository[IO],
       PostgresDeskRepository[IO],
-      PostgresDeskReservationRepository[IO]
+      PostgresParkingSpotRepository[IO],
+      PostgresDeskReservationRepository[IO],
+      PostgresParkingSpotReservationRepository[IO]
     ) => IO[Expectations]
   ): Unit =
     test(name) { session =>
@@ -44,13 +50,17 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       lazy val postgresOfficeViewRepository = new PostgresOfficeViewRepository[IO](session)
       lazy val postgresAccountRepository = new PostgresAccountRepository[IO](session)
       lazy val postgresDeskRepository = new PostgresDeskRepository[IO](session)
-      lazy val postgresReservationRepository = new PostgresDeskReservationRepository[IO](session)
+      lazy val postgresParkingSpotRepository = new PostgresParkingSpotRepository[IO](session)
+      lazy val postgresDeskReservationRepository = new PostgresDeskReservationRepository[IO](session)
+      lazy val postgresParkingSpotReservationRepository = new PostgresParkingSpotReservationRepository[IO](session)
       truncateTables(session) >> run(
         postgresOfficeRepository,
         postgresOfficeViewRepository,
         postgresAccountRepository,
         postgresDeskRepository,
-        postgresReservationRepository
+        postgresParkingSpotRepository,
+        postgresDeskReservationRepository,
+        postgresParkingSpotReservationRepository
       )
     }
 
@@ -59,7 +69,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with no office managers
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
 
@@ -79,7 +89,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with its office managers
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office1Manager = anyOfficeManager(id = anyAccountId1, "officeManager1")
@@ -110,7 +120,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with no office managers
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _, _, _) =>
     val office = anyOffice
     val archivedOfficeManager = anyOfficeManager(id = anyAccountId1, "archivedOfficeManager")
 
@@ -132,7 +142,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with assigned accounts count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
 
@@ -152,7 +162,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with their assigned accounts count
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office1User =
@@ -182,7 +192,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with assigned accounts count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, _, _) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, _, _, _, _) =>
     val office = anyOffice
     val archivedUser = anyUser(id = anyAccountId1, "archivedUser", assignedOfficeId = Some(office.id))
 
@@ -203,7 +213,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called
       | THEN return an office view with desks count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
 
@@ -223,7 +233,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
         | WHEN listOffices is called
         | THEN return an office view with their desks count
         |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, deskRepository, _) =>
+  ) { (officeRepository, officeViewRepository, _, deskRepository, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office1Desk1 = anyDesk(anyDeskId1, "desk 1.1", office1.id)
@@ -246,11 +256,58 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
-    """GIVEN 1 office with active reservations in the database
+    """GIVEN 2 offices in the database having no parking spots
+      | WHEN listOffices is called
+      | THEN return an office view with parking spots count equal to 0
+      |""".stripMargin
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
+    val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
+    val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
+
+    for {
+      _ <- officeRepository.create(office1)
+      _ <- officeRepository.create(office2)
+      officeListView <- officeViewRepository.listOffices(now = anyLocalDateTime, limit = 10, offset = 0)
+    } yield expect.all(
+      officeListView.offices.forall(_.parkingSpotsCount == 0),
+      officeListView.offices.size == 2,
+      !officeListView.pagination.hasMoreResults
+    )
+  }
+
+  beforeTest(
+    """GIVEN 2 offices in the database having parking spots
+        | WHEN listOffices is called
+        | THEN return an office view with their parking spots count
+        |""".stripMargin
+  ) { (officeRepository, officeViewRepository, _, _, parkingSpotRepository, _, _) =>
+    val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
+    val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
+    val office1ParkingSpot1 = anyParkingSpot(anyParkingSpotId1, "A1", office1.id)
+    val office1ParkingSpot2 = anyParkingSpot(anyParkingSpotId2, "A2", office1.id)
+    val office2ParkingSpot1 = anyParkingSpot(anyParkingSpotId3, "X-2", office2.id)
+
+    for {
+      _ <- officeRepository.create(office1)
+      _ <- officeRepository.create(office2)
+      _ <- parkingSpotRepository.create(office1ParkingSpot1)
+      _ <- parkingSpotRepository.create(office1ParkingSpot2)
+      _ <- parkingSpotRepository.create(office2ParkingSpot1)
+      officeListView <- officeViewRepository.listOffices(now = anyLocalDateTime, limit = 10, offset = 0)
+    } yield expect.all(
+      officeListView.offices.find(_.id == office1.id).exists(_.parkingSpotsCount == 2),
+      officeListView.offices.find(_.id == office2.id).exists(_.parkingSpotsCount == 1),
+      officeListView.offices.size == 2,
+      !officeListView.pagination.hasMoreResults
+    )
+  }
+
+  beforeTest(
+    """GIVEN 1 office with active desk reservations in the database
       | WHEN listOffices is called
       | THEN return an office view with active reservations count equal to the number of active reservations
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, deskRepository, reservationRepository) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, deskRepository, _, deskReservationRepository, _) =>
     val office = anyOffice
     val user = anyUser(id = anyAccountId1, "user1")
     val desk = anyDesk(anyDeskId1, "desk 1.1", office.id)
@@ -279,8 +336,8 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       _ <- officeRepository.create(office)
       _ <- accountRepository.create(user)
       _ <- deskRepository.create(desk)
-      _ <- reservationRepository.createReservation(confirmedReservationWithNowBetweenStartAndEnd)
-      _ <- reservationRepository.createReservation(pendingReservationWithStartAfterNow)
+      _ <- deskReservationRepository.createReservation(confirmedReservationWithNowBetweenStartAndEnd)
+      _ <- deskReservationRepository.createReservation(pendingReservationWithStartAfterNow)
       officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
     } yield expect.all(
       officeListView.offices.exists(_.activeReservationsCount == 2),
@@ -290,11 +347,11 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
-    """GIVEN 1 office with inactive reservations in the database and 1 office with an active reservation
+    """GIVEN 1 office with inactive desk reservations in the database and 1 office with an active desk reservation
       | WHEN listOffices is called
       | THEN return an office view with active reservations count equal to 0
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, accountRepository, deskRepository, reservationRepository) =>
+  ) { (officeRepository, officeViewRepository, accountRepository, deskRepository, _, deskReservationRepository, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val user = anyUser(id = anyAccountId1, "user1")
@@ -345,10 +402,10 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       _ <- accountRepository.create(user)
       _ <- deskRepository.create(desk1)
       _ <- deskRepository.create(desk2)
-      _ <- reservationRepository.createReservation(confirmedReservationWithEndBeforeNow)
-      _ <- reservationRepository.createReservation(rejectedReservationWithStartAfterNow)
-      _ <- reservationRepository.createReservation(cancelledReservationWithStartAfterNow)
-      _ <- reservationRepository.createReservation(office2ActiveReservation)
+      _ <- deskReservationRepository.createReservation(confirmedReservationWithEndBeforeNow)
+      _ <- deskReservationRepository.createReservation(rejectedReservationWithStartAfterNow)
+      _ <- deskReservationRepository.createReservation(cancelledReservationWithStartAfterNow)
+      _ <- deskReservationRepository.createReservation(office2ActiveReservation)
       officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
     } yield expect.all(
       officeListView.offices.find(_.id == office1.id).exists(_.activeReservationsCount == 0),
@@ -358,12 +415,197 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
   }
 
   beforeTest(
+    """GIVEN 1 office with active parking spot reservations in the database
+      | WHEN listOffices is called
+      | THEN return an office view with active reservations count equal to the number of active reservations
+      |""".stripMargin
+  ) {
+    (
+      officeRepository,
+      officeViewRepository,
+      accountRepository,
+      _,
+      parkingSpotRepository,
+      _,
+      parkingSpotReservationRepository
+    ) =>
+      val office = anyOffice
+      val user = anyUser(id = anyAccountId1, "user1")
+      val parkingSpot = anyParkingSpot(anyParkingSpotId1, "A1", office.id)
+
+      val now = anyLocalDateTime
+      val confirmedReservationWithNowBetweenStartAndEnd = anyParkingSpotReservation(
+        id = anyReservationId2,
+        userId = user.id,
+        parkingSpotId = parkingSpot.id
+      ).copy(
+        reservedFromDate = now.minusDays(1).toLocalDate,
+        reservedToDate = now.plusDays(1).toLocalDate,
+        state = Confirmed
+      )
+      val pendingReservationWithStartAfterNow = anyParkingSpotReservation(
+        id = anyReservationId1,
+        userId = user.id,
+        parkingSpotId = parkingSpot.id
+      ).copy(
+        reservedFromDate = now.plusDays(2).toLocalDate,
+        reservedToDate = now.plusDays(3).toLocalDate,
+        state = Pending
+      )
+
+      for {
+        _ <- officeRepository.create(office)
+        _ <- accountRepository.create(user)
+        _ <- parkingSpotRepository.create(parkingSpot)
+        _ <- parkingSpotReservationRepository.createReservation(confirmedReservationWithNowBetweenStartAndEnd)
+        _ <- parkingSpotReservationRepository.createReservation(pendingReservationWithStartAfterNow)
+        officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
+      } yield expect.all(
+        officeListView.offices.exists(_.activeReservationsCount == 2),
+        officeListView.offices.size == 1,
+        !officeListView.pagination.hasMoreResults
+      )
+  }
+
+  beforeTest(
+    """GIVEN 1 office with inactive parking spot reservations in the database and 1 office with an active parking spot reservation
+      | WHEN listOffices is called
+      | THEN return an office view with active reservations count equal to 0
+      |""".stripMargin
+  ) {
+    (
+      officeRepository,
+      officeViewRepository,
+      accountRepository,
+      _,
+      parkingSpotRepository,
+      _,
+      parkingSpotReservationRepository
+    ) =>
+      val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
+      val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
+      val user = anyUser(id = anyAccountId1, "user1")
+      val parkingSpot1 = anyParkingSpot(anyParkingSpotId1, "A1", office1.id)
+      val parkingSpot2 = anyParkingSpot(anyParkingSpotId2, "X-2", office2.id)
+
+      val now = anyLocalDateTime
+      val confirmedReservationWithEndBeforeNow = anyParkingSpotReservation(
+        id = anyReservationId1,
+        userId = user.id,
+        parkingSpotId = parkingSpot1.id
+      ).copy(
+        reservedFromDate = now.minusDays(2).toLocalDate,
+        reservedToDate = now.minusDays(1).toLocalDate,
+        state = Confirmed
+      )
+      val rejectedReservationWithStartAfterNow = anyParkingSpotReservation(
+        id = anyReservationId2,
+        userId = user.id,
+        parkingSpotId = parkingSpot1.id
+      ).copy(
+        reservedFromDate = now.plusDays(1).toLocalDate,
+        reservedToDate = now.plusDays(2).toLocalDate,
+        state = Rejected
+      )
+      val cancelledReservationWithStartAfterNow = anyParkingSpotReservation(
+        id = anyReservationId3,
+        userId = user.id,
+        parkingSpotId = parkingSpot1.id
+      ).copy(
+        reservedFromDate = now.plusDays(1).toLocalDate,
+        reservedToDate = now.plusDays(2).toLocalDate,
+        state = Cancelled
+      )
+      val office2ActiveReservation = anyParkingSpotReservation(
+        id = anyReservationId4,
+        userId = user.id,
+        parkingSpotId = parkingSpot2.id
+      ).copy(
+        reservedFromDate = now.plusDays(1).toLocalDate,
+        reservedToDate = now.plusDays(2).toLocalDate,
+        state = Confirmed
+      )
+
+      for {
+        _ <- officeRepository.create(office1)
+        _ <- officeRepository.create(office2)
+        _ <- accountRepository.create(user)
+        _ <- parkingSpotRepository.create(parkingSpot1)
+        _ <- parkingSpotRepository.create(parkingSpot2)
+        _ <- parkingSpotReservationRepository.createReservation(confirmedReservationWithEndBeforeNow)
+        _ <- parkingSpotReservationRepository.createReservation(rejectedReservationWithStartAfterNow)
+        _ <- parkingSpotReservationRepository.createReservation(cancelledReservationWithStartAfterNow)
+        _ <- parkingSpotReservationRepository.createReservation(office2ActiveReservation)
+        officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
+      } yield expect.all(
+        officeListView.offices.find(_.id == office1.id).exists(_.activeReservationsCount == 0),
+        officeListView.offices.size == 2,
+        !officeListView.pagination.hasMoreResults
+      )
+  }
+
+  beforeTest(
+    """GIVEN 1 office with active desk and parking spot reservations in the database
+      | WHEN listOffices is called
+      | THEN return an office view with active reservations count equal to sum of active desk and parking spot reservations
+      |""".stripMargin
+  ) {
+    (
+      officeRepository,
+      officeViewRepository,
+      accountRepository,
+      deskRepository,
+      parkingSpotRepository,
+      deskReservationRepository,
+      parkingSpotReservationRepository
+    ) =>
+      val office = anyOffice
+      val user = anyUser(id = anyAccountId1, "user1")
+      val desk = anyDesk(anyDeskId1, "desk 1.1", office.id)
+      val parkingSpot = anyParkingSpot(anyParkingSpotId1, "A1", office.id)
+
+      val now = anyLocalDateTime
+      val activeDeskReservation = anyDeskReservation(
+        id = anyReservationId2,
+        userId = user.id,
+        deskId = desk.id
+      ).copy(
+        reservedFromDate = now.minusDays(1).toLocalDate,
+        reservedToDate = now.plusDays(1).toLocalDate,
+        state = Confirmed
+      )
+      val activeParkingSpotReservation = anyParkingSpotReservation(
+        id = anyReservationId3,
+        userId = user.id,
+        parkingSpotId = parkingSpot.id
+      ).copy(
+        reservedFromDate = now.minusDays(1).toLocalDate,
+        reservedToDate = now.plusDays(1).toLocalDate,
+        state = Confirmed
+      )
+
+      for {
+        _ <- officeRepository.create(office)
+        _ <- accountRepository.create(user)
+        _ <- deskRepository.create(desk)
+        _ <- parkingSpotRepository.create(parkingSpot)
+        _ <- deskReservationRepository.createReservation(activeDeskReservation)
+        _ <- parkingSpotReservationRepository.createReservation(activeParkingSpotReservation)
+        officeListView <- officeViewRepository.listOffices(now, limit = 10, offset = 0)
+      } yield expect.all(
+        officeListView.offices.exists(_.activeReservationsCount == 2),
+        officeListView.offices.size == 1,
+        !officeListView.pagination.hasMoreResults
+      )
+  }
+
+  beforeTest(
     """
       |GIVEN 3 offices in the database
       | WHEN listOffices is called with limit 2 and offsets 0 and 2
       | THEN return two pages of results
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
     val office1 = anyOffice.copy(id = anyOfficeId1, name = "office1")
     val office2 = anyOffice.copy(id = anyOfficeId2, name = "office2")
     val office3 = anyOffice.copy(id = anyOfficeId3, name = "office3")
@@ -388,7 +630,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called with limit 1 and offset 1
       | THEN return an empty list of results
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
     val office = anyOffice
 
     for {
@@ -406,7 +648,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
       | WHEN listOffices is called with limit 1 and offset 0
       | THEN return an empty list of results
       |""".stripMargin
-  ) { (officeRepository, officeViewRepository, _, _, _) =>
+  ) { (officeRepository, officeViewRepository, _, _, _, _, _) =>
     val archivedOffice = anyOffice.copy(isArchived = true)
 
     for {
@@ -419,6 +661,7 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
     truncateReservationTable(session) >>
       truncateAccountTable(session) >>
       truncateDeskTable(session) >>
+      truncateParkingSpotTable(session) >>
       truncateOfficeTable(session)
 
   private def truncateReservationTable(session: Resource[IO, Session[IO]]) = {
@@ -441,6 +684,14 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
     val sql: Command[Void] =
       sql"""
         TRUNCATE TABLE desk CASCADE
+      """.command
+    session.use(_.execute(sql))
+  }
+
+  private def truncateParkingSpotTable(session: Resource[IO, Session[IO]]) = {
+    val sql: Command[Void] =
+      sql"""
+        TRUNCATE TABLE parking_spot CASCADE
       """.command
     session.use(_.execute(sql))
   }
@@ -517,11 +768,37 @@ object PostgresOfficeViewRepositorySuite extends IOSuite with PostgresFixture {
   private lazy val anyDeskId2 = UUID.fromString("4a565b76-eabf-497c-9ea9-7f935ffdfcd6")
   private lazy val anyDeskId3 = UUID.fromString("56a1eb04-5014-48f6-9241-e7f169b16177")
 
+  private def anyParkingSpot(id: UUID, name: String, officeId: UUID) = ParkingSpot(
+    id = id,
+    name = name,
+    isAvailable = true,
+    notes = List("Test", "Notes"),
+    isHandicapped = false,
+    isUnderground = false,
+    officeId = officeId
+  )
+
+  private lazy val anyParkingSpotId1 = UUID.fromString("178d2c7e-4ed3-426f-955b-451199c6afaa")
+  private lazy val anyParkingSpotId2 = UUID.fromString("1379f31d-ea7a-4437-bfa7-674559119bff")
+  private lazy val anyParkingSpotId3 = UUID.fromString("45b881f5-a453-4db5-892e-c09f65529784")
+
   private def anyDeskReservation(id: UUID, userId: UUID, deskId: UUID) = DeskReservation(
     id = id,
     userId = userId,
     createdAt = anyLocalDateTime,
     deskId = deskId,
+    reservedFromDate = anyLocalDateTime.toLocalDate,
+    reservedToDate = anyLocalDateTime.toLocalDate,
+    state = Confirmed,
+    notes = ""
+  )
+
+  private def anyParkingSpotReservation(id: UUID, userId: UUID, parkingSpotId: UUID) = ParkingSpotReservation(
+    id = id,
+    userId = userId,
+    createdAt = anyLocalDateTime,
+    parkingSpotId = parkingSpotId,
+    plateNumber = "DSW 58100",
     reservedFromDate = anyLocalDateTime.toLocalDate,
     reservedToDate = anyLocalDateTime.toLocalDate,
     state = Confirmed,

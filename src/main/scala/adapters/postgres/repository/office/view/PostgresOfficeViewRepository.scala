@@ -11,8 +11,8 @@ import domain.model.office.view.OfficeManagerView
 import domain.model.office.view.OfficeView
 import domain.model.view.Pagination
 import domain.repository.office.view.OfficeViewRepository
-
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 import scala.annotation.nowarn
 import skunk._
@@ -47,8 +47,7 @@ class PostgresOfficeViewRepository[F[_]: Concurrent: MonadCancelThrow](
 
 object PostgresOfficeViewRepository {
 
-  // TODO: Populate parking spots count
-  // TODO: Populate rooms count
+  // TODO: Populate meeting rooms count and include them in active reservations count
   private lazy val listOfficesSql: Query[LocalDateTime *: Int *: Int *: EmptyTuple, OfficeView] =
     sql"""
       SELECT id,
@@ -62,9 +61,9 @@ object PostgresOfficeViewRepository {
              office_managers,
              COALESCE(assigned_accounts_count, 0),
              COALESCE(desks_count, 0),
-             0, 
-             0, 
-             COALESCE(active_reservations_count, 0)
+             COALESCE(parking_spots_count, 0),
+             0,
+             COALESCE(active_desk_reservations_count, 0) + COALESCE(active_parking_spot_reservations_count, 0) AS active_reservations_count
       FROM office
 
       -- Office managers
@@ -94,26 +93,47 @@ object PostgresOfficeViewRepository {
       ) AS d ON office.id = d.office_id
       
       -- Parking spots count
-      -- To be implemented
-      
-      -- Rooms count
-      -- To be implemented
-      
-      -- Active reservations count
       LEFT JOIN (
-        SELECT   office_id, COUNT(*)::int4 AS active_reservations_count
+        SELECT   office_id, COUNT(*)::int4 AS parking_spots_count
+        FROM     parking_spot
+        WHERE    is_archived = 'no'
+        GROUP BY office_id
+      ) AS p ON office.id = p.office_id
+
+      -- Meeting rooms count
+      -- To be implemented
+      
+      -- Active desk reservations count
+      LEFT JOIN (
+        SELECT   office_id, COUNT(*)::int4 AS active_desk_reservations_count
         FROM     reservation
         LEFT JOIN desk ON reservation.desk_id = desk.id
         WHERE    $timestamp <= reserved_to
           AND    state IN ('Pending', 'Confirmed')
         GROUP BY office_id
-      ) AS r ON office.id = r.office_id
+      ) AS dr ON office.id = dr.office_id
+      
+      -- Active parking spot reservations count
+      LEFT JOIN (
+        SELECT   office_id, COUNT(*)::int4 AS active_parking_spot_reservations_count
+        FROM     reservation
+        LEFT JOIN parking_spot ON reservation.parking_spot_id = parking_spot.id
+        WHERE    $timestamp <= reserved_to
+          AND    state IN ('Pending', 'Confirmed')
+        GROUP BY office_id
+      ) AS psr ON office.id = psr.office_id
+
+      -- Active meeting room reservations count
+      -- To be implemented
 
       WHERE    is_archived = 'no'
       ORDER BY name
       LIMIT    $int4
       OFFSET   $int4
-    """.query(officeViewDecoder)
+    """.query(officeViewDecoder).contramap {
+      case now *: limit *: offset *: EmptyTuple =>
+        now *: now *: limit *: offset *: EmptyTuple
+    }
 
   @nowarn("msg=match may not be exhaustive")
   private lazy val officeViewDecoder: Decoder[OfficeView] =
