@@ -429,6 +429,8 @@ object PostgresParkingSpotViewRepositorySuite extends IOSuite with PostgresFixtu
     } yield expect(reservableParkingSpots.isEmpty)
   }
 
+  // TODO: Verify that other types of reservations (desk, meeting room) are not considered as overlapping
+
   private def truncateTables(session: Resource[IO, Session[IO]]) =
     truncateReservationTable(session) >>
       truncateAccountTable(session) >>

@@ -5,6 +5,7 @@ import adapters.http.ApiError
 import adapters.http.account.AccountEndpoints
 import adapters.http.desk.DeskEndpoints
 import adapters.http.office.OfficeEndpoints
+import adapters.http.parkingspot.ParkingSpotEndpoints
 import adapters.http.reservation.DeskReservationEndpoints
 import adapters.http.reservation.ParkingSpotReservationEndpoints
 import adapters.keycloak.auth.repository.KeycloakPublicKeyRepository
@@ -17,6 +18,7 @@ import adapters.postgres.repository.desk.view.PostgresDeskViewRepository
 import adapters.postgres.repository.office.PostgresOfficeRepository
 import adapters.postgres.repository.office.view.PostgresOfficeViewRepository
 import adapters.postgres.repository.parkingspot.PostgresParkingSpotRepository
+import adapters.postgres.repository.parkingspot.view.PostgresParkingSpotViewRepository
 import adapters.postgres.repository.reservation.PostgresDeskReservationRepository
 import adapters.postgres.repository.reservation.PostgresParkingSpotReservationRepository
 import adapters.postgres.repository.reservation.view.PostgresDeskReservationViewRepository
@@ -41,6 +43,7 @@ import domain.repository.desk.view.DeskViewRepository
 import domain.repository.office.OfficeRepository
 import domain.repository.office.view.OfficeViewRepository
 import domain.repository.parkingspot.ParkingSpotRepository
+import domain.repository.parkingspot.view.ParkingSpotViewRepository
 import domain.repository.reservation.ReservationRepository
 import domain.repository.reservation.view.DeskReservationViewRepository
 import domain.repository.reservation.view.ParkingSpotReservationViewRepository
@@ -49,11 +52,9 @@ import domain.service.account.SuperAdminInitService
 import domain.service.demo.DemoDataService
 import domain.service.desk.DeskService
 import domain.service.office.OfficeService
+import domain.service.parkingspot.ParkingSpotService
 import domain.service.reservation.DeskReservationService
 import domain.service.reservation.ParkingSpotReservationService
-import io.github.avapl.adapters.http.parkingspot.ParkingSpotEndpoints
-import io.github.avapl.domain.repository.parkingspot.view.ParkingSpotViewRepository
-import io.github.avapl.domain.service.parkingspot.ParkingSpotService
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -140,6 +141,7 @@ object Main extends IOApp.Simple {
       deskReservationViewRepository =
         new PostgresDeskReservationViewRepository[F](session)(implicitly, monadCancelThrow),
       parkingSpotRepository = new PostgresParkingSpotRepository[F](session)(monadCancelThrow),
+      parkingSpotViewRepository = new PostgresParkingSpotViewRepository[F](session)(implicitly, monadCancelThrow),
       parkingSpotReservationRepository = new PostgresParkingSpotReservationRepository[F](session)(monadCancelThrow),
       parkingSpotReservationViewRepository =
         new PostgresParkingSpotReservationViewRepository[F](session)(implicitly, monadCancelThrow),
@@ -211,12 +213,12 @@ object Main extends IOApp.Simple {
         publicKeyRepository,
         rolesExtractorService
       ).endpoints
-//      val parkingSpotEndpoints = new ParkingSpotEndpoints[F](
-//        parkingSpotService,
-//        repositories.parkingSpotViewRepository,
-//        publicKeyRepository,
-//        rolesExtractorService
-//      ).endpoints
+      val parkingSpotEndpoints = new ParkingSpotEndpoints[F](
+        parkingSpotService,
+        repositories.parkingSpotViewRepository,
+        publicKeyRepository,
+        rolesExtractorService
+      ).endpoints
       val parkingSpotReservationEndpoints = new ParkingSpotReservationEndpoints[F](
         parkingSpotReservationService,
         repositories.parkingSpotReservationViewRepository,
@@ -230,7 +232,7 @@ object Main extends IOApp.Simple {
         rolesExtractorService
       ).endpoints
 
-      officeEndpoints <+> deskEndpoints <+> deskReservationEndpoints <+> /*parkingSpotEndpoints <+>*/ parkingSpotReservationEndpoints <+> accountEndpoints
+      officeEndpoints <+> deskEndpoints <+> deskReservationEndpoints <+> parkingSpotEndpoints <+> parkingSpotReservationEndpoints <+> accountEndpoints
     }
 
   private def runHttpServer[F[_]: Async](
@@ -287,7 +289,7 @@ object Main extends IOApp.Simple {
     deskReservationRepository: ReservationRepository[F, DeskReservation],
     deskReservationViewRepository: DeskReservationViewRepository[F],
     parkingSpotRepository: ParkingSpotRepository[F],
-//    parkingSpotViewRepository: ParkingSpotViewRepository[F],
+    parkingSpotViewRepository: ParkingSpotViewRepository[F],
     parkingSpotReservationRepository: ReservationRepository[F, ParkingSpotReservation],
     parkingSpotReservationViewRepository: ParkingSpotReservationViewRepository[F],
     accountRepository: AccountRepository[F] with TemporaryPasswordRepository[F],
