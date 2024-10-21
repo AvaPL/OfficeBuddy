@@ -1,0 +1,76 @@
+<div class="page-title">
+  <div class="title-button">
+    <button [disabled]="!selectedOffice" mat-button class="mat-h1" matTooltip="Change office"
+            (click)="openFilterDialog()">
+      {{ selectedOffice ? selectedOffice.name : "Parking Spots" }}
+    </button>
+  </div>
+  <button class="reservation-button" mat-icon-button matTooltip="Switch to reservations view"
+          (click)="changeToReservationsView.emit()">
+    <mat-icon>calendar_month</mat-icon>
+  </button>
+  <mat-divider></mat-divider>
+</div>
+<div class="parking-spot-cards">
+  <mat-card *ngFor="let spot of parkingSpots" appearance="raised">
+    <mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>
+          <span>{{ spot.name }}</span>
+          <span *ngIf="!spot.isAvailable" class="mat-body disabled-spot-label">Disabled</span>
+        </mat-card-title>
+        <mat-card-subtitle class="spot-stats">
+          <div class="spot-stats-item" matTooltip="Notes">
+            <mat-icon matListItemIcon>note</mat-icon>
+            <span matListItemLine>{{ spot.notes.join(', ') }}</span>
+          </div>
+          <mat-icon *ngIf="spot.isHandicapped" class="spot-stats-item handicapped-icon" matTooltip="Handicapped">accessible</mat-icon>
+          <mat-icon *ngIf="spot.isUnderground" class="spot-stats-item" matTooltip="Underground">underground</mat-icon>
+        </mat-card-subtitle>
+        <button *ngIf="authService.hasOfficeManagerRole()" mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="editParkingSpot({
+            officeName: selectedOffice!.name,
+            spotId: spot.id,
+            spotName: spot.name,
+            notes: spot.notes,
+            isHandicapped: spot.isHandicapped,
+            isUnderground: spot.isUnderground
+          })">
+            <mat-icon>edit</mat-icon>
+            <span>Edit spot</span>
+          </button>
+          <button *ngIf="!spot.isAvailable" mat-menu-item
+                  (click)="toggleEnabledParkingSpot(spot.id, spot.name, selectedOffice!.name, true)">
+            <mat-icon>visibility_on</mat-icon>
+            <span>Enable spot</span>
+          </button>
+          <button *ngIf="spot.isAvailable" mat-menu-item
+                  (click)="toggleEnabledParkingSpot(spot.id, spot.name, selectedOffice!.name, false)">
+            <mat-icon>visibility_off</mat-icon>
+            <span>Disable spot</span>
+          </button>
+          <button mat-menu-item (click)="deleteParkingSpot(spot.id, spot.name, selectedOffice!.name)">
+            <mat-icon>highlight_remove</mat-icon>
+            <span>Delete spot</span>
+          </button>
+        </mat-menu>
+      </mat-card-title-group>
+    </mat-card-header>
+  </mat-card>
+</div>
+<mat-paginator
+  [length]="pagination.offset + pagination.limit + (pagination.hasMoreResults ? 1 : 0)"
+  [pageSize]="pagination.limit"
+  [pageIndex]="pagination.offset / pagination.limit"
+  (page)="handlePageEvent($event)"
+  hidePageSize>
+</mat-paginator>
+<button *ngIf="selectedOffice && authService.hasOfficeManagerRole()" mat-fab class="add-button" color="primary"
+        (click)="createParkingSpot(selectedOffice.id, selectedOffice.name)"
+        matTooltip="Add new parking spot"
+        matTooltipPosition="above">
+  <mat-icon>add</mat-icon>
+</button>

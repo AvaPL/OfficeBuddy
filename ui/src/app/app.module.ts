@@ -74,6 +74,9 @@ import {provideHttpClient, withInterceptorsFromDi} from "@angular/common/http";
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule} from "@angular/material/snack-bar";
 import {AssignUserDialogComponent} from "./component/office/assign-user-dialog/assign-user-dialog.component";
 import {EditManagersDialogComponent} from "./component/office/edit-managers-dialog/edit-managers-dialog.component";
+import {
+  ParkingSpotListViewComponent
+} from "./component/parking/view/parking-spot-list-view/parking-spot-list-view.component";
 
 @NgModule({
   declarations: [
@@ -101,6 +104,7 @@ import {EditManagersDialogComponent} from "./component/office/edit-managers-dial
     NavbarComponent,
     OfficeComponent,
     ParkingComponent,
+    ParkingSpotListViewComponent,
     RoomComponent,
     ToggleEnabledDeskDialogComponent
   ],

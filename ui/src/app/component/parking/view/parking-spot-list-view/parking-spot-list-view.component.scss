@@ -1,0 +1,121 @@
+.page-title {
+  background-color: var(--mat-app-background-color);
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 999;
+
+  .title-button {
+    padding: 22px 16px 0 16px;
+
+    button {
+      margin-bottom: 14px;
+    }
+  }
+
+  .reservation-button {
+    position: fixed;
+    right: 16px;
+    top: 16px;
+    z-index: 1000;
+  }
+
+  mat-divider {
+    margin-left: 16px;
+    margin-right: 236px;
+
+    @media (max-width: 600px) {
+      margin-right: 16px;
+    }
+  }
+}
+
+.parking-spot-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(200px, 30%)), 1fr));
+
+  padding: 96px 24px 8px 24px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+mat-card {
+  border-radius: 10px;
+  margin: 5px;
+}
+
+.disabled-spot-label {
+  height: 22px;
+  margin-left: 8px;
+  padding: 2px 6px 0 6px;
+  border-radius: 4px;
+  background-color: rgb(191, 191, 191);
+  color: white;
+}
+
+mat-card-header {
+  padding: 16px;
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+  }
+}
+
+mat-card-subtitle {
+  width: 100px;
+
+  .handicapped-icon {
+    transform: scale(1.2);
+  }
+}
+
+.spot-stats {
+  display: flex;
+  flex-direction: row;
+  margin-top: 8px;
+}
+
+.spot-stats-item {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 0 2px 0;
+  margin-right: 4px;
+
+  span {
+    margin-left: 4px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+mat-paginator {
+  display: flex;
+  justify-content: center;
+  background-color: var(--mat-app-background-color);
+
+  ::ng-deep .mat-mdc-paginator-range-label {
+    display: none;
+  }
+
+  ::ng-deep button {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
+
+  @media (max-width: 600px) {
+    padding-bottom: 68px;
+  }
+}
+
+.add-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+
+  @media (max-width: 600px) {
+    margin-bottom: 55px;
+  }
+}

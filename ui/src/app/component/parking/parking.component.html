@@ -1,1 +1,14 @@
-<p>parking works!</p>
+@switch (mode) {
+  @case (Mode.LIST) {
+    <app-parking-spot-list-view (changeToReservationsView)="mode = Mode.RESERVATION"
+                                [selectedOfficeId]="selectedOfficeId"
+                                (selectedOfficeIdChange)="changeSelectedOfficeId($event)">
+    </app-parking-spot-list-view>
+  }
+  @case (Mode.RESERVATION) {
+<!--    <app-parking-spot-reservation-view (changeToDesksView)="mode = Mode.LIST"-->
+<!--                                       [selectedOfficeId]="selectedOfficeId"-->
+<!--                                       (selectedOfficeIdChange)="changeSelectedOfficeId($event)">-->
+<!--    </app-parking-spot-reservation-view>-->
+  }
+}
