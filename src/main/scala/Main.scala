@@ -172,7 +172,9 @@ object Main extends IOApp.Simple {
           repositories.accountRepository,
           repositories.officeRepository,
           repositories.deskRepository,
-          repositories.deskReservationRepository
+          repositories.deskReservationRepository,
+          repositories.parkingSpotRepository,
+          repositories.parkingSpotReservationRepository
         )
       }
       _ <- demoDataService.loadDemoData()

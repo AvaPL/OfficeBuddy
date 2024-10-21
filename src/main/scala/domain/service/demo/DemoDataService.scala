@@ -14,7 +14,9 @@ import domain.model.appmetadata.AppMetadata.IsDemoDataLoaded
 import domain.model.desk.Desk
 import domain.model.office.Address
 import domain.model.office.Office
+import domain.model.parkingspot.ParkingSpot
 import domain.model.reservation.DeskReservation
+import domain.model.reservation.ParkingSpotReservation
 import domain.model.reservation.ReservationState.Cancelled
 import domain.model.reservation.ReservationState.Confirmed
 import domain.model.reservation.ReservationState.Pending
@@ -23,25 +25,26 @@ import domain.repository.account.AccountRepository
 import domain.repository.appmetadata.AppMetadataRepository
 import domain.repository.desk.DeskRepository
 import domain.repository.office.OfficeRepository
+import domain.repository.parkingspot.ParkingSpotRepository
 import domain.repository.reservation.ReservationRepository
-import domain.service.demo.DemoDataService.Accounts
-import domain.service.demo.DemoDataService.Offices
-import domain.service.demo.DemoDataService.generateDesk
-import domain.service.demo.DemoDataService.generateDeskReservation
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 import org.typelevel.log4cats.Logger
 import util.FUUID
 
-// TODO: Add parking spots and reservations for them
+// TODO: Add meeting rooms and reservations for them
 class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
   appMetadataRepository: AppMetadataRepository[F],
   accountRepository: AccountRepository[F],
   officeRepository: OfficeRepository[F],
   deskRepository: DeskRepository[F],
-  deskReservationRepository: ReservationRepository[F, DeskReservation]
+  deskReservationRepository: ReservationRepository[F, DeskReservation],
+  parkingSpotRepository: ParkingSpotRepository[F],
+  parkingSpotReservationRepository: ReservationRepository[F, ParkingSpotReservation]
 ) {
+
+  import DemoDataService._
 
   // TODO: Loading demo data should be done within a transaction
   def loadDemoData(): F[Unit] =
@@ -53,10 +56,12 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
           offices <- loadOffices()
           accounts <- loadAccounts()
           desks <- loadDesks()
-          reservations <- loadDeskReservations(desks)
+          deskReservations <- loadDeskReservations(desks)
+          parkingSpots <- loadParkingSpots()
+          parkingSpotReservations <- loadParkingSpotReservations(parkingSpots)
           _ <- appMetadataRepository.set(IsDemoDataLoaded(true))
           _ <- Logger[F].info(
-            s"Demo data loaded (${offices.size} offices, ${accounts.size} accounts, ${desks.size} desks, ${reservations.size} reservations)"
+            s"Demo data loaded (${offices.size} offices, ${accounts.size} accounts, ${desks.size} desks, ${deskReservations.size} desk reservations, ${parkingSpots.size} parking spots, ${parkingSpotReservations.size} parking spot reservations)"
           )
         } yield ()
     }
@@ -98,9 +103,12 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
 
   private def loadDeskReservations(desks: List[Desk]): F[List[DeskReservation]] =
     for {
-      now <- Clock[F].realTimeInstant.map(LocalDateTime.ofInstant(_, ZoneOffset.UTC))
+      now <- now
       reservations <- loadDeskReservations(desks, now)
     } yield reservations
+
+  private lazy val now: F[LocalDateTime] =
+    Clock[F].realTimeInstant.map(LocalDateTime.ofInstant(_, ZoneOffset.UTC))
 
   private def loadDeskReservations(desks: List[Desk], now: LocalDateTime): F[List[DeskReservation]] =
     desks.flatTraverse { desk =>
@@ -121,6 +129,64 @@ class DemoDataService[F[_]: Clock: FUUID: Logger: MonadThrow: Random](
   private def loadDeskReservation(user: Account, desk: Desk, now: LocalDateTime): F[DeskReservation] =
     generateDeskReservation(user.id, desk.id, now)
       .flatMap(deskReservationRepository.createReservation)
+
+  private def loadParkingSpots(): F[List[ParkingSpot]] =
+    Offices.allOffices.map(_.id).flatTraverse(loadOfficeParkingSpots)
+
+  private def loadOfficeParkingSpots(officeId: UUID): F[List[ParkingSpot]] =
+    for {
+      startingGroup <- Random[F].betweenInt(0, 5)
+      numberOfGroups <- Random[F].betweenInt(1, 4)
+      parkingSpots <- (startingGroup until startingGroup + numberOfGroups).toList
+        .flatTraverse(loadGroupParkingSpots(officeId, _))
+    } yield parkingSpots
+
+  private def loadGroupParkingSpots(officeId: UUID, groupIndex: Int): F[List[ParkingSpot]] =
+    for {
+      spotsCount <- Random[F].betweenInt(2, 6)
+      isUnderground <- Random[F].nextBoolean
+      parkingSpots <- (1 to spotsCount).toList.traverse(loadParkingSpot(officeId, groupIndex, isUnderground, _))
+    } yield parkingSpots
+
+  private def loadParkingSpot(officeId: UUID, groupIndex: Int, isUnderground: Boolean, spotIndex: Int): F[ParkingSpot] =
+    generateParkingSpot(officeId, ('A' + groupIndex).toChar, isUnderground, spotIndex)
+      .flatMap(parkingSpotRepository.create)
+
+  private def loadParkingSpotReservations(parkingSpots: List[ParkingSpot]): F[List[ParkingSpotReservation]] =
+    for {
+      now <- now
+      reservations <- loadParkingSpotReservations(parkingSpots, now)
+    } yield reservations
+
+  private def loadParkingSpotReservations(
+    parkingSpots: List[ParkingSpot],
+    now: LocalDateTime
+  ): F[List[ParkingSpotReservation]] =
+    parkingSpots.flatTraverse { parkingSpot =>
+      Random[F].nextBoolean.flatMap { hasReservation =>
+        if (hasReservation)
+          loadParkingSpotReservation(parkingSpot, now).map(List(_))
+        else
+          List.empty[ParkingSpotReservation].pure[F]
+      }
+    }
+
+  private def loadParkingSpotReservation(
+    parkingSpot: ParkingSpot,
+    now: LocalDateTime
+  ): F[ParkingSpotReservation] =
+    for {
+      user <- Random[F].elementOf(Accounts.allUsers ++ Accounts.allOfficeManagers)
+      reservation <- loadParkingSpotReservation(user, parkingSpot, now)
+    } yield reservation
+
+  private def loadParkingSpotReservation(
+    user: Account,
+    parkingSpot: ParkingSpot,
+    now: LocalDateTime
+  ): F[ParkingSpotReservation] =
+    generateParkingSpotReservation(user.id, parkingSpot.id, now)
+      .flatMap(parkingSpotReservationRepository.createReservation)
 }
 
 object DemoDataService {
@@ -774,5 +840,82 @@ object DemoDataService {
     "Networking event",
     "Office party",
     "Birthday celebration"
+  )
+
+  def generateParkingSpot[F[_]: FUUID: Monad: Random](
+    officeId: UUID,
+    group: Char,
+    isUnderground: Boolean,
+    spotIndex: Int
+  ): F[ParkingSpot] =
+    for {
+      id <- FUUID[F].randomUUID()
+      isAvailable <- Random[F].betweenInt(0, 100).map(_ < 95)
+      notes <- Random[F].betweenInt(0, 100).map { int =>
+        if (int < 33) exampleParkingSpotNotes(int % exampleParkingSpotNotes.size)
+        else ""
+      }
+      isHandicapped <- Random[F].betweenInt(0, 100).map(_ < 10)
+    } yield ParkingSpot(
+      id = id,
+      name = s"$group$spotIndex",
+      isAvailable = isAvailable,
+      notes = List(notes),
+      isHandicapped = isHandicapped,
+      isUnderground = isUnderground,
+      officeId = officeId
+    )
+
+  private lazy val exampleParkingSpotNotes = List(
+    "Close to the entrance",
+    "Near the elevator",
+    "Charging station"
+  )
+
+  def generateParkingSpotReservation[F[_]: FUUID: Monad: Random](
+    userId: UUID,
+    parkingSpotId: UUID,
+    now: LocalDateTime
+  ): F[ParkingSpotReservation] =
+    for {
+      id <- FUUID[F].randomUUID()
+      createdAtMinusDays <- Random[F].betweenInt(0, 8)
+      reservedFromPlusDays <- Random[F].betweenInt(-3, 15)
+      reservationDurationDays <- Random[F].betweenInt(1, 6)
+      state <- Random[F].betweenInt(0, 100).map { int =>
+        if (int < 10) Rejected
+        else if (int < 25) Cancelled
+        else if (int < 40) Pending
+        else Confirmed
+      }
+      notes <- Random[F].betweenInt(0, 100).map { int =>
+        if (int < 20) exampleParkingSpotReservationNotes(int % exampleParkingSpotReservationNotes.size)
+        else ""
+      }
+      plateNumber <- (Random[F].nextString(2), Random[F].betweenInt(10_000, 99_999)).mapN(_ + _)
+    } yield {
+      val reservedFromDate = now.toLocalDate.plusDays(reservedFromPlusDays)
+      val reservedToDate = reservedFromDate.plusDays(
+        reservationDurationDays - 1
+      ) // if reservationDurationDays == 1, then reservedFromDate == reservedToDate
+      val createdAt = reservedFromDate.minusDays(createdAtMinusDays)
+
+      ParkingSpotReservation(
+        id = id,
+        userId = userId,
+        createdAt = createdAt.atTime(now.toLocalTime),
+        reservedFromDate = reservedFromDate,
+        reservedToDate = reservedToDate,
+        state = state,
+        notes = notes,
+        parkingSpotId = parkingSpotId,
+        plateNumber = plateNumber
+      )
+    }
+
+  private lazy val exampleParkingSpotReservationNotes = List(
+    "Client meeting",
+    "VIP guest",
+    "Reserved for delivery"
   )
 }
