@@ -17,16 +17,13 @@
       <mat-card-title-group>
         <mat-card-title>
           <span>{{ spot.name }}</span>
+          <mat-card-subtitle class="spot-stats">
+            <mat-icon *ngIf="spot.isUnderground" class="spot-stats-item" matTooltip="Underground">system_update_alt
+            </mat-icon>
+            <mat-icon *ngIf="spot.isHandicapped" class="spot-stats-item" matTooltip="Handicapped">accessible</mat-icon>
+          </mat-card-subtitle>
           <span *ngIf="!spot.isAvailable" class="mat-body disabled-spot-label">Disabled</span>
         </mat-card-title>
-        <mat-card-subtitle class="spot-stats">
-          <div class="spot-stats-item" matTooltip="Notes">
-            <mat-icon matListItemIcon>note</mat-icon>
-            <span matListItemLine>{{ spot.notes.join(', ') }}</span>
-          </div>
-          <mat-icon *ngIf="spot.isHandicapped" class="spot-stats-item handicapped-icon" matTooltip="Handicapped">accessible</mat-icon>
-          <mat-icon *ngIf="spot.isUnderground" class="spot-stats-item" matTooltip="Underground">underground</mat-icon>
-        </mat-card-subtitle>
         <button *ngIf="authService.hasOfficeManagerRole()" mat-icon-button [matMenuTriggerFor]="menu">
           <mat-icon>more_vert</mat-icon>
         </button>
@@ -35,7 +32,6 @@
             officeName: selectedOffice!.name,
             spotId: spot.id,
             spotName: spot.name,
-            notes: spot.notes,
             isHandicapped: spot.isHandicapped,
             isUnderground: spot.isUnderground
           })">

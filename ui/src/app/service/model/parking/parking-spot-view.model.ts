@@ -4,7 +4,6 @@ export interface ParkingSpotView {
   id: string;
   name: string;
   isAvailable: boolean;
-  notes: string[];
   isHandicapped: boolean;
   isUnderground: boolean;
 }
