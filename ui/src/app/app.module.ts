@@ -79,13 +79,13 @@ import {
 } from "./component/parking/view/parking-spot-list-view/parking-spot-list-view.component";
 import {
   ParkingSpotFilterDialogComponent
-} from "./component/parking/view/parking-spot-filter-dialog/parking-spot-filter-dialog.component";
+} from "./component/parking/view/parking-spot-list-view/parking-spot-filter-dialog/parking-spot-filter-dialog.component";
 import {
   DeleteParkingSpotDialogComponent
-} from "./component/parking/view/delete-parking-spot-dialog/delete-parking-spot-dialog.component";
+} from "./component/parking/view/parking-spot-list-view/delete-parking-spot-dialog/delete-parking-spot-dialog.component";
 import {
   ToggleEnabledParkingSpotDialogComponent
-} from "./component/parking/view/toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
+} from "./component/parking/view/parking-spot-list-view/toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
 
 @NgModule({
   declarations: [

@@ -1,7 +1,7 @@
 import {Component, inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {MatSnackBar} from "@angular/material/snack-bar";
-import {ParkingSpotService} from "../../../../service/parking-spot.service";
+import {ParkingSpotService} from "../../../../../service/parking-spot.service";
 
 export interface ToggleEnabledParkingSpotDialogData {
   officeName: string

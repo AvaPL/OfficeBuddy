@@ -6,12 +6,12 @@ import {ParkingSpotService} from "../../../../service/parking-spot.service";
 import {Pagination} from "../../../../service/model/pagination/pagination.model";
 import {AuthService} from "../../../../service/auth.service";
 import {ParkingSpotView} from "../../../../service/model/parking/parking-spot-view.model";
-import {ParkingSpotFilterDialogComponent} from "../parking-spot-filter-dialog/parking-spot-filter-dialog.component";
+import {ParkingSpotFilterDialogComponent} from "./parking-spot-filter-dialog/parking-spot-filter-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
-import {DeleteParkingSpotDialogComponent} from "../delete-parking-spot-dialog/delete-parking-spot-dialog.component";
+import {DeleteParkingSpotDialogComponent} from "./delete-parking-spot-dialog/delete-parking-spot-dialog.component";
 import {
   ToggleEnabledParkingSpotDialogComponent
-} from "../toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
+} from "./toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
 
 @Component({
   selector: 'app-parking-spot-list-view',
