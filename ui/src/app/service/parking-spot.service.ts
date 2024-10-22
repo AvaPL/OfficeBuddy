@@ -8,6 +8,7 @@ import {CreateParkingSpot} from "./model/parking/create-parking-spot.model";
 import {UpdateParkingSpot} from "./model/parking/update-parking-spot.model";
 import {Pagination} from "./model/pagination/pagination.model";
 import {LocalDate} from "./model/date/local-date.model";
+import {ParkingSpot} from "./model/parking/parking-spot.model";
 
 @Injectable({
   providedIn: 'root'
@@ -40,17 +41,17 @@ export class ParkingSpotService {
   //
   //   return firstValueFrom(this.http.patch<ParkingSpot>(`${this.baseUrl}/${parkingSpotId}`, update, {headers}));
   // }
-  //
-  // async updateAvailability(parkingSpotId: string, isAvailable: boolean): Promise<ParkingSpot> {
-  //   const token = await this.authService.getToken();
-  //   const headers = requestHeaders(token);
-  //
-  //   const update: UpdateParkingSpot = {
-  //     isAvailable: isAvailable,
-  //   }
-  //
-  //   return firstValueFrom(this.http.patch<ParkingSpot>(`${this.baseUrl}/${parkingSpotId}`, update, {headers}));
-  // }
+
+  async updateAvailability(parkingSpotId: string, isAvailable: boolean): Promise<ParkingSpot> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token);
+
+    const update: UpdateParkingSpot = {
+      isAvailable: isAvailable,
+    }
+
+    return firstValueFrom(this.http.patch<ParkingSpot>(`${this.baseUrl}/${parkingSpotId}`, update, {headers}));
+  }
 
   async archiveParkingSpot(parkingSpotId: string): Promise<void> {
     const token = await this.authService.getToken();

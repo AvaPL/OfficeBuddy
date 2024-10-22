@@ -9,6 +9,9 @@ import {ParkingSpotView} from "../../../../service/model/parking/parking-spot-vi
 import {ParkingSpotFilterDialogComponent} from "../parking-spot-filter-dialog/parking-spot-filter-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
 import {DeleteParkingSpotDialogComponent} from "../delete-parking-spot-dialog/delete-parking-spot-dialog.component";
+import {
+  ToggleEnabledParkingSpotDialogComponent
+} from "../toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
 
 @Component({
   selector: 'app-parking-spot-list-view',
@@ -24,7 +27,7 @@ export class ParkingSpotListViewComponent implements OnInit {
   readonly parkingSpotFilterDialog = inject(MatDialog);
   // readonly createParkingSpotDialog = inject(MatDialog);
   // readonly editParkingSpotDialog = inject(MatDialog);
-  // readonly toggleEnabledParkingSpotDialog = inject(MatDialog);
+  readonly toggleEnabledParkingSpotDialog = inject(MatDialog);
   readonly deleteParkingSpotDialog = inject(MatDialog);
 
   offices: OfficeCompact[] = []
@@ -109,20 +112,20 @@ export class ParkingSpotListViewComponent implements OnInit {
   }
 
   toggleEnabledParkingSpot(parkingSpotId: string, parkingSpotName: string, officeName: string, enabled: boolean) {
-    // const dialogRef = this.toggleEnabledParkingSpotDialog.open(ToggleEnabledParkingSpotDialogComponent, {
-    //   data: {
-    //     officeName,
-    //     parkingSpotId,
-    //     parkingSpotName,
-    //     enabled
-    //   }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(editedParkingSpot => {
-    //   if (editedParkingSpot) {
-    //     this.fetchParkingSpots(this.pagination.limit, 0)
-    //   }
-    // })
+    const dialogRef = this.toggleEnabledParkingSpotDialog.open(ToggleEnabledParkingSpotDialogComponent, {
+      data: {
+        officeName,
+        parkingSpotId,
+        parkingSpotName,
+        enabled
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(editedParkingSpot => {
+      if (editedParkingSpot) {
+        this.fetchParkingSpots(this.pagination.limit, 0)
+      }
+    })
   }
 
   deleteParkingSpot(parkingSpotId: string, parkingSpotName: string, officeName: string) {

@@ -83,6 +83,9 @@ import {
 import {
   DeleteParkingSpotDialogComponent
 } from "./component/parking/view/delete-parking-spot-dialog/delete-parking-spot-dialog.component";
+import {
+  ToggleEnabledParkingSpotDialogComponent
+} from "./component/parking/view/toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
 
 @NgModule({
   declarations: [
@@ -114,7 +117,8 @@ import {
     ParkingSpotFilterDialogComponent,
     ParkingSpotListViewComponent,
     RoomComponent,
-    ToggleEnabledDeskDialogComponent
+    ToggleEnabledDeskDialogComponent,
+    ToggleEnabledParkingSpotDialogComponent
   ],
   imports: [
     AppRoutingModule,
