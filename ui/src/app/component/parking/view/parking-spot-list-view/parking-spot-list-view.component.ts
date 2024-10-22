@@ -8,6 +8,7 @@ import {AuthService} from "../../../../service/auth.service";
 import {ParkingSpotView} from "../../../../service/model/parking/parking-spot-view.model";
 import {ParkingSpotFilterDialogComponent} from "../parking-spot-filter-dialog/parking-spot-filter-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
+import {DeleteParkingSpotDialogComponent} from "../delete-parking-spot-dialog/delete-parking-spot-dialog.component";
 
 @Component({
   selector: 'app-parking-spot-list-view',
@@ -24,7 +25,7 @@ export class ParkingSpotListViewComponent implements OnInit {
   // readonly createParkingSpotDialog = inject(MatDialog);
   // readonly editParkingSpotDialog = inject(MatDialog);
   // readonly toggleEnabledParkingSpotDialog = inject(MatDialog);
-  // readonly deleteParkingSpotDialog = inject(MatDialog);
+  readonly deleteParkingSpotDialog = inject(MatDialog);
 
   offices: OfficeCompact[] = []
   parkingSpots: ParkingSpotView[] = []
@@ -125,13 +126,13 @@ export class ParkingSpotListViewComponent implements OnInit {
   }
 
   deleteParkingSpot(parkingSpotId: string, parkingSpotName: string, officeName: string) {
-    // const dialogRef = this.deleteParkingSpotDialog.open(DeleteParkingSpotDialogComponent, {data: {officeName, parkingSpotId, parkingSpotName}});
-    //
-    // dialogRef.afterClosed().subscribe(isConfirmed => {
-    //   if (isConfirmed) {
-    //     this.fetchParkingSpots(this.pagination.limit, 0)
-    //   }
-    // });
+    const dialogRef = this.deleteParkingSpotDialog.open(DeleteParkingSpotDialogComponent, {data: {officeName, parkingSpotId, parkingSpotName}});
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        this.fetchParkingSpots(this.pagination.limit, 0)
+      }
+    });
   }
 
   handlePageEvent(event: PageEvent) {

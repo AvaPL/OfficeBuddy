@@ -51,13 +51,13 @@ export class ParkingSpotService {
   //
   //   return firstValueFrom(this.http.patch<ParkingSpot>(`${this.baseUrl}/${parkingSpotId}`, update, {headers}));
   // }
-  //
-  // async archiveParkingSpot(parkingSpotId: string): Promise<void> {
-  //   const token = await this.authService.getToken();
-  //   const headers = requestHeaders(token);
-  //
-  //   return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${parkingSpotId}`, {headers}));
-  // }
+
+  async archiveParkingSpot(parkingSpotId: string): Promise<void> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token);
+
+    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${parkingSpotId}`, {headers}));
+  }
 
   // async getReservableParkingSpotListView(officeId: string, reservationFrom: LocalDate, reservationTo: LocalDate): Promise<ReservableParkingSpotView[]> {
   //   const token = await this.authService.getToken();

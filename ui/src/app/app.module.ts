@@ -80,6 +80,9 @@ import {
 import {
   ParkingSpotFilterDialogComponent
 } from "./component/parking/view/parking-spot-filter-dialog/parking-spot-filter-dialog.component";
+import {
+  DeleteParkingSpotDialogComponent
+} from "./component/parking/view/delete-parking-spot-dialog/delete-parking-spot-dialog.component";
 
 @NgModule({
   declarations: [
@@ -95,6 +98,7 @@ import {
     DeleteAccountDialogComponent,
     DeleteDeskDialogComponent,
     DeleteOfficeDialogComponent,
+    DeleteParkingSpotDialogComponent,
     DeskComponent,
     DeskListFilterDialogComponent,
     DeskListViewComponent,
