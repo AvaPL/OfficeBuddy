@@ -77,6 +77,9 @@ import {EditManagersDialogComponent} from "./component/office/edit-managers-dial
 import {
   ParkingSpotListViewComponent
 } from "./component/parking/view/parking-spot-list-view/parking-spot-list-view.component";
+import {
+  ParkingSpotFilterDialogComponent
+} from "./component/parking/view/parking-spot-filter-dialog/parking-spot-filter-dialog.component";
 
 @NgModule({
   declarations: [
@@ -104,6 +107,7 @@ import {
     NavbarComponent,
     OfficeComponent,
     ParkingComponent,
+    ParkingSpotFilterDialogComponent,
     ParkingSpotListViewComponent,
     RoomComponent,
     ToggleEnabledDeskDialogComponent

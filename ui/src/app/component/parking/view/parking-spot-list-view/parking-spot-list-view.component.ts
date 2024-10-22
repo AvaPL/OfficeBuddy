@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, inject, Input, OnInit, Output} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
 import {OfficeCompact} from "../../../../service/model/office/office-compact.model";
 import {OfficeService} from "../../../../service/office.service";
@@ -6,6 +6,8 @@ import {ParkingSpotService} from "../../../../service/parking-spot.service";
 import {Pagination} from "../../../../service/model/pagination/pagination.model";
 import {AuthService} from "../../../../service/auth.service";
 import {ParkingSpotView} from "../../../../service/model/parking/parking-spot-view.model";
+import {ParkingSpotFilterDialogComponent} from "../parking-spot-filter-dialog/parking-spot-filter-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
 
 @Component({
   selector: 'app-parking-spot-list-view',
@@ -18,7 +20,7 @@ export class ParkingSpotListViewComponent implements OnInit {
   @Output() selectedOfficeIdChange = new EventEmitter<string>();
   @Output() changeToReservationsView = new EventEmitter();
 
-  // readonly parkingSpotFilterDialog = inject(MatDialog);
+  readonly parkingSpotFilterDialog = inject(MatDialog);
   // readonly createParkingSpotDialog = inject(MatDialog);
   // readonly editParkingSpotDialog = inject(MatDialog);
   // readonly toggleEnabledParkingSpotDialog = inject(MatDialog);
@@ -67,17 +69,17 @@ export class ParkingSpotListViewComponent implements OnInit {
   }
 
   openFilterDialog() {
-    // const dialogRef = this.parkingSpotFilterDialog.open(ParkingSpotFilterDialogComponent, {
-    //   data: {
-    //     offices: this.offices,
-    //     selectedOfficeId: this.selectedOffice?.id,
-    //   }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(selectedOffice => {
-    //   if (selectedOffice)
-    //     this.handleFilter(selectedOffice)
-    // });
+    const dialogRef = this.parkingSpotFilterDialog.open(ParkingSpotFilterDialogComponent, {
+      data: {
+        offices: this.offices,
+        selectedOfficeId: this.selectedOffice?.id,
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(selectedOffice => {
+      if (selectedOffice)
+        this.handleFilter(selectedOffice)
+    });
   }
 
   createParkingSpot(officeId: string, officeName: string) {
