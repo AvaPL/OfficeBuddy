@@ -89,6 +89,9 @@ import {
 import {
   CreateParkingSpotDialogComponent
 } from "./component/parking/view/parking-spot-list-view/create-parking-spot-dialog/create-parking-spot-dialog.component";
+import {
+  EditParkingSpotDialogComponent
+} from "./component/parking/view/parking-spot-list-view/edit-parking-spot-dialog/edit-parking-spot-dialog.component";
 
 @NgModule({
   declarations: [
@@ -115,6 +118,7 @@ import {
     EditDeskDialogComponent,
     EditManagersDialogComponent,
     EditOfficeDialogComponent,
+    EditParkingSpotDialogComponent,
     NavbarComponent,
     OfficeComponent,
     ParkingComponent,

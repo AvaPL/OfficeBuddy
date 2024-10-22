@@ -13,6 +13,10 @@ import {
   ToggleEnabledParkingSpotDialogComponent
 } from "./toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
 import {CreateParkingSpotDialogComponent} from "./create-parking-spot-dialog/create-parking-spot-dialog.component";
+import {
+  EditParkingSpotDialogComponent,
+  EditParkingSpotInitialValuesDialogData
+} from "./edit-parking-spot-dialog/edit-parking-spot-dialog.component";
 
 @Component({
   selector: 'app-parking-spot-list-view',
@@ -27,7 +31,7 @@ export class ParkingSpotListViewComponent implements OnInit {
 
   readonly parkingSpotFilterDialog = inject(MatDialog);
   readonly createParkingSpotDialog = inject(MatDialog);
-  // readonly editParkingSpotDialog = inject(MatDialog);
+  readonly editParkingSpotDialog = inject(MatDialog);
   readonly toggleEnabledParkingSpotDialog = inject(MatDialog);
   readonly deleteParkingSpotDialog = inject(MatDialog);
 
@@ -99,17 +103,16 @@ export class ParkingSpotListViewComponent implements OnInit {
     });
   }
 
-  editParkingSpot(editParkingSpotInitialValues: any) {
-    // editParkingSpot(editParkingSpotInitialValues: EditParkingSpotInitialValuesDialogData) {
-    // const dialogRef = this.editParkingSpotDialog.open(EditParkingSpotDialogComponent, {
-    //   data: editParkingSpotInitialValues
-    // })
-    //
-    // dialogRef.afterClosed().subscribe(editedParkingSpot => {
-    //   if (editedParkingSpot) {
-    //     this.fetchParkingSpots(this.pagination.limit, 0)
-    //   }
-    // });
+  editParkingSpot(editParkingSpotInitialValues: EditParkingSpotInitialValuesDialogData) {
+    const dialogRef = this.editParkingSpotDialog.open(EditParkingSpotDialogComponent, {
+      data: editParkingSpotInitialValues
+    })
+
+    dialogRef.afterClosed().subscribe(editedParkingSpot => {
+      if (editedParkingSpot) {
+        this.fetchParkingSpots(this.pagination.limit, 0)
+      }
+    });
   }
 
   toggleEnabledParkingSpot(parkingSpotId: string, parkingSpotName: string, officeName: string, enabled: boolean) {
