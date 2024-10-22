@@ -12,6 +12,7 @@ import {DeleteParkingSpotDialogComponent} from "./delete-parking-spot-dialog/del
 import {
   ToggleEnabledParkingSpotDialogComponent
 } from "./toggle-enabled-parking-spot-dialog/toggle-enabled-parking-spot-dialog.component";
+import {CreateParkingSpotDialogComponent} from "./create-parking-spot-dialog/create-parking-spot-dialog.component";
 
 @Component({
   selector: 'app-parking-spot-list-view',
@@ -25,7 +26,7 @@ export class ParkingSpotListViewComponent implements OnInit {
   @Output() changeToReservationsView = new EventEmitter();
 
   readonly parkingSpotFilterDialog = inject(MatDialog);
-  // readonly createParkingSpotDialog = inject(MatDialog);
+  readonly createParkingSpotDialog = inject(MatDialog);
   // readonly editParkingSpotDialog = inject(MatDialog);
   readonly toggleEnabledParkingSpotDialog = inject(MatDialog);
   readonly deleteParkingSpotDialog = inject(MatDialog);
@@ -87,15 +88,15 @@ export class ParkingSpotListViewComponent implements OnInit {
   }
 
   createParkingSpot(officeId: string, officeName: string) {
-    // const dialogRef = this.createParkingSpotDialog.open(CreateParkingSpotDialogComponent, {
-    //   data: {officeId, officeName}
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(createdParkingSpot => {
-    //   if (createdParkingSpot) {
-    //     this.fetchParkingSpots(this.pagination.limit, 0)
-    //   }
-    // });
+    const dialogRef = this.createParkingSpotDialog.open(CreateParkingSpotDialogComponent, {
+      data: {officeId, officeName}
+    });
+
+    dialogRef.afterClosed().subscribe(createdParkingSpot => {
+      if (createdParkingSpot) {
+        this.fetchParkingSpots(this.pagination.limit, 0)
+      }
+    });
   }
 
   editParkingSpot(editParkingSpotInitialValues: any) {
@@ -129,7 +130,13 @@ export class ParkingSpotListViewComponent implements OnInit {
   }
 
   deleteParkingSpot(parkingSpotId: string, parkingSpotName: string, officeName: string) {
-    const dialogRef = this.deleteParkingSpotDialog.open(DeleteParkingSpotDialogComponent, {data: {officeName, parkingSpotId, parkingSpotName}});
+    const dialogRef = this.deleteParkingSpotDialog.open(DeleteParkingSpotDialogComponent, {
+      data: {
+        officeName,
+        parkingSpotId,
+        parkingSpotName
+      }
+    });
 
     dialogRef.afterClosed().subscribe(isConfirmed => {
       if (isConfirmed) {

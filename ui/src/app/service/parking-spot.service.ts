@@ -28,13 +28,13 @@ export class ParkingSpotService {
     return firstValueFrom(this.http.get<ParkingSpotListView>(url, {headers}));
   }
 
-  // async createParkingSpot(parkingSpot: CreateParkingSpot): Promise<ParkingSpot> {
-  //   const token = await this.authService.getToken();
-  //   const headers = requestHeaders(token);
-  //
-  //   return firstValueFrom(this.http.post<ParkingSpot>(this.baseUrl, parkingSpot, {headers}));
-  // }
-  //
+  async createParkingSpot(parkingSpot: CreateParkingSpot): Promise<ParkingSpot> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token);
+
+    return firstValueFrom(this.http.post<ParkingSpot>(this.baseUrl, parkingSpot, {headers}));
+  }
+
   // async updateParkingSpot(parkingSpotId: string, update: UpdateParkingSpot): Promise<ParkingSpot> {
   //   const token = await this.authService.getToken();
   //   const headers = requestHeaders(token);

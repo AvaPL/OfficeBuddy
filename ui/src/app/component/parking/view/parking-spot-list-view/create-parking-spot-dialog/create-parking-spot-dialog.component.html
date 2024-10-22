@@ -1,0 +1,22 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h2 mat-dialog-title class="title">New parking spot in {{ data.officeName }}</h2>
+  <mat-divider></mat-divider>
+  <mat-dialog-content>
+    <div class="name-and-details">
+      <mat-form-field class="name">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" required>
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+      </mat-form-field>
+    </div>
+    <div class="slide-toggles">
+      <mat-slide-toggle formControlName="isHandicapped" color="primary">Handicapped</mat-slide-toggle>
+      <mat-slide-toggle formControlName="isUnderground" color="primary">Underground</mat-slide-toggle>
+      <mat-slide-toggle formControlName="isAvailable" color="primary">Enabled</mat-slide-toggle>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Back</button>
+    <button mat-button color="primary" type="submit" [disabled]="!form.valid">Create</button>
+  </mat-dialog-actions>
+</form>
