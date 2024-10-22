@@ -46,16 +46,21 @@ a.is-active {
     align-items: center;
     color: rgba(255, 255, 255, 0.75);
     background-color: transparent;
-    margin-top: 10px;
-    margin-bottom: 8px;
+    padding-top: 10px;
+    padding-bottom: 8px;
   }
 
   span {
     white-space: normal;
   }
 
-  button:hover, .is-active-mobile {
+  button:hover {
     color: white;
+  }
+
+  .is-active-mobile {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1); /* Add this line for semitransparent background */
   }
 }
 
