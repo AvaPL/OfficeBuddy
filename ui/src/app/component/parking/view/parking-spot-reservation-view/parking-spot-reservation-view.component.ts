@@ -111,12 +111,13 @@ export class ParkingSpotReservationViewComponent implements OnInit {
     this.fetchReservations(this.pagination.limit, event.pageIndex * this.pagination.limit);
   }
 
-  handleFilter(selectedOffice: OfficeCompact, selectedReservationStates: ReservationState[], reservationStartDate: Date, reservedByYou: boolean) {
+  handleFilter(selectedOffice: OfficeCompact, selectedReservationStates: ReservationState[], reservationStartDate: Date, reservedByYou: boolean, plateNumber: string) {
     this.selectedOffice = selectedOffice;
     this.selectedOfficeIdChange.emit(selectedOffice.id);
     this.selectedReservationStates = selectedReservationStates;
     this.reservationStartDate = reservationStartDate;
     this.reservedByYou = reservedByYou;
+    this.plateNumber = plateNumber.length > 0 ? plateNumber : null;
     this.fetchReservations(this.pagination.limit, 0);
   }
 
@@ -158,15 +159,15 @@ export class ParkingSpotReservationViewComponent implements OnInit {
         selectedReservationStates: this.selectedReservationStates,
         reservationStartDate: this.reservationStartDate,
         reservedByYou: this.reservedByYou,
-        plateNumber: this.plateNumber
+        plateNumber: this.plateNumber ?? ""
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        const { selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou } = result;
+        const { selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou, plateNumber } = result;
         if (selectedOffice)
-          this.handleFilter(selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou);
+          this.handleFilter(selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou, plateNumber);
       }
     });
   }

@@ -10,7 +10,7 @@ export interface ParkingSpotFilterDialogData {
   selectedReservationStates: ReservationState[],
   reservationStartDate: Date,
   reservedByYou: boolean,
-  plateNumber: string | null
+  plateNumber: string
 }
 
 @Component({
@@ -30,7 +30,7 @@ export class ParkingSpotReservationFilterDialogComponent {
   selectedReservationStates: ReservationState[] = this.data.selectedReservationStates;
   reservationStartDate: Date = this.data.reservationStartDate;
   reservedByYou: boolean = this.data.reservedByYou;
-  plateNumber: string | null = this.data.plateNumber;
+  plateNumber: string = this.data.plateNumber;
 
   constructor(media: MediaMatcher) {
     this.touchUiQuery = media.matchMedia('(max-width: 600px)');
