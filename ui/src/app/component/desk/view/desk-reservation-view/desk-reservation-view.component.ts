@@ -14,7 +14,7 @@ import {
 import {OfficeCompact} from "../../../../service/model/office/office-compact.model";
 import {OfficeService} from "../../../../service/office.service";
 import {ReservationState} from "../../../../service/model/reservation/reservation-state.enum";
-import {DeskReservationView, DeskView, UserView} from "../../../../service/model/reservation/reservation-view.model";
+import {DeskReservationView, DeskView, UserView} from "../../../../service/model/reservation/desk-reservation-view.model";
 import {Pagination} from "../../../../service/model/pagination/pagination.model";
 import {ReservationService} from "../../../../service/reservation.service";
 import {LocalDate} from "../../../../service/model/date/local-date.model";

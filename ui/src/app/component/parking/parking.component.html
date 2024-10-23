@@ -6,9 +6,9 @@
     </app-parking-spot-list-view>
   }
   @case (Mode.RESERVATION) {
-<!--    <app-parking-spot-reservation-view (changeToDesksView)="mode = Mode.LIST"-->
-<!--                                       [selectedOfficeId]="selectedOfficeId"-->
-<!--                                       (selectedOfficeIdChange)="changeSelectedOfficeId($event)">-->
-<!--    </app-parking-spot-reservation-view>-->
+    <app-parking-spot-reservation-view (changeToParkingSpotsView)="mode = Mode.LIST"
+                                       [selectedOfficeId]="selectedOfficeId"
+                                       (selectedOfficeIdChange)="changeSelectedOfficeId($event)">
+    </app-parking-spot-reservation-view>
   }
 }

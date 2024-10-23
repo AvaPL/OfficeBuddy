@@ -5,9 +5,10 @@ import {firstValueFrom} from "rxjs";
 import {DeskReservation} from "./model/reservation/desk-reservation.model";
 import {LocalDate} from "./model/date/local-date.model";
 import {ReservationState} from "./model/reservation/reservation-state.enum";
-import {DeskReservationListView} from "./model/reservation/reservation-view.model";
+import {DeskReservationListView} from "./model/reservation/desk-reservation-view.model";
 import {AuthService} from "./auth.service";
 import {requestHeaders} from "./util/header.util";
+import {ParkingSpotReservationListView} from "./model/reservation/parking-spot-reservation-view.model";
 
 @Injectable({
   providedIn: 'root'
@@ -63,5 +64,25 @@ export class ReservationService {
     const headers = requestHeaders(token);
 
     return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/cancel`, null, {headers}));
+  }
+
+  async getParkingSpotReservationListView(
+    officeId: string,
+    reservationFrom: LocalDate,
+    reservationStates: ReservationState[] | null,
+    userId: string | null,
+    plateNumber: string | null,
+    limit: number,
+    offset: number
+  ): Promise<ParkingSpotReservationListView> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token);
+
+    let url = `${this.baseUrl}/parking/view/list?office_id=${officeId}&reservation_from=${reservationFrom}&limit=${limit}&offset=${offset}`;
+    if (reservationStates) url += `&reservation_states=${reservationStates.join(',')}`;
+    if (userId) url += `&user_id=${userId}`;
+    if (plateNumber) url += `&plate_number=${plateNumber}`;
+
+    return firstValueFrom(this.http.get<ParkingSpotReservationListView>(url, {headers}));
   }
 }
