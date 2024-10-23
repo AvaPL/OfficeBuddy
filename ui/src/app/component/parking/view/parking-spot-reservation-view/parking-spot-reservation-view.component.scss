@@ -77,6 +77,10 @@
   @media (max-width: 600px) {
     width: 0;
     flex-wrap: wrap;
+
+    .plate-number {
+      margin-top: 6px;
+    }
   }
 
   div {

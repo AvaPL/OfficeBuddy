@@ -892,13 +892,15 @@ object DemoDataService {
         if (int < 20) exampleParkingSpotReservationNotes(int % exampleParkingSpotReservationNotes.size)
         else ""
       }
-      plateNumber <- (Random[F].nextString(2), Random[F].betweenInt(10_000, 99_999)).mapN(_ + _)
+      plateNumberPrefix <- List.fill(2)(Random[F].betweenInt('A', 'Z' + 1)).sequence.map(_.map(_.toChar).mkString)
+      plateNumberSuffix <- List.fill(5)(Random[F].betweenInt(0, 10)).sequence.map(_.mkString)
     } yield {
       val reservedFromDate = now.toLocalDate.plusDays(reservedFromPlusDays)
       val reservedToDate = reservedFromDate.plusDays(
         reservationDurationDays - 1
       ) // if reservationDurationDays == 1, then reservedFromDate == reservedToDate
       val createdAt = reservedFromDate.minusDays(createdAtMinusDays)
+      val plateNumber = s"$plateNumberPrefix $plateNumberSuffix"
 
       ParkingSpotReservation(
         id = id,
