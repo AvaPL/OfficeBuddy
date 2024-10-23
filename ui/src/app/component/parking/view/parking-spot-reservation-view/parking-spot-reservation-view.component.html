@@ -25,12 +25,18 @@
                   [style.background-color]="stateChipStyle(reservation.state).backgroundColor"
                   [style.color]="stateChipStyle(reservation.state).textColor">{{ reservation.state }}</span>
           </mat-card-title>
-          <mat-card-subtitle class="reservation-subtitle-line">
-            <mat-icon matListItemIcon>person</mat-icon>
-            <span>{{ reservation.user.firstName }} {{ reservation.user.lastName }}</span>
+          <mat-card-subtitle class="reservation-subtitle-line person-plate-number">
+            <div>
+              <mat-icon matListItemIcon>person</mat-icon>
+              <span>{{ reservation.user.firstName }} {{ reservation.user.lastName }}</span>
+            </div>
+            <div matTooltip="Plate number">
+              <mat-icon matListItemIcon>straighten</mat-icon>
+              <span>{{ reservation.plateNumber }}</span>
+            </div>
           </mat-card-subtitle>
           <mat-card-subtitle class="reservation-subtitle-line" matTooltip="Ends at">
-            <mat-icon matListItemIcon>event</mat-icon>
+            <mat-icon matListItemIcon>event_busy</mat-icon>
             <span>{{ reservation.reservedToDate }}</span>
           </mat-card-subtitle>
           <div class="reservation-notes">

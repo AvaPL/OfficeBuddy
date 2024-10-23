@@ -1,0 +1,24 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+
+  .office-select {
+    margin-top: 8px;
+  }
+
+  .reservation-start-date {
+    padding-bottom: 4px;
+  }
+
+  width: min(450px, 80vw);
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}

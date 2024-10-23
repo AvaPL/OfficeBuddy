@@ -1,0 +1,31 @@
+<h2 mat-dialog-title class="title">Filters</h2>
+<mat-dialog-content>
+  <mat-form-field class="office-select">
+    <mat-label>Office</mat-label>
+    <mat-select [(value)]="selectedOffice">
+      <mat-option *ngFor="let office of data.offices" [value]="office">{{ office.name }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Reservation statuses</mat-label>
+    <mat-select [(value)]="selectedReservationStates" multiple>
+      <mat-option *ngFor="let state of Object.values(ReservationState)" [value]="state">{{ state }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field class="reservation-start-date">
+    <mat-label>Reservation start date</mat-label>
+    <input matInput [matDatepicker]="picker" [(ngModel)]="reservationStartDate" required>
+    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+    <mat-datepicker [touchUi]="touchUiQuery.matches" #picker></mat-datepicker>
+    <mat-error *ngIf="!reservationStartDate">Reservation start date is required</mat-error>
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Plate number</mat-label>
+    <input matInput [(ngModel)]="plateNumber">
+  </mat-form-field>
+  <mat-slide-toggle [(ngModel)]="reservedByYou" color="primary">Reserved by you</mat-slide-toggle>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Back</button>
+  <button mat-button color="primary" type="submit" [disabled]="!reservationStartDate" (click)="onApply()" cdkFocusInitial>Apply</button>
+</mat-dialog-actions>

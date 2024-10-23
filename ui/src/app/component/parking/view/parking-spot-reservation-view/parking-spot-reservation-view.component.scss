@@ -70,6 +70,26 @@
   }
 }
 
+.person-plate-number {
+  display: flex;
+  align-items: center;
+
+  @media (max-width: 600px) {
+    width: 0;
+    flex-wrap: wrap;
+  }
+
+  div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    span {
+      margin-right: 8px;
+    }
+  }
+}
+
 mat-card {
   border-radius: 10px;
   margin-bottom: 10px;

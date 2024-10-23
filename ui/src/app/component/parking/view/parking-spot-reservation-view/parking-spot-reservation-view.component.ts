@@ -14,6 +14,9 @@ import {
   ParkingSpotReservationView,
   ParkingSpotView
 } from "../../../../service/model/reservation/parking-spot-reservation-view.model";
+import {
+  ParkingSpotReservationFilterDialogComponent
+} from "./parking-spot-reservation-filter-dialog/parking-spot-reservation-filter-dialog.component";
 
 type GroupedParkingSpotReservations = { [key: string]: ParkingSpotReservationView[] }
 
@@ -148,23 +151,24 @@ export class ParkingSpotReservationViewComponent implements OnInit {
   }
 
   openFilterDialog() {
-    // const dialogRef = this.parkingSpotFilterDialog.open(ParkingSpotReservationFilterDialogComponent, {
-    //   data: {
-    //     offices: this.offices,
-    //     selectedOfficeId: this.selectedOffice?.id,
-    //     selectedReservationStates: this.selectedReservationStates,
-    //     reservationStartDate: this.reservationStartDate,
-    //     reservedByYou: this.reservedByYou
-    //   }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(result => {
-    //   if (result) {
-    //     const { selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou } = result;
-    //     if (selectedOffice)
-    //       this.handleFilter(selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou);
-    //   }
-    // });
+    const dialogRef = this.parkingSpotFilterDialog.open(ParkingSpotReservationFilterDialogComponent, {
+      data: {
+        offices: this.offices,
+        selectedOfficeId: this.selectedOffice?.id,
+        selectedReservationStates: this.selectedReservationStates,
+        reservationStartDate: this.reservationStartDate,
+        reservedByYou: this.reservedByYou,
+        plateNumber: this.plateNumber
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const { selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou } = result;
+        if (selectedOffice)
+          this.handleFilter(selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou);
+      }
+    });
   }
 
   confirmReservation(reservationId: string, parkingSpot: ParkingSpotView, user: UserView, reservedFromDate: string, reservedToDate: string) {
