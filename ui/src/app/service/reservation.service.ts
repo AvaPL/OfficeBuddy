@@ -9,6 +9,8 @@ import {DeskReservationListView} from "./model/reservation/desk-reservation-view
 import {AuthService} from "./auth.service";
 import {requestHeaders} from "./util/header.util";
 import {ParkingSpotReservationListView} from "./model/reservation/parking-spot-reservation-view.model";
+import {CreateParkingSpotReservation} from "./model/reservation/create-parking-spot-reservation.model";
+import {ParkingSpotReservation} from "./model/reservation/parking-spot-reservation.model";
 
 @Injectable({
   providedIn: 'root'
@@ -84,5 +86,12 @@ export class ReservationService {
     if (plateNumber) url += `&plate_number=${plateNumber}`;
 
     return firstValueFrom(this.http.get<ParkingSpotReservationListView>(url, {headers}));
+  }
+
+  async createParkingSpotReservation(reservation: CreateParkingSpotReservation): Promise<ParkingSpotReservation> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token);
+
+    return firstValueFrom(this.http.post<ParkingSpotReservation>(`${this.baseUrl}/parking`, reservation, {headers}));
   }
 }

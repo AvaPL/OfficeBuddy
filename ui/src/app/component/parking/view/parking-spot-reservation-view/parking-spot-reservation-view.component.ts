@@ -20,6 +20,9 @@ import {
 import {
   ParkingSpotReservationConfirmDialogComponent
 } from "./parking-spot-reservation-confirm-dialog/parking-spot-reservation-confirm-dialog.component";
+import {
+  CreateParkingSpotReservationDialogComponent
+} from "./create-parking-spot-reservation-dialog/create-parking-spot-reservation-dialog.component";
 
 type GroupedParkingSpotReservations = { [key: string]: ParkingSpotReservationView[] }
 
@@ -168,7 +171,7 @@ export class ParkingSpotReservationViewComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        const { selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou, plateNumber } = result;
+        const {selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou, plateNumber} = result;
         if (selectedOffice)
           this.handleFilter(selectedOffice, selectedReservationStates, reservationStartDate, reservedByYou, plateNumber);
       }
@@ -252,15 +255,15 @@ export class ParkingSpotReservationViewComponent implements OnInit {
   }
 
   createReservation(officeId: string, officeName: string) {
-    // const dialogRef = this.createParkingSpotReservationDialog.open(CreateParkingSpotReservationDialogComponent, {
-    //   data: { officeId, officeName }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(createdReservation => {
-    //   if (createdReservation) {
-    //     this.fetchReservations(this.pagination.limit, 0);
-    //   }
-    // });
+    const dialogRef = this.createParkingSpotReservationDialog.open(CreateParkingSpotReservationDialogComponent, {
+      data: {officeId, officeName}
+    });
+
+    dialogRef.afterClosed().subscribe(createdReservation => {
+      if (createdReservation) {
+        this.fetchReservations(this.pagination.limit, 0);
+      }
+    });
   }
 
   canConfirmReservation(reservation: ParkingSpotReservationView) {

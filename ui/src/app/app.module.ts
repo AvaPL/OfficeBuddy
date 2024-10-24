@@ -101,6 +101,9 @@ import {
 import {
   ParkingSpotReservationConfirmDialogComponent
 } from "./component/parking/view/parking-spot-reservation-view/parking-spot-reservation-confirm-dialog/parking-spot-reservation-confirm-dialog.component";
+import {
+  CreateParkingSpotReservationDialogComponent
+} from "./component/parking/view/parking-spot-reservation-view/create-parking-spot-reservation-dialog/create-parking-spot-reservation-dialog.component";
 
 @NgModule({
   declarations: [
@@ -114,6 +117,7 @@ import {
     CreateDeskReservationDialogComponent,
     CreateOfficeDialogComponent,
     CreateParkingSpotDialogComponent,
+    CreateParkingSpotReservationDialogComponent,
     DeleteAccountDialogComponent,
     DeleteDeskDialogComponent,
     DeleteOfficeDialogComponent,

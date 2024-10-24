@@ -9,6 +9,7 @@ import {UpdateParkingSpot} from "./model/parking/update-parking-spot.model";
 import {Pagination} from "./model/pagination/pagination.model";
 import {LocalDate} from "./model/date/local-date.model";
 import {ParkingSpot} from "./model/parking/parking-spot.model";
+import {ReservableParkingSpotView} from "./model/parking/reservable-parking-spot-view.model";
 
 @Injectable({
   providedIn: 'root'
@@ -60,11 +61,11 @@ export class ParkingSpotService {
     return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${parkingSpotId}`, {headers}));
   }
 
-  // async getReservableParkingSpotListView(officeId: string, reservationFrom: LocalDate, reservationTo: LocalDate): Promise<ReservableParkingSpotView[]> {
-  //   const token = await this.authService.getToken();
-  //   const headers = requestHeaders(token);
-  //
-  //   const url = `${this.baseUrl}/view/reservable/list?office_id=${officeId}&reservation_from=${reservationFrom}&reservation_to=${reservationTo}`;
-  //   return firstValueFrom(this.http.get<ReservableParkingSpotView[]>(url, {headers}));
-  // }
+  async getReservableParkingSpotViewList(officeId: string, reservationFrom: LocalDate, reservationTo: LocalDate): Promise<ReservableParkingSpotView[]> {
+    const token = await this.authService.getToken();
+    const headers = requestHeaders(token);
+
+    const url = `${this.baseUrl}/view/reservable?office_id=${officeId}&reservation_from=${reservationFrom}&reservation_to=${reservationTo}`;
+    return firstValueFrom(this.http.get<ReservableParkingSpotView[]>(url, {headers}));
+  }
 }

@@ -1,0 +1,51 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h2 mat-dialog-title class="title">New reservation in {{ data.officeName }}</h2>
+  <mat-dialog-content>
+    <mat-form-field class="reservation-date-range">
+      <mat-label>Reservation date range</mat-label>
+      <mat-date-range-input [min]="minDate" [rangePicker]="picker">
+        <input matStartDate formControlName="reservationFrom" placeholder="Start date" required
+               (dateChange)="fetchParkingSpots()">
+        <input matEndDate formControlName="reservationTo" placeholder="End date" required
+               (dateChange)="fetchParkingSpots()">
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-date-range-picker [touchUi]="false" #picker></mat-date-range-picker>
+      <mat-error
+        *ngIf="form.get('reservationFrom')?.hasError('required') || form.get('reservationTo')?.hasError('required')">
+        Reservation date range is required
+      </mat-error>
+    </mat-form-field>
+    <mat-selection-list
+      *ngIf="parkingSpots.length > 0 && !form.get('reservationFrom')?.hasError('required') && !form.get('reservationTo')?.hasError('required')"
+      formControlName="parkingSpotId" [multiple]="false">
+      @for (spot of parkingSpots; track spot.id) {
+        <mat-list-option color="primary" [value]="spot.id" [selected]="[spot.id] === form.get('parkingSpotId')?.value">
+          <div class="parking-spot-horizontal">
+            <span>{{ spot.name }}</span>
+            <mat-icon *ngIf="spot.isUnderground" matTooltip="Underground">arrow_downward</mat-icon>
+            <mat-icon *ngIf="spot.isHandicapped" matTooltip="Handicapped">accessible</mat-icon>
+          </div>
+        </mat-list-option>
+        <mat-divider *ngIf="!$last"></mat-divider>
+      }
+    </mat-selection-list>
+    <span *ngIf="parkingSpots.length === 0 && form.get('reservationFrom')?.value && form.get('reservationTo')?.value"
+          class="mat-h3 no-free-parking-spots-info">No available parking spots found</span>
+    <mat-form-field>
+      <mat-label>Plate Number</mat-label>
+      <input formControlName="plateNumber" matInput required>
+      <mat-error *ngIf="form.get('plateNumber')?.hasError('required')">
+        Plate number is required
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Comment (optional)</mat-label>
+      <textarea formControlName="comment" class="comment" matInput></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Back</button>
+    <button mat-button color="primary" type="submit" [disabled]="!form.valid">Confirm</button>
+  </mat-dialog-actions>
+</form>

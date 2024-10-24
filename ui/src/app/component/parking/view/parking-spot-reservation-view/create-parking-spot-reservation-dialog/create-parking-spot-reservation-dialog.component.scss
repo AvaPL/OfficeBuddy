@@ -1,0 +1,45 @@
+.title {
+  padding-bottom: 0;
+  margin-bottom: 12px;
+}
+
+button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+
+  mat-selection-list {
+    overflow: scroll;
+    max-height: 200px;
+    margin-bottom: 16px;
+  }
+
+  width: min(450px, 80vw);
+
+  .reservation-date-range {
+    padding-top: 10px;
+  }
+
+  .no-free-parking-spots-info {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.parking-spot-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  span {
+    margin-right: 16px;
+  }
+}
+
+.comment {
+  max-height: 40vh;
+}
