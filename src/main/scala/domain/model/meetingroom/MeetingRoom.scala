@@ -3,6 +3,7 @@ package domain.model.meetingroom
 
 import java.util.UUID
 
+// TODO: Add meeting rooms to the app
 case class MeetingRoom(
   id: UUID,
   name: String,
@@ -16,5 +17,7 @@ case class MeetingRoom(
   hasWebcam: Boolean,
   hasTv: Boolean,
   //
-  officeId: UUID
+  officeId: UUID,
+  //
+  isArchived: Boolean = false
 )
