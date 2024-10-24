@@ -45,25 +45,25 @@ export class ReservationService {
     return firstValueFrom(this.http.post<DeskReservation>(`${this.baseUrl}/desk`, reservation, {headers}));
   }
 
-  async confirmDeskReservation(reservationId: string): Promise<void> {
+  async confirmReservation(entityType: 'desk' | 'parking', reservationId: string): Promise<void> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token);
 
-    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/confirm`, null, {headers}));
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${entityType}/${reservationId}/confirm`, null, {headers}));
   }
 
-  async rejectDeskReservation(reservationId: string): Promise<void> {
+  async rejectReservation(entityType: 'desk' | 'parking', reservationId: string): Promise<void> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token);
 
-    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/reject`, null, {headers}));
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${entityType}/${reservationId}/reject`, null, {headers}));
   }
 
-  async cancelDeskReservation(reservationId: string): Promise<void> {
+  async cancelReservation(entityType: 'desk' | 'parking', reservationId: string): Promise<void> {
     const token = await this.authService.getToken();
     const headers = requestHeaders(token);
 
-    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/desk/${reservationId}/cancel`, null, {headers}));
+    return firstValueFrom(this.http.put<void>(`${this.baseUrl}/${entityType}/${reservationId}/cancel`, null, {headers}));
   }
 
   async getParkingSpotReservationListView(

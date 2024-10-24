@@ -48,24 +48,24 @@
           <div class="buttons-row">
             <button *ngIf="canConfirmReservation(reservation)" mat-icon-button class="reservation-button"
                     matTooltip="Confirm"
-                    (click)="confirmReservation(reservation.id, reservation.parkingSpot, reservation.user, reservation.reservedFromDate, reservation.reservedToDate)">
+                    (click)="confirmReservation(reservation.id, reservation.parkingSpot, reservation.user, reservation.plateNumber, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>check_circle</mat-icon>
             </button>
             <button *ngIf="canRejectConfirmedReservation(reservation)" mat-icon-button class="reservation-button"
                     matTooltip="Reject"
-                    (click)="rejectReservation(reservation.id, reservation.parkingSpot, reservation.user, reservation.reservedFromDate, reservation.reservedToDate)">
+                    (click)="rejectReservation(reservation.id, reservation.parkingSpot, reservation.user, reservation.plateNumber, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>unpublished</mat-icon>
             </button>
             <button *ngIf="canRejectPendingReservation(reservation)" mat-icon-button class="reservation-button"
                     matTooltip="Reject"
-                    (click)="rejectReservation(reservation.id, reservation.parkingSpot, reservation.user, reservation.reservedFromDate, reservation.reservedToDate)">
+                    (click)="rejectReservation(reservation.id, reservation.parkingSpot, reservation.user, reservation.plateNumber, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>do_not_disturb_on</mat-icon>
             </button>
             <button
               *ngIf="canCancelReservation(reservation)"
               mat-icon-button class="reservation-button"
               matTooltip="Cancel"
-              (click)="cancelReservation(reservation.id, reservation.parkingSpot, reservation.reservedFromDate, reservation.reservedToDate)">
+              (click)="cancelReservation(reservation.id, reservation.parkingSpot, reservation.plateNumber, reservation.reservedFromDate, reservation.reservedToDate)">
               <mat-icon>cancel</mat-icon>
             </button>
           </div>

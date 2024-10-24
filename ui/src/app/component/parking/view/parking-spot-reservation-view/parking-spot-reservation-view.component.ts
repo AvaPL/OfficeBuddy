@@ -17,6 +17,9 @@ import {
 import {
   ParkingSpotReservationFilterDialogComponent
 } from "./parking-spot-reservation-filter-dialog/parking-spot-reservation-filter-dialog.component";
+import {
+  ParkingSpotReservationConfirmDialogComponent
+} from "./parking-spot-reservation-confirm-dialog/parking-spot-reservation-confirm-dialog.component";
 
 type GroupedParkingSpotReservations = { [key: string]: ParkingSpotReservationView[] }
 
@@ -172,77 +175,80 @@ export class ParkingSpotReservationViewComponent implements OnInit {
     });
   }
 
-  confirmReservation(reservationId: string, parkingSpot: ParkingSpotView, user: UserView, reservedFromDate: string, reservedToDate: string) {
-    // const dialogRef = this.parkingSpotReservationConfirmDialog.open(ParkingSpotReservationConfirmDialogComponent, {
-    //   data: {
-    //     isWarn: false,
-    //     buttonText: "Confirm",
-    //     parkingSpotName: parkingSpot.name,
-    //     userFirstName: user.firstName,
-    //     userLastName: user.lastName,
-    //     reservedFromDate,
-    //     reservedToDate,
-    //     snackbarSuccessText: "Parking spot reservation confirmed",
-    //     snackbarErrorText: "Unexpected error occurred when confirming parking spot reservation",
-    //     sendRequest: async () => {
-    //       return this.reservationService.confirmParkingSpotReservation(reservationId);
-    //     }
-    //   }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(isConfirmed => {
-    //   if (isConfirmed) {
-    //     this.fetchReservations(this.pagination.limit, 0);
-    //   }
-    // });
+  confirmReservation(reservationId: string, parkingSpot: ParkingSpotView, user: UserView, plateNumber: string, reservedFromDate: string, reservedToDate: string) {
+    const dialogRef = this.parkingSpotReservationConfirmDialog.open(ParkingSpotReservationConfirmDialogComponent, {
+      data: {
+        isWarn: false,
+        buttonText: "Confirm",
+        parkingSpotName: parkingSpot.name,
+        userFirstName: user.firstName,
+        userLastName: user.lastName,
+        plateNumber,
+        reservedFromDate,
+        reservedToDate,
+        snackbarSuccessText: "Parking spot reservation confirmed",
+        snackbarErrorText: "Unexpected error occurred when confirming parking spot reservation",
+        sendRequest: async () => {
+          return this.reservationService.confirmReservation('parking', reservationId);
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        this.fetchReservations(this.pagination.limit, 0);
+      }
+    });
   }
 
-  rejectReservation(reservationId: string, parkingSpot: ParkingSpotView, user: UserView, reservedFromDate: string, reservedToDate: string) {
-    // const dialogRef = this.parkingSpotReservationConfirmDialog.open(ParkingSpotReservationConfirmDialogComponent, {
-    //   data: {
-    //     isWarn: true,
-    //     buttonText: "Reject",
-    //     parkingSpotName: parkingSpot.name,
-    //     userFirstName: user.firstName,
-    //     userLastName: user.lastName,
-    //     reservedFromDate,
-    //     reservedToDate,
-    //     snackbarSuccessText: "Parking spot reservation rejected",
-    //     snackbarErrorText: "Unexpected error occurred when rejecting parking spot reservation",
-    //     sendRequest: async () => {
-    //       return this.reservationService.rejectParkingSpotReservation(reservationId);
-    //     }
-    //   }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(isConfirmed => {
-    //   if (isConfirmed) {
-    //     this.fetchReservations(this.pagination.limit, 0);
-    //   }
-    // });
+  rejectReservation(reservationId: string, parkingSpot: ParkingSpotView, user: UserView, plateNumber: string, reservedFromDate: string, reservedToDate: string) {
+    const dialogRef = this.parkingSpotReservationConfirmDialog.open(ParkingSpotReservationConfirmDialogComponent, {
+      data: {
+        isWarn: true,
+        buttonText: "Reject",
+        parkingSpotName: parkingSpot.name,
+        userFirstName: user.firstName,
+        userLastName: user.lastName,
+        plateNumber,
+        reservedFromDate,
+        reservedToDate,
+        snackbarSuccessText: "Parking spot reservation rejected",
+        snackbarErrorText: "Unexpected error occurred when rejecting parking spot reservation",
+        sendRequest: async () => {
+          return this.reservationService.rejectReservation('parking', reservationId);
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        this.fetchReservations(this.pagination.limit, 0);
+      }
+    });
   }
 
-  cancelReservation(reservationId: string, parkingSpot: ParkingSpotView, reservedFromDate: string, reservedToDate: string) {
-    // const dialogRef = this.parkingSpotReservationConfirmDialog.open(ParkingSpotReservationConfirmDialogComponent, {
-    //   data: {
-    //     isWarn: true,
-    //     buttonText: "Cancel",
-    //     parkingSpotName: parkingSpot.name,
-    //     reservedFromDate,
-    //     reservedToDate,
-    //     snackbarSuccessText: "Parking spot reservation cancelled",
-    //     snackbarErrorText: "Unexpected error occurred when cancelling parking spot reservation",
-    //     sendRequest: async () => {
-    //       return this.reservationService.cancelParkingSpotReservation(reservationId);
-    //     }
-    //   }
-    // });
-    //
-    // dialogRef.afterClosed().subscribe(isConfirmed => {
-    //   if (isConfirmed) {
-    //     this.fetchReservations(this.pagination.limit, 0);
-    //   }
-    // });
+  cancelReservation(reservationId: string, parkingSpot: ParkingSpotView, plateNumber: string, reservedFromDate: string, reservedToDate: string) {
+    const dialogRef = this.parkingSpotReservationConfirmDialog.open(ParkingSpotReservationConfirmDialogComponent, {
+      data: {
+        isWarn: true,
+        buttonText: "Cancel",
+        parkingSpotName: parkingSpot.name,
+        plateNumber,
+        reservedFromDate,
+        reservedToDate,
+        snackbarSuccessText: "Parking spot reservation cancelled",
+        snackbarErrorText: "Unexpected error occurred when cancelling parking spot reservation",
+        sendRequest: async () => {
+          return this.reservationService.cancelReservation('parking', reservationId);
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(isConfirmed => {
+      if (isConfirmed) {
+        this.fetchReservations(this.pagination.limit, 0);
+      }
+    });
   }
 
   createReservation(officeId: string, officeName: string) {

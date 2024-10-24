@@ -183,7 +183,7 @@ export class DeskReservationViewComponent implements OnInit {
         snackbarSuccessText: "Desk reservation confirmed",
         snackbarErrorText: "Unexpected error occurred when confirming desk reservation",
         sendRequest: async () => {
-          return this.reservationService.confirmDeskReservation(reservationId)
+          return this.reservationService.confirmReservation('desk', reservationId)
         }
       }
     });
@@ -208,7 +208,7 @@ export class DeskReservationViewComponent implements OnInit {
         snackbarSuccessText: "Desk reservation rejected",
         snackbarErrorText: "Unexpected error occurred when rejecting desk reservation",
         sendRequest: async () => {
-          return this.reservationService.rejectDeskReservation(reservationId)
+          return this.reservationService.rejectReservation('desk', reservationId)
         }
       }
     });
@@ -231,7 +231,7 @@ export class DeskReservationViewComponent implements OnInit {
         snackbarSuccessText: "Desk reservation cancelled",
         snackbarErrorText: "Unexpected error occurred when cancelling desk reservation",
         sendRequest: async () => {
-          return this.reservationService.cancelDeskReservation(reservationId)
+          return this.reservationService.cancelReservation('desk', reservationId)
         }
       }
     });
