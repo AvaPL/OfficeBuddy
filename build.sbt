@@ -1,5 +1,5 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "2.13.11"
+ThisBuild / scalaVersion := "2.13.13"
 
 val catsEffectVersion = "3.5.0"
 val chimneyVersion = "0.7.5"
@@ -23,7 +23,10 @@ val sttpClientVersion = "3.8.15"
 val weaverCatsVersion = "0.8.3"
 
 lazy val root = (project in file("."))
-  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(
+    BuildInfoPlugin,
+    JavaAppPackaging
+  )
   .settings(
     idePackagePrefix := Some("io.github.avapl"),
     name := "OfficeBuddy",
@@ -66,7 +69,10 @@ lazy val root = (project in file("."))
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     buildInfoKeys := Seq[BuildInfoKey](name, version),
-    buildInfoPackage := "io.github.avapl.util"
+    buildInfoPackage := "io.github.avapl.util",
+    dockerBaseImage := "eclipse-temurin:17-jre",
+    dockerExposedPorts += 8080,
+    dockerUpdateLatest := true
   )
 
 lazy val integrationTests = (project in file("it"))

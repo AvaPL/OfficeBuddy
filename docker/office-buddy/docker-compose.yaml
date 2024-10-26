@@ -1,3 +1,33 @@
 version: "3.8"
 include:
   - ../infra.yaml
+services:
+  backend:
+    container_name: backend
+    restart: always
+    image: officebuddy:latest
+    ports:
+      - "8080:8080"
+    environment:
+      postgres.host: postgres
+      postgres.port: 5432
+      postgres.user: ${POSTGRES_OFFICE_BUDDY_USER}
+      postgres.password: ${POSTGRES_OFFICE_BUDDY_PASSWORD}
+      postgres.database: ${POSTGRES_OFFICE_BUDDY_DATABASE}
+      keycloak.server-url: http://keycloak:8080
+      keycloak.admin-user: ${KEYCLOAK_ADMIN}
+      keycloak.admin-password: ${KEYCLOAK_ADMIN_PASSWORD}
+    depends_on:
+      postgres:
+        condition: 'service_healthy'
+      keycloak:
+        condition: 'service_healthy'
+  frontend:
+    container_name: frontend
+    restart: always
+    image: officebuddy-ui:latest
+    ports:
+      - "4200:4200"
+    depends_on:
+      backend:
+        condition: 'service_started'

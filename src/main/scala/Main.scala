@@ -28,6 +28,7 @@ import cats.effect._
 import cats.effect.std.Console
 import cats.effect.std.Random
 import cats.implicits._
+import com.typesafe.config.ConfigFactory
 import config.AppConfig
 import config.HttpConfig
 import config.KeycloakConfig
@@ -61,7 +62,9 @@ import org.http4s.server.Router
 import org.keycloak.admin.client.Keycloak
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import pureconfig.ConfigObjectSource
 import pureconfig.ConfigSource
+import pureconfig.backend.ErrorUtil.unsafeToReaderResult
 import pureconfig.module.catseffect.syntax._
 import skunk.Session
 import sttp.tapir.json.circe.jsonBody
@@ -95,7 +98,14 @@ object Main extends IOApp.Simple {
     } yield ()
 
   private def loadConfig[F[_]: Sync]() =
-    ConfigSource.default.loadF[F, AppConfig]()
+    ConfigObjectSource(
+      unsafeToReaderResult(
+        ConfigFactory
+          .systemEnvironment()
+          .withFallback(ConfigFactory.defaultApplication())
+          .withFallback(ConfigFactory.defaultReference())
+      )
+    ).loadF[F, AppConfig]()
 
   private def runDatabaseMigrations[F[_]: Sync](config: PostgresConfig) =
     new FlywayMigration[F](
