@@ -1,0 +1,6 @@
+{
+  "/api": {
+    "target": "${PROXY_URL}",
+    "secure": false
+  }
+}

@@ -1,4 +1,5 @@
 import {KeycloakService} from "keycloak-angular";
+import {environment} from "../../environments/environment";
 
 export function initializeKeycloak(
   keycloak: KeycloakService
@@ -6,10 +7,9 @@ export function initializeKeycloak(
   return () =>
     keycloak.init({
       config: {
-        // TODO: Inject these instead of hardcoding
-        url: 'http://localhost:8888',
-        realm: 'office-buddy',
-        clientId: 'office-buddy-ui',
+        url: environment.keycloak.url,
+        realm: environment.keycloak.realm,
+        clientId: environment.keycloak.clientId,
       },
       initOptions: {
         checkLoginIframe: false
