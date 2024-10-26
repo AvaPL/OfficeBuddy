@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "${PROXY_URL}",
+    "target": "${BACKEND_PROXY_URL}",
     "secure": false
   }
 }
