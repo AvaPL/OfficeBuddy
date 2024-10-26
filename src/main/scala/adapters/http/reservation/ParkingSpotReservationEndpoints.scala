@@ -35,8 +35,6 @@ import sttp.tapir.model.CommaSeparated
 import sttp.tapir.model.Delimited
 import sttp.tapir.server.ServerEndpoint
 
-// TODO: Use
-// TODO: Add unit tests
 class ParkingSpotReservationEndpoints[F[_]](
   override val reservationService: ParkingSpotReservationService[F],
   reservationViewRepository: ParkingSpotReservationViewRepository[F],

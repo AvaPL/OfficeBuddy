@@ -274,7 +274,7 @@ object Main extends IOApp.Simple {
 
   private def internalApiRoutes[F[_]: Async](endpoints: List[ServerEndpoint[Any, F]]) = {
     val options = Http4sServerOptions.customiseInterceptors
-      .defaultHandlers(apiErrorHandler) // TODO: Move the handler (or server creation) somewhere else?
+      .defaultHandlers(apiErrorHandler)
       .options
     Http4sServerInterpreter(options).toRoutes(endpoints)
   }

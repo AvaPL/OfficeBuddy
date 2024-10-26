@@ -30,7 +30,6 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 
-// TODO: Add tests
 class ParkingSpotEndpoints[F[_]: Clock: MonadThrow](
   parkingSpotService: ParkingSpotService[F],
   parkingSpotViewRepository: ParkingSpotViewRepository[F],

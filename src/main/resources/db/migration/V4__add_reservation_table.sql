@@ -11,9 +11,8 @@ CREATE TABLE reservation(
 
   type           varchar,
 
-  -- desk
   desk_id        uuid      REFERENCES desk(id),
-  -- TODO: Add columns for parking spots and meeting rooms
+  -- TODO: Add columns for meeting rooms
 
   CONSTRAINT reservation_overlap_excl EXCLUDE USING gist(
     desk_id WITH =, tsrange(reserved_from, reserved_to, '[]') WITH &&

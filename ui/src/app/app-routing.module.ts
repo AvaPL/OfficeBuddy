@@ -11,7 +11,7 @@ const routes: Routes = [
   {path: 'desk', component: DeskComponent, canActivate: [AuthGuard]},
   {path: 'parking', component: ParkingComponent, canActivate: [AuthGuard]},
   {path: 'room', component: RoomComponent, canActivate: [AuthGuard]},
-  {path: 'account', component: AccountComponent, canActivate: [AuthGuard]}, // TODO: Disable for users
+  {path: 'account', component: AccountComponent, canActivate: [AuthGuard]},
   {path: 'office', component: OfficeComponent, canActivate: [AuthGuard]},
   {path: '**', redirectTo: 'desk'}
 ];
