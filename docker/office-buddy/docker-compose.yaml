@@ -17,6 +17,7 @@ services:
       keycloak.server-url: http://keycloak:8080
       keycloak.admin-user: ${KEYCLOAK_ADMIN}
       keycloak.admin-password: ${KEYCLOAK_ADMIN_PASSWORD}
+      demo-data-enabled: true
     depends_on:
       postgres:
         condition: 'service_healthy'
@@ -27,7 +28,7 @@ services:
     restart: always
     image: officebuddy-ui:latest
     ports:
-      - "4200:4200"
+      - "4200:80"
     depends_on:
       backend:
         condition: 'service_started'
