@@ -16,8 +16,9 @@ Improvements yet to be made are marked with TODOs in the code and listed in the 
 
 ## Domain landscape
 
-> :information_source: You might open the in a separate tab or in [Excalidraw](https://excalidraw.com/) to see the
-> details.
+> :information_source: You might want to open the diagram
+> [in a separate tab](https://raw.githubusercontent.com/AvaPL/OfficeBuddy/main/docs/office_buddy_domain.excalidraw.svg)
+> or upload it to [Excalidraw](https://excalidraw.com/) to see the details.
 
 ![Domain landscape](./docs/office_buddy_domain.excalidraw.svg)
 
