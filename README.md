@@ -27,14 +27,14 @@ ng serve
 
 The frontend app will be available at http://localhost:4200.
 
-When the app is first run, it creates a superadmin user with the following credentials:
+When the app is first run, it creates a superadmin account with the following credentials:
 
 - username: `superadmin@officebuddy.com`
 - password: `superadmin`
 
 It then can be used to configure the app. The app loads some demo data by default, including accounts. Other accounts
-are available when you use "Forgot password" in the login form. Provide the email address of the account you want to use
-and the password reset link will be available in Mailpit at http://localhost:8025.
+are available when you use "Forgot password" in the login form. Provide the email address of the account you want to
+use, and the password reset link will be available in Mailpit at http://localhost:8025.
 
 #### API documentation
 
