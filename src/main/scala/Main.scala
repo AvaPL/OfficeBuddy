@@ -190,6 +190,7 @@ object Main extends IOApp.Simple {
       _ <- demoDataService.loadDemoData()
     } yield ()
 
+  // TODO: Add and use healthcheck endpoints
   private def createEndpoints[F[_]: Async](
     repositories: Repositories[F],
     keycloak: Keycloak,
