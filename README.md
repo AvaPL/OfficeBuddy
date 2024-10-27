@@ -1,5 +1,36 @@
 # OfficeBuddy
 
+OfficeBuddy is a simple office management application. It's my pet project to expand my knowledge about some new areas
+and reinforce the knowledge of the ones I already know.
+
+Things you'll find in this project:
+
+- small-scale DDD approach
+- purely functional backend written in Scala with [Cats Effect](https://typelevel.org/cats-effect/)
+- tests written using [Weaver](https://disneystreaming.github.io/weaver-test/)
+  and [Mockito Scala](https://github.com/mockito/mockito-scala)
+- mobile-first frontend written in Angular using mostly GitHub Copilot (it turns out it's quite good!)
+- ...and probably more to come in the future if I continue the development :smile:
+
+Improvements yet to be made are marked with TODOs in the code and listed in the issues.
+
+## Domain landscape
+
+> :information_source: You might open the in a separate tab or in [Excalidraw](https://excalidraw.com/) to see the
+> details.
+
+![Domain landscape](./docs/office_buddy_domain.excalidraw.svg)
+
+## Screenshots
+
+| <img src="screenshots/offices_mobile.png"> | <img src="screenshots/new_desk_reservation_mobile.png"> | <img src="screenshots/parking_reservations_mobile.png"> |
+|:------------------------------------------:|:-------------------------------------------------------:|:-------------------------------------------------------:|
+
+| <img src="screenshots/desk_reservations.png"> |
+|:---------------------------------------------:|
+|     <img src="screenshots/accounts.png">      |
+|    <img src="screenshots/new_account.png">    |
+
 ## Running the app
 
 The below setup assumes the default config set up in the repository files.
